@@ -209,7 +209,7 @@ void ImageBufferDataPrivateAccelerated::draw(GraphicsContext& destContext, const
     if (destContext.isAcceleratedContext()) {
         invalidateState();
 
-        // If accelerated compositing is disabled, this may be the painter of the QGLWidget, which is a QGL2PaintEngineEx.
+        // If accelerated compositing is disabled, this may be the painter of the OpenGL viewport widget, which is a QOpenGL2PaintEngineEx.
         QOpenGL2PaintEngineEx* acceleratedPaintEngine = dynamic_cast<QOpenGL2PaintEngineEx*>(destContext.platformContext()->paintEngine()); // toQOpenGL2PaintEngineEx(destContext.platformContext()->paintEngine());
         if (acceleratedPaintEngine) {
             QPaintDevice* targetPaintDevice = acceleratedPaintEngine->paintDevice();

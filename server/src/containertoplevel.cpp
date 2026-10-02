@@ -29,7 +29,6 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QSizePolicy>
 #include <QPalette>
-#include <QDesktopWidget>
 #include <QApplication>
 #include <QScreen>
 #include <QPixmap>
@@ -45,7 +44,8 @@
 #include <unistd.h>
 
 #include <QCursor>
-#include <QGLWidget>
+#include <QOpenGLWidget>
+#include <QSurfaceFormat>
 
 //a client window wraps a WebView (from QGraphicsWebView) object.
 //At the top level, clients that request new frames are granted
@@ -391,7 +391,10 @@ WebGraphicsView::WebGraphicsView() : QGraphicsView()
     
     // Configure OpenGL rendering if enabled
     if (useOpenGL) {
-        QGLWidget* glWidget = new QGLWidget(QGLFormat(QGL::SampleBuffers));
+        QOpenGLWidget* glWidget = new QOpenGLWidget;
+        QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+        format.setSamples(4); //multisampling, as QGL::SampleBuffers gave with the old QGLWidget.
+        glWidget->setFormat(format);
         glWidget->setAutoFillBackground(false);
         setViewport(glWidget);
         

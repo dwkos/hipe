@@ -52,7 +52,7 @@ sudo ninja install
 It installs as `libHipeCore` and `libHipeCoreWidgets`, with headers in `/usr/include/HipeCore`. The server
 links the *installed* copy, so a change in `hipecore/` only reaches `hiped` after `sudo ninja install`.
 
-**Server** (`server/`, qmake + Qt5; needs the Qt SVG and OpenGL modules as well as the installed engine):
+**Server** (`server/`, qmake + Qt 5.15; needs the Qt SVG module as well as the installed engine):
 ```sh
 cd server
 qmake -makefile ./src/hiped.pro   # or run ./configure, a 1-line wrapper for the same command

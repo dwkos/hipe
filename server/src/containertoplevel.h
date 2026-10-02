@@ -26,7 +26,6 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <HipeCore/QGraphicsWebView>
-#include <QGLWidget>      // Add OpenGL widget support
 
 #include "container.h"
 

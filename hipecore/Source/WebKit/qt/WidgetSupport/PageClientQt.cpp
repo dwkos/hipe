@@ -26,14 +26,6 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 
-#if defined(Q_WS_X11)
-#include <QX11Info>
-#endif
-
-#ifdef QT_OPENGL_LIB
-#include <QGLWidget>
-#endif
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #include <QOpenGLWidget>
 #endif
 
@@ -190,16 +182,8 @@ bool PageClientQGraphicsWidget::makeOpenGLContextCurrentIfAvailable()
     QGraphicsView* graphicsView = firstGraphicsView();
     if (graphicsView && graphicsView->viewport()) {
         QWidget* widget = graphicsView->viewport();
-#if defined(QT_OPENGL_LIB)
-        if (widget->inherits("QGLWidget")) {
-            QGLWidget* glWidget = static_cast<QGLWidget*>(widget);
-            // The GL context belonging to the QGLWidget viewport must be current when TextureMapper is being created.
-            glWidget->makeCurrent();
-            return true;
-        }
-#endif
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
         if (widget->inherits("QOpenGLWidget")) {
+            // The GL context belonging to the viewport must be current when TextureMapper is being created.
             QOpenGLWidget* qoglWidget = static_cast<QOpenGLWidget*>(widget);
             qoglWidget->makeCurrent();
             return true;
@@ -216,13 +200,6 @@ QOpenGLContext* PageClientQGraphicsWidget::openGLContextIfAvailable()
     QGraphicsView* graphicsView = firstGraphicsView();
     if (graphicsView && graphicsView->viewport()) {
         QWidget* widget = graphicsView->viewport();
-#if defined(QT_OPENGL_LIB)
-        if (widget->inherits("QGLWidget")) {
-            QGLWidget* glWidget = static_cast<QGLWidget*>(widget);
-            return glWidget->context()->contextHandle();
-        }
-#endif
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
         if (widget->inherits("QOpenGLWidget")) {
             QOpenGLWidget* qoglWidget = static_cast<QOpenGLWidget*>(widget);
             return qoglWidget->context();
