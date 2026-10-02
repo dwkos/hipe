@@ -460,11 +460,14 @@ if(KDE_INSTALL_USE_QT_SYS_PATHS)
         "Qt plugins"
          QT_PLUGIN_INSTALL_DIR)
 
-    query_qmake(qt_imports_dir QT_INSTALL_IMPORTS)
+    # Qt 6 has no Qt Quick 1, and its qmake does not know this variable.
+    if (NOT HIPE_QT STREQUAL "Qt6")
+        query_qmake(qt_imports_dir QT_INSTALL_IMPORTS)
 
-    _define_absolute(QTQUICKIMPORTSDIR ${qt_imports_dir}
-        "QtQuick1 imports"
-        IMPORTS_INSTALL_DIR)
+        _define_absolute(QTQUICKIMPORTSDIR ${qt_imports_dir}
+            "QtQuick1 imports"
+            IMPORTS_INSTALL_DIR)
+    endif ()
 
     query_qmake(qt_qml_dir QT_INSTALL_QML)
 

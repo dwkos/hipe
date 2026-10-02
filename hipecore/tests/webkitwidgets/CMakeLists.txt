@@ -9,17 +9,17 @@ include_directories(
 
 include_directories(SYSTEM
     ${ICU_INCLUDE_DIRS}
-    ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
-    ${Qt5Widgets_INCLUDE_DIRS}
-    ${Qt5Test_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_PRIVATE_INCLUDE_DIRS}
+    ${${HIPE_QT}Widgets_INCLUDE_DIRS}
+    ${${HIPE_QT}Test_INCLUDE_DIRS}
 )
 
 add_definitions(-DTESTS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 
 set(QtWK1ApiTests_LIBRARIES
-    ${Qt5Gui_LIBRARIES}
-    ${Qt5Test_LIBRARIES}
-    ${Qt5Widgets_LIBRARIES}
+    ${${HIPE_QT}Gui_LIBRARIES}
+    ${${HIPE_QT}Test_LIBRARIES}
+    ${${HIPE_QT}Widgets_LIBRARIES}
     WebKitWidgets
 )
 
@@ -39,7 +39,7 @@ set(QtWK1ApiTests
 foreach (testName ${QtWK1ApiTests})
     list(APPEND tst_${testName}_SOURCES ${testName}/tst_${testName}.cpp)
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${testName}/tst_${testName}.qrc")
-        qt5_add_resources(tst_${testName}_SOURCES ${testName}/tst_${testName}.qrc)
+        qt_add_resources(tst_${testName}_SOURCES ${testName}/tst_${testName}.qrc)
     endif ()
 
     add_executable(tst_${testName} ${tst_${testName}_SOURCES})

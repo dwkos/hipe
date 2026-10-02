@@ -60,3 +60,4 @@ Source/.vscode/settings.json
 
 # Local machine notes, not for sharing (paths/setup specific to this checkout)
 .claude/local-notes.md
+/build-*/

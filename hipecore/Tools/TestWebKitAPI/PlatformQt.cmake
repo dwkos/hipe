@@ -8,7 +8,7 @@ include_directories(
 
 include_directories(SYSTEM
     ${ICU_INCLUDE_DIRS}
-    ${Qt5Gui_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_INCLUDE_DIRS}
 )
 
 add_definitions(
@@ -27,13 +27,13 @@ set(test_main_SOURCES
 )
 
 list(APPEND test_wtf_LIBRARIES
-    ${Qt5Gui_LIBRARIES}
+    ${${HIPE_QT}Gui_LIBRARIES}
 )
 
 set(test_webcore_LIBRARIES
     WebCore
     gtest
-    ${Qt5Gui_LIBRARIES}
+    ${${HIPE_QT}Gui_LIBRARIES}
     ${STATIC_LIB_DEPENDENCIES}
 )
 

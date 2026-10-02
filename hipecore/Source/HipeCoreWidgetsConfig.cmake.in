@@ -2,7 +2,7 @@
 @QTWEBKIT_PACKAGE_INIT@
 
 find_dependency(HipeCore @PROJECT_VERSION_STRING@ EXACT)
-find_dependency_with_major_and_minor(Qt5Widgets @Qt5_VERSION_MAJOR@ @Qt5_VERSION_MINOR@)
+find_dependency_with_major_and_minor(@HIPE_QT@Widgets @HIPE_QT_VERSION_MAJOR@ @HIPE_QT_VERSION_MINOR@)
 
 include("${CMAKE_CURRENT_LIST_DIR}/HipeCoreWidgetsTargets.cmake")
 

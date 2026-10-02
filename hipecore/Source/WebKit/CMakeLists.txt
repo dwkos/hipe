@@ -76,7 +76,7 @@ if (${PORT} STREQUAL "Qt")
     if (USE_LINKER_VERSION_SCRIPT)
         set(VERSION_SCRIPT "${CMAKE_BINARY_DIR}/QtWebKit.version")
         add_custom_command(TARGET WebKit PRE_LINK
-            COMMAND ${PERL_EXECUTABLE} ${TOOLS_DIR}/qt/generate-version-script.pl ${Qt5_VERSION} > ${VERSION_SCRIPT}
+            COMMAND ${PERL_EXECUTABLE} ${TOOLS_DIR}/qt/generate-version-script.pl ${${HIPE_QT}_VERSION} > ${VERSION_SCRIPT}
             VERBATIM
         )
         set_target_properties(WebKit PROPERTIES LINK_FLAGS -Wl,--version-script,${VERSION_SCRIPT})

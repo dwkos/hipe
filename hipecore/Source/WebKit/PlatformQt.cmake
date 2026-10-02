@@ -194,10 +194,16 @@ list(APPEND WebKit_SOURCES
 )
 
 list(APPEND WebKit_SYSTEM_INCLUDE_DIRECTORIES
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Gui_INCLUDE_DIRS}
-    ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+    ${${HIPE_QT}Core_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_PRIVATE_INCLUDE_DIRS}
 )
+if (HIPE_QT STREQUAL "Qt6")
+    list(APPEND WebKit_SYSTEM_INCLUDE_DIRECTORIES
+        ${Qt6OpenGL_INCLUDE_DIRS}
+        ${Qt6OpenGL_PRIVATE_INCLUDE_DIRS}
+    )
+endif ()
 # Build the include path with duplicates removed
 list(REMOVE_DUPLICATES WebKit_SYSTEM_INCLUDE_DIRECTORIES)
 
@@ -208,8 +214,8 @@ list(APPEND WebKit_LIBRARIES
         ${X11_Xcomposite_LIB}
         ${X11_Xrender_LIB}
     PUBLIC
-        ${Qt5Core_LIBRARIES}
-        ${Qt5Gui_LIBRARIES}
+        ${${HIPE_QT}Core_LIBRARIES}
+        ${${HIPE_QT}Gui_LIBRARIES}
 )
 
 if (ENABLE_X11_TARGET)
@@ -221,7 +227,7 @@ endif ()
 # Resources have to be included directly in the final binary.
 # The linker won't pick them from a static library since they aren't referenced.
 if (NOT SHARED_CORE)
-    qt5_add_resources(WebKit_SOURCES
+    qt_add_resources(WebKit_SOURCES
         "${WEBCORE_DIR}/WebCore.qrc"
     )
 endif ()
@@ -292,9 +298,9 @@ install(
     COMPONENT Data
 )
 
-set(WEBKIT_PKGCONFIG_DEPS "Qt5Core Qt5Gui")
+set(WEBKIT_PKGCONFIG_DEPS "${HIPE_QT}Core ${HIPE_QT}Gui")
 
-set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} Qt5Widgets HipeCore")
+set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} ${HIPE_QT}Widgets HipeCore")
 
 if (QT_STATIC_BUILD)
     set(EXTRA_LIBS_NAMES WebCore WTF)
@@ -364,15 +370,25 @@ set(WebKitWidgets_SOURCES
 )
 
 set(WebKitWidgets_SYSTEM_INCLUDE_DIRECTORIES
-    ${Qt5Gui_INCLUDE_DIRS}
-    ${Qt5Widgets_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_INCLUDE_DIRS}
+    ${${HIPE_QT}Widgets_INCLUDE_DIRS}
 )
 
 set(WebKitWidgets_LIBRARIES
     PUBLIC
-        ${Qt5Widgets_LIBRARIES}
+        ${${HIPE_QT}Widgets_LIBRARIES}
         WebKit
 )
+
+if (HIPE_QT STREQUAL "Qt6")
+    list(APPEND WebKitWidgets_SYSTEM_INCLUDE_DIRECTORIES
+        ${Qt6OpenGL_INCLUDE_DIRS}
+        ${Qt6OpenGLWidgets_INCLUDE_DIRS}
+    )
+    list(APPEND WebKitWidgets_LIBRARIES
+        ${Qt6OpenGLWidgets_LIBRARIES}
+    )
+endif ()
 
 ecm_generate_headers(
     QtWebKitWidgets_FORWARDING_HEADERS
@@ -497,7 +513,7 @@ endif ()
 if (USE_LINKER_VERSION_SCRIPT)
     set(VERSION_SCRIPT "${CMAKE_BINARY_DIR}/QtWebKitWidgets.version")
     add_custom_command(TARGET WebKitWidgets PRE_LINK
-        COMMAND ${PERL_EXECUTABLE} ${TOOLS_DIR}/qt/generate-version-script.pl ${Qt5_VERSION} > ${VERSION_SCRIPT}
+        COMMAND ${PERL_EXECUTABLE} ${TOOLS_DIR}/qt/generate-version-script.pl ${${HIPE_QT}_VERSION} > ${VERSION_SCRIPT}
         VERBATIM
     )
     set_target_properties(WebKitWidgets PROPERTIES LINK_FLAGS -Wl,--version-script,${VERSION_SCRIPT})

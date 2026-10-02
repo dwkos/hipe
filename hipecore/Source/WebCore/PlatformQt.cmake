@@ -176,7 +176,7 @@ endif ()
 # Do it in the WebCore to support SHARED_CORE since WebKitWidgets won't load WebKit in that case.
 # This should match the opposite statement in WebKit/PlatformQt.cmake
 if (SHARED_CORE)
-    qt5_add_resources(WebCore_SOURCES
+    qt_add_resources(WebCore_SOURCES
         WebCore.qrc
     )
 endif ()
@@ -185,20 +185,30 @@ list(APPEND WebCore_SYSTEM_INCLUDE_DIRECTORIES
     ${HYPHEN_INCLUDE_DIR}
     ${LIBXML2_INCLUDE_DIR}
     ${LIBXSLT_INCLUDE_DIR}
-    ${Qt5Core_INCLUDE_DIRS}
-    ${Qt5Gui_INCLUDE_DIRS}
-    ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+    ${${HIPE_QT}Core_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_INCLUDE_DIRS}
+    ${${HIPE_QT}Gui_PRIVATE_INCLUDE_DIRS}
     ${ZLIB_INCLUDE_DIRS}
 )
 
 list(APPEND WebCore_LIBRARIES
     ${LIBXML2_LIBRARIES}
     ${LIBXSLT_LIBRARIES}
-    ${Qt5Core_LIBRARIES}
-    ${Qt5Gui_LIBRARIES}
+    ${${HIPE_QT}Core_LIBRARIES}
+    ${${HIPE_QT}Gui_LIBRARIES}
     ${X11_X11_LIB}
     ${ZLIB_LIBRARIES}
 )
+
+if (HIPE_QT STREQUAL "Qt6")
+    list(APPEND WebCore_SYSTEM_INCLUDE_DIRECTORIES
+        ${Qt6OpenGL_INCLUDE_DIRS}
+        ${Qt6OpenGL_PRIVATE_INCLUDE_DIRS}
+    )
+    list(APPEND WebCore_LIBRARIES
+        ${Qt6OpenGL_LIBRARIES}
+    )
+endif ()
 
 if (QT_STATIC_BUILD)
     list(APPEND WebCore_LIBRARIES
@@ -223,14 +233,14 @@ if (ENABLE_OPENGL)
         platform/graphics/qt/QFramebufferPaintDevice.cpp
     )
 
-    if (${Qt5Gui_OPENGL_IMPLEMENTATION} STREQUAL GLESv2)
+    if ("${HIPE_QT_OPENGL_IMPLEMENTATION}" STREQUAL "GLESv2")
         list(APPEND WebCore_SOURCES
             platform/graphics/opengl/Extensions3DOpenGLES.cpp
             platform/graphics/opengl/GraphicsContext3DOpenGLES.cpp
         )
         list(APPEND WebCore_LIBRARIES
-            ${Qt5Gui_EGL_LIBRARIES}
-            ${Qt5Gui_OPENGL_LIBRARIES}
+            ${${HIPE_QT}Gui_EGL_LIBRARIES}
+            ${${HIPE_QT}Gui_OPENGL_LIBRARIES}
         )
     else ()
         list(APPEND WebCore_SOURCES

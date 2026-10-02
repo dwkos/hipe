@@ -1,8 +1,8 @@
 @PACKAGE_INIT@
 @QTWEBKIT_PACKAGE_INIT@
 
-find_dependency_with_major_and_minor(Qt5Core @Qt5_VERSION_MAJOR@ @Qt5_VERSION_MINOR@)
-find_dependency_with_major_and_minor(Qt5Gui @Qt5_VERSION_MAJOR@ @Qt5_VERSION_MINOR@)
+find_dependency_with_major_and_minor(@HIPE_QT@Core @HIPE_QT_VERSION_MAJOR@ @HIPE_QT_VERSION_MINOR@)
+find_dependency_with_major_and_minor(@HIPE_QT@Gui @HIPE_QT_VERSION_MAJOR@ @HIPE_QT_VERSION_MINOR@)
 
 include("${CMAKE_CURRENT_LIST_DIR}/HipeCoreTargets.cmake")
 

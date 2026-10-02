@@ -1,11 +1,15 @@
-find_package(Qt5Core QUIET)
+find_package(${HIPE_QT}Core QUIET)
 
-set(_qmake_executable_default "qmake-qt5")
-if (TARGET Qt5::qmake)
-    get_target_property(_qmake_executable_default Qt5::qmake LOCATION)
+if (HIPE_QT STREQUAL "Qt6")
+    set(_qmake_executable_default "qmake6")
+else ()
+    set(_qmake_executable_default "qmake-qt5")
+endif ()
+if (TARGET ${HIPE_QT}::qmake)
+    get_target_property(_qmake_executable_default ${HIPE_QT}::qmake LOCATION)
 endif()
 set(QMAKE_EXECUTABLE ${_qmake_executable_default}
-    CACHE FILEPATH "Location of the Qt5 qmake executable")
+    CACHE FILEPATH "Location of the qmake executable of the Qt in use")
 
 # This is not public API (yet)!
 function(query_qmake result_variable qt_variable)

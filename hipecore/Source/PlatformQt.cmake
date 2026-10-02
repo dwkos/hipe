@@ -112,11 +112,11 @@ get_target_property(@MODULE_NAME@_INCLUDE_DIRS        HipeCore::@MODULE_NAME@ IN
 get_target_property(@MODULE_NAME@_COMPILE_DEFINITIONS HipeCore::@MODULE_NAME@ INTERFACE_COMPILE_DEFINITIONS)
 
 foreach (_module_dep \${_@MODULE_NAME@_MODULE_DEPENDENCIES})
-    list(APPEND @MODULE_NAME@_INCLUDE_DIRS \${Qt5\${_module_dep}_INCLUDE_DIRS})
-    list(APPEND @MODULE_NAME@_PRIVATE_INCLUDE_DIRS \${Qt5\${_module_dep}_PRIVATE_INCLUDE_DIRS})
-    list(APPEND @MODULE_NAME@_DEFINITIONS \${Qt5\${_module_dep}_DEFINITIONS})
-    list(APPEND @MODULE_NAME@_COMPILE_DEFINITIONS \${Qt5\${_module_dep}_COMPILE_DEFINITIONS})
-    list(APPEND @MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS \${Qt5\${_module_dep}_EXECUTABLE_COMPILE_FLAGS})
+    list(APPEND @MODULE_NAME@_INCLUDE_DIRS \${@HIPE_QT@\${_module_dep}_INCLUDE_DIRS})
+    list(APPEND @MODULE_NAME@_PRIVATE_INCLUDE_DIRS \${@HIPE_QT@\${_module_dep}_PRIVATE_INCLUDE_DIRS})
+    list(APPEND @MODULE_NAME@_DEFINITIONS \${@HIPE_QT@\${_module_dep}_DEFINITIONS})
+    list(APPEND @MODULE_NAME@_COMPILE_DEFINITIONS \${@HIPE_QT@\${_module_dep}_COMPILE_DEFINITIONS})
+    list(APPEND @MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS \${@HIPE_QT@\${_module_dep}_EXECUTABLE_COMPILE_FLAGS})
 endforeach ()
 list(REMOVE_DUPLICATES @MODULE_NAME@_INCLUDE_DIRS)
 list(REMOVE_DUPLICATES @MODULE_NAME@_PRIVATE_INCLUDE_DIRS)
@@ -190,20 +190,20 @@ install(EXPORT HipeCoreWidgetsTargets
 
 # Documentation
 
-if (NOT TARGET Qt5::qdoc)
-    add_executable(Qt5::qdoc IMPORTED)
+if (NOT TARGET ${HIPE_QT}::qdoc)
+    add_executable(${HIPE_QT}::qdoc IMPORTED)
     query_qmake(QDOC_EXECUTABLE QT_INSTALL_BINS)
     set(QDOC_EXECUTABLE "${QDOC_EXECUTABLE}/qdoc")
-    set_target_properties(Qt5::qdoc PROPERTIES
+    set_target_properties(${HIPE_QT}::qdoc PROPERTIES
         IMPORTED_LOCATION ${QDOC_EXECUTABLE}
     )
 endif ()
 
-if (NOT TARGET Qt5::qhelpgenerator)
-    add_executable(Qt5::qhelpgenerator IMPORTED)
+if (NOT TARGET ${HIPE_QT}::qhelpgenerator)
+    add_executable(${HIPE_QT}::qhelpgenerator IMPORTED)
     query_qmake(QHELPGENERATOR_EXECUTABLE QT_INSTALL_BINS)
     set(QHELPGENERATOR_EXECUTABLE "${QHELPGENERATOR_EXECUTABLE}/qhelpgenerator")
-    set_target_properties(Qt5::qhelpgenerator PROPERTIES
+    set_target_properties(${HIPE_QT}::qhelpgenerator PROPERTIES
         IMPORTED_LOCATION ${QHELPGENERATOR_EXECUTABLE}
     )
 endif ()
@@ -240,13 +240,13 @@ set(EXPORT_VARS_COMMANDS
 
 add_custom_target(prepare_docs ${NEED_ALL}
     ${EXPORT_VARS_COMMANDS}
-    COMMAND Qt5::qdoc ${QDOC_CONFIG} -prepare -outputdir "${DOC_OUTPUT_DIR}/qtwebkit" -installdir ${DOC_INSTALL_DIR} -indexdir ${QT_INSTALL_DOCS} -no-link-errors
+    COMMAND ${HIPE_QT}::qdoc ${QDOC_CONFIG} -prepare -outputdir "${DOC_OUTPUT_DIR}/qtwebkit" -installdir ${DOC_INSTALL_DIR} -indexdir ${QT_INSTALL_DOCS} -no-link-errors
     VERBATIM
 )
 
 add_custom_target(generate_docs ${NEED_ALL}
     ${EXPORT_VARS_COMMANDS}
-    COMMAND Qt5::qdoc ${QDOC_CONFIG} -generate -outputdir "${DOC_OUTPUT_DIR}/qtwebkit" -installdir ${DOC_INSTALL_DIR} -indexdir ${QT_INSTALL_DOCS}
+    COMMAND ${HIPE_QT}::qdoc ${QDOC_CONFIG} -generate -outputdir "${DOC_OUTPUT_DIR}/qtwebkit" -installdir ${DOC_INSTALL_DIR} -indexdir ${QT_INSTALL_DOCS}
     VERBATIM
 )
 add_dependencies(generate_docs prepare_docs)
@@ -255,7 +255,7 @@ add_custom_target(html_docs)
 add_dependencies(html_docs generate_docs)
 
 add_custom_target(qch_docs ${NEED_ALL}
-    COMMAND Qt5::qhelpgenerator "${DOC_OUTPUT_DIR}/qtwebkit/qtwebkit.qhp" -o "${DOC_OUTPUT_DIR}/qtwebkit.qch"
+    COMMAND ${HIPE_QT}::qhelpgenerator "${DOC_OUTPUT_DIR}/qtwebkit/qtwebkit.qhp" -o "${DOC_OUTPUT_DIR}/qtwebkit.qch"
     VERBATIM
 )
 add_dependencies(qch_docs html_docs)

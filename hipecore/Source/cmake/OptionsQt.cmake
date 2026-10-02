@@ -51,8 +51,8 @@ if (EXISTS ${STATIC_DEPENDENCIES_CMAKE_FILE})
 endif ()
 
 macro(CONVERT_PRL_LIBS_TO_CMAKE _qt_component)
-    if (TARGET Qt5::${_qt_component})
-        get_target_property(_lib_location Qt5::${_qt_component} LOCATION)
+    if (TARGET ${HIPE_QT}::${_qt_component})
+        get_target_property(_lib_location ${HIPE_QT}::${_qt_component} LOCATION)
         execute_process(COMMAND ${PERL_EXECUTABLE} ${TOOLS_DIR}/qt/convert-prl-libs-to-cmake.pl
             --lib ${_lib_location}
             --out ${STATIC_DEPENDENCIES_CMAKE_FILE}
@@ -62,27 +62,37 @@ macro(CONVERT_PRL_LIBS_TO_CMAKE _qt_component)
     endif ()
 endmacro()
 
-macro(CHECK_QT5_PRIVATE_INCLUDE_DIRS _qt_component _header)
+macro(CHECK_QT_PRIVATE_INCLUDE_DIRS _qt_component _header)
     set(INCLUDE_TEST_SOURCE
     "
         #include <${_header}>
         int main() { return 0; }
     "
     )
-    set(CMAKE_REQUIRED_INCLUDES ${Qt5${_qt_component}_PRIVATE_INCLUDE_DIRS})
-    set(CMAKE_REQUIRED_LIBRARIES Qt5::${_qt_component})
+    if (HIPE_QT STREQUAL "Qt6")
+        # Qt 6 describes its private include directories with generator expressions, which a
+        # try-compile cannot evaluate, so look for the header file itself.
+        find_file(${HIPE_QT}${_qt_component}_PRIVATE_HEADER_FOUND ${_header}
+            PATHS ${Qt6${_qt_component}_INCLUDE_DIRS}
+            PATH_SUFFIXES "${Qt6_VERSION}/Qt${_qt_component}"
+            NO_DEFAULT_PATH
+        )
+    else ()
+        set(CMAKE_REQUIRED_INCLUDES ${${HIPE_QT}${_qt_component}_PRIVATE_INCLUDE_DIRS})
+        set(CMAKE_REQUIRED_LIBRARIES ${HIPE_QT}::${_qt_component})
 
-    # Avoid check_include_file_cxx() because it performs linking but doesn't support CMAKE_REQUIRED_LIBRARIES (doh!)
-    check_cxx_source_compiles("${INCLUDE_TEST_SOURCE}" Qt5${_qt_component}_PRIVATE_HEADER_FOUND)
+        # Avoid check_include_file_cxx() because it performs linking but doesn't support CMAKE_REQUIRED_LIBRARIES (doh!)
+        check_cxx_source_compiles("${INCLUDE_TEST_SOURCE}" ${HIPE_QT}${_qt_component}_PRIVATE_HEADER_FOUND)
 
+        unset(CMAKE_REQUIRED_INCLUDES)
+        unset(CMAKE_REQUIRED_LIBRARIES)
+    endif ()
     unset(INCLUDE_TEST_SOURCE)
-    unset(CMAKE_REQUIRED_INCLUDES)
-    unset(CMAKE_REQUIRED_LIBRARIES)
 
-    if (NOT Qt5${_qt_component}_PRIVATE_HEADER_FOUND)
+    if (NOT ${HIPE_QT}${_qt_component}_PRIVATE_HEADER_FOUND)
         message(FATAL_ERROR "Header ${_header} is not found. Please make sure that:
-    1. Private headers of Qt5${_qt_component} are installed
-    2. Qt5${_qt_component}_PRIVATE_INCLUDE_DIRS is correctly defined in Qt5${_qt_component}Config.cmake")
+    1. Private headers of ${HIPE_QT}${_qt_component} are installed
+    2. ${HIPE_QT}${_qt_component}_PRIVATE_INCLUDE_DIRS is correctly defined in ${HIPE_QT}${_qt_component}Config.cmake")
     endif ()
 endmacro()
 
@@ -110,7 +120,7 @@ macro(QTWEBKIT_GENERATE_MOC_FILES_CPP _target)
         endif ()
         get_filename_component(_name_we ${_file} NAME_WE)
         set(_moc_name "${CMAKE_CURRENT_BINARY_DIR}/${_name_we}.moc")
-        qt5_generate_moc(${_file} ${_moc_name} TARGET ${_target})
+        qt_generate_moc(${_file} ${_moc_name} TARGET ${_target})
         ADD_SOURCE_DEPENDENCIES(${_file} ${_moc_name})
     endforeach ()
 endmacro()
@@ -123,7 +133,7 @@ macro(QTWEBKIT_GENERATE_MOC_FILE_H _target _header _source)
     endif ()
     get_filename_component(_name_we ${_header} NAME_WE)
     set(_moc_name "${CMAKE_CURRENT_BINARY_DIR}/moc_${_name_we}.cpp")
-    qt5_generate_moc(${_header} ${_moc_name} TARGET ${_target})
+    qt_generate_moc(${_header} ${_moc_name} TARGET ${_target})
     ADD_SOURCE_DEPENDENCIES(${_source} ${_moc_name})
 endmacro()
 
@@ -224,12 +234,22 @@ endif ()
 set(ENABLE_GAMEPAD_DEPRECATED_DEFAULT OFF)
 
 # FIXME: Move Qt handling here
-# Qt 5.15 is the only Qt 5 release supported. The code avoids everything Qt 5 deprecates, so that
-# it also compiles against Qt 6's API (see QT_DISABLE_DEPRECATED_BEFORE below).
-set(REQUIRED_QT_VERSION 5.15.0)
-find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core Gui QUIET)
+# hipecore builds against Qt 5.15, the only Qt 5 release supported, or (work in progress) Qt 6:
+# configure with -DHIPECORE_QT_MAJOR=6. HIPE_QT is the package and target prefix, "Qt5" or "Qt6".
+# The code avoids everything Qt 5 deprecates (see QT_DISABLE_DEPRECATED_BEFORE below).
+set(HIPECORE_QT_MAJOR 5 CACHE STRING "Qt major version to build against: 5 or 6")
+if (HIPECORE_QT_MAJOR STREQUAL "6")
+    set(HIPE_QT Qt6)
+    set(REQUIRED_QT_VERSION 6.5.0)
+elseif (HIPECORE_QT_MAJOR STREQUAL "5")
+    set(HIPE_QT Qt5)
+    set(REQUIRED_QT_VERSION 5.15.0)
+else ()
+    message(FATAL_ERROR "HIPECORE_QT_MAJOR must be 5 or 6")
+endif ()
+find_package(${HIPE_QT} ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core Gui QUIET)
 
-get_target_property(QT_CORE_TYPE Qt5::Core TYPE)
+get_target_property(QT_CORE_TYPE ${HIPE_QT}::Core TYPE)
 if (QT_CORE_TYPE MATCHES STATIC)
     set(QT_STATIC_BUILD ON)
     set(SHARED_CORE OFF)
@@ -243,7 +263,7 @@ else ()
     set(ICU_LIBRARY_PREFIX "")
 endif ()
 
-if (UNIX AND TARGET Qt5::QXcbIntegrationPlugin AND NOT APPLE)
+if (UNIX AND TARGET ${HIPE_QT}::QXcbIntegrationPlugin AND NOT APPLE)
     set(ENABLE_X11_TARGET_DEFAULT ON)
 else ()
     set(ENABLE_X11_TARGET_DEFAULT OFF)
@@ -472,10 +492,32 @@ if (ENABLE_API_TESTS)
     )
 endif ()
 
+# In Qt 6 the OpenGL classes that are not part of Qt Gui, and QOpenGLWidget, are in modules of their own.
+if (HIPE_QT STREQUAL "Qt6")
+    list(APPEND QT_REQUIRED_COMPONENTS
+        OpenGL
+        OpenGLWidgets
+    )
+endif ()
+
 if (ENABLE_OPENGL)
     # Note: Gui module is already found
     # Warning: quotes are sinificant here!
-    if (NOT DEFINED Qt5Gui_OPENGL_IMPLEMENTATION OR "${Qt5Gui_OPENGL_IMPLEMENTATION}" STREQUAL "")
+    # HIPE_QT_OPENGL_IMPLEMENTATION is "GL", "GLESv2" or "DynamicGL". Qt 5 states it in a variable;
+    # Qt 6 lists it among the features of its Gui module.
+    if (HIPE_QT STREQUAL "Qt6")
+        get_target_property(_qt_gui_features Qt6::Gui QT_ENABLED_PUBLIC_FEATURES)
+        list(FIND _qt_gui_features opengles2 _qt_has_opengles2)
+        list(FIND _qt_gui_features opengl _qt_has_opengl)
+        if (_qt_has_opengles2 GREATER -1)
+            set(HIPE_QT_OPENGL_IMPLEMENTATION GLESv2)
+        elseif (_qt_has_opengl GREATER -1)
+            set(HIPE_QT_OPENGL_IMPLEMENTATION GL)
+        endif ()
+    else ()
+        set(HIPE_QT_OPENGL_IMPLEMENTATION "${Qt5Gui_OPENGL_IMPLEMENTATION}")
+    endif ()
+    if ("${HIPE_QT_OPENGL_IMPLEMENTATION}" STREQUAL "")
        message(FATAL_ERROR "Qt with OpenGL support is required for ENABLE_OPENGL")
     endif ()
 
@@ -484,19 +526,19 @@ if (ENABLE_OPENGL)
 
     if (WIN32)
         include(CheckCXXSymbolExists)
-        set(CMAKE_REQUIRED_INCLUDES ${Qt5Gui_INCLUDE_DIRS})
-        set(CMAKE_REQUIRED_FLAGS ${Qt5Gui_EXECUTABLE_COMPILE_FLAGS})
+        set(CMAKE_REQUIRED_INCLUDES ${${HIPE_QT}Gui_INCLUDE_DIRS})
+        set(CMAKE_REQUIRED_FLAGS ${${HIPE_QT}Gui_EXECUTABLE_COMPILE_FLAGS})
         check_cxx_symbol_exists(QT_OPENGL_DYNAMIC qopenglcontext.h HAVE_QT_OPENGL_DYNAMIC)
         if (HAVE_QT_OPENGL_DYNAMIC)
-            set(Qt5Gui_OPENGL_IMPLEMENTATION DynamicGL)
+            set(HIPE_QT_OPENGL_IMPLEMENTATION DynamicGL)
         endif ()
         unset(CMAKE_REQUIRED_INCLUDES)
         unset(CMAKE_REQUIRED_FLAGS)
     endif ()
 
-    message(STATUS "Qt OpenGL implementation: ${Qt5Gui_OPENGL_IMPLEMENTATION}")
-    message(STATUS "Qt OpenGL libraries: ${Qt5Gui_OPENGL_LIBRARIES}")
-    message(STATUS "Qt EGL libraries: ${Qt5Gui_EGL_LIBRARIES}")
+    message(STATUS "Qt OpenGL implementation: ${HIPE_QT_OPENGL_IMPLEMENTATION}")
+    message(STATUS "Qt OpenGL libraries: ${${HIPE_QT}Gui_OPENGL_LIBRARIES}")
+    message(STATUS "Qt EGL libraries: ${${HIPE_QT}Gui_EGL_LIBRARIES}")
 endif ()
 
 # Mach ports and Unix sockets are currently used by WK2, but their USE() values
@@ -507,9 +549,12 @@ elseif (UNIX)
     SET_AND_EXPOSE_TO_BUILD(USE_UNIX_DOMAIN_SOCKETS 1)
 endif ()
 
-find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS ${QT_REQUIRED_COMPONENTS})
+find_package(${HIPE_QT} ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS ${QT_REQUIRED_COMPONENTS})
 
-CHECK_QT5_PRIVATE_INCLUDE_DIRS(Gui private/qhexstring_p.h)
+CHECK_QT_PRIVATE_INCLUDE_DIRS(Gui private/qhexstring_p.h)
+
+set(HIPE_QT_VERSION_MAJOR ${${HIPE_QT}_VERSION_MAJOR})
+set(HIPE_QT_VERSION_MINOR ${${HIPE_QT}_VERSION_MINOR})
 
 if (QT_STATIC_BUILD)
     foreach (qt_module ${QT_REQUIRED_COMPONENTS})
@@ -521,7 +566,7 @@ if (QT_STATIC_BUILD)
 endif ()
 
 foreach (qt_module ${QT_OPTIONAL_COMPONENTS})
-    find_package("Qt5${qt_module}" ${REQUIRED_QT_VERSION} PATHS ${_qt5_install_prefix} NO_DEFAULT_PATH)
+    find_package("${HIPE_QT}${qt_module}" ${REQUIRED_QT_VERSION} PATHS ${_qt5_install_prefix} NO_DEFAULT_PATH)
     if (QT_STATIC_BUILD)
         CONVERT_PRL_LIBS_TO_CMAKE(${qt_module})
     endif ()
