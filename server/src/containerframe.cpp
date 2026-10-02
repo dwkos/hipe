@@ -1,0 +1,113 @@
+/*  Copyright (c) 2016-2026 Daniel Kos, General Development Systems
+
+    This file is part of Hipe.
+
+    Hipe is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Hipe is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Hipe.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "containerframe.h"
+#include "connection.h"
+#include <QtWebKitWidgets/QWebPage>
+
+//ContainerFrame is an alternative version of ContainerTopLevel, that exists within an iframe
+//of another.
+
+ContainerFrame::ContainerFrame(Connection* bridge, std::string clientName, 
+                QWebFrame* frame, int themeIndex, Container* parent)
+                 : Container(bridge, clientName, themeIndex) {
+    initYet = false;
+    this->frame = frame;
+    this->parent = parent;
+
+    //Disable network access and link navigation:
+#ifndef HAVE_HIPECORE
+    //hipecore has no network backend at all, so there is nothing left for
+    //QNetworkAccessManager to disable; stock QtWebKit still needs this.
+    frame->page()->networkAccessManager()->setNetworkAccessible(QNetworkAccessManager::NotAccessible);
+    //hipecore hardcodes link-click navigation as always ignored (see FrameLoaderClientQt.cpp);
+    //stock QtWebKit still needs the delegation policy set explicitly.
+    frame->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
+
+    //setting up JS bridge to Qt after frame cleared, only needed on stock webkit which uses JavaScript approach
+    connect(frame, SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(frameCleared()));
+#endif
+    connect(frame, SIGNAL(destroyed()), this, SLOT(frameDestroyed()));
+}
+
+ContainerFrame::~ContainerFrame()
+{
+    if(frame) {
+        frame->setHtml(""); //clear the frame's contents if it still exists.
+        if(parent)
+            parent->receiveSubFrameEvent(HIPE_FRAME_EVENT_CLIENT_DISCONNECTED, frame, "");
+    }
+}
+
+Container* ContainerFrame::getParent()
+{
+    return parent;
+}
+
+void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
+{
+    if(!parent || !frame) return;
+    if(!initYet) {
+        frame->setHtml(QString("<html><head><style>") + stylesheet.c_str() + "</style><script>var canvascontext;</script></head><body "
+#ifndef HAVE_HIPECORE
+            "onkeydown=\"c.receiveKeyEventOnBody(false, event.which + ',' + " HIPE_JS_MODIFIER_MASK ");\" "
+            "onkeyup=\"c.receiveKeyEventOnBody(true, event.which + ',' + " HIPE_JS_MODIFIER_MASK ");\" "
+            "ondragstart=\"return false\""
+#endif
+            "></body></html>");
+        stylesheet = ""; //clear already-applied stylesheet data.
+        webElement = frame->documentElement().lastChild();
+        initYet = true;
+
+        //alert parent of fg/bg colour scheme
+        std::string fg, bg;
+        while(!fg.size())  //the frame might not be rendered straight away; during this time these will return blank strings.
+            fg = webElement.styleProperty("color", QWebElement::ComputedStyle).toStdString();
+        fgColorChanged(fg);
+        while(!bg.size())
+            bg = webElement.styleProperty("background-color", QWebElement::ComputedStyle).toStdString();
+        bgColorChanged(bg);
+
+        getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_BACKGROUND_CHANGED, frame, bg);
+        getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_COLOR_CHANGED, frame, fg);
+
+#ifdef HAVE_HIPECORE //set up keyboard events on the body element.
+        //Only once: each requestEvent() adds another listener, and the body element (with its
+        //listeners) persists for the life of the frame -- later setBody() calls only replace
+        //or append to its children.
+        webElement.requestEvent("keyup", (void*)this, 1, 0, _receiveKeyEventOnBody, false);
+        webElement.requestEvent("keydown", (void*)this, 0, 0, _receiveKeyEventOnBody, false);
+        webElement.requestEvent("dragstart", 0,0,0, _receiveDragStartEvent, true); //catch the event to override default dragging behaviour.
+#endif
+    }
+    if(overwrite) webElement.setInnerXml(newBodyHtml.c_str());
+    else webElement.appendInside(newBodyHtml.c_str()); //c_str() conversion is adequate since any binary data will be in safe base64 encoding.
+}
+
+void ContainerFrame::setTitle(std::string newTitle)
+{
+    if(!parent || !frame) return;
+    parent->receiveSubFrameEvent(HIPE_FRAME_EVENT_TITLE_CHANGED, frame, newTitle);
+}
+
+void ContainerFrame::setIcon(const char* imgData, size_t length)
+{
+    if(!parent || !frame) return;
+    parent->receiveSubFrameEvent(HIPE_FRAME_EVENT_ICON_CHANGED, frame, std::string(imgData, length));
+}
+

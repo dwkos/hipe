@@ -1,0 +1,11 @@
+--- a/Source/WebCore/CMakeLists.txt
++++ b/Source/WebCore/CMakeLists.txt
+@@ -3192,6 +3192,8 @@
+         add_definitions(${EGL_DEFINITIONS})
+     endif ()
+ 
++    list(APPEND WebCore_LIBRARIES GLESv2 EGL)
++
+     list(APPEND WebCore_INCLUDE_DIRECTORIES
+         "${WEBCORE_DIR}/platform/graphics/gpu"
+     )

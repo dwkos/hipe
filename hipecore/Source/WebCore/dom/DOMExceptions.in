@@ -1,0 +1,6 @@
+namespace=Exception
+
+DOMCoreException
+FileException
+SVGException
+

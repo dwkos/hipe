@@ -1,0 +1,47 @@
+# -----------------------------------------------------------------------------
+# Add module directories
+# -----------------------------------------------------------------------------
+if (NOT USE_SYSTEM_MALLOC)
+    add_subdirectory(bmalloc)
+endif ()
+
+add_subdirectory(WTF)
+
+# hipecore: JavaScriptCore removed from the tree (Bucket 5.7). WebCore/WebKit
+# stopped linking it in Bucket 5.6; the C++ typed-array headers it still needed
+# now live in Source/WTF/wtf/typedarrays/.
+
+add_subdirectory(WebCore)
+
+if (${PORT} STREQUAL "Win" AND ENABLE_GRAPHICS_CONTEXT_3D)
+    add_subdirectory(ThirdParty/ANGLE)
+endif ()
+
+if (ENABLE_API_TESTS)
+    add_subdirectory(ThirdParty/gtest)
+endif ()
+
+if (USE_WOFF2 AND NOT WOFF2DEC_FOUND)
+    add_subdirectory(ThirdParty/brotli)
+    add_subdirectory(ThirdParty/woff2)
+endif ()
+
+if (ENABLE_WEBKIT)
+    add_subdirectory(WebKit)
+endif ()
+
+WEBKIT_INCLUDE_CONFIG_FILES_IF_EXISTS()
+
+# -----------------------------------------------------------------------------
+# Set compiler flags for all targets
+# -----------------------------------------------------------------------------
+if (NOT USE_SYSTEM_MALLOC)
+    WEBKIT_SET_EXTRA_COMPILER_FLAGS(bmalloc ${ADDITIONAL_COMPILER_FLAGS})
+endif ()
+WEBKIT_SET_EXTRA_COMPILER_FLAGS(WTF ${ADDITIONAL_COMPILER_FLAGS})
+WEBKIT_SET_EXTRA_COMPILER_FLAGS(WebCore ${ADDITIONAL_COMPILER_FLAGS})
+
+if (ENABLE_WEBKIT)
+    WEBKIT_SET_EXTRA_COMPILER_FLAGS(WebKit ${ADDITIONAL_COMPILER_FLAGS})
+endif ()
+

@@ -1,0 +1,144 @@
+namespace="HTML"
+namespacePrefix="xhtml"
+namespaceURI="http://www.w3.org/1999/xhtml"
+fallbackInterfaceName="HTMLUnknownElement"
+
+a interfaceName=HTMLAnchorElement, JSInterfaceName=HTMLElement
+abbr interfaceName=HTMLElement
+acronym interfaceName=HTMLElement
+address interfaceName=HTMLElement
+applet constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+area JSInterfaceName=HTMLElement
+article interfaceName=HTMLElement
+aside interfaceName=HTMLElement
+attachment conditional=ATTACHMENT_ELEMENT, settingsConditional=attachmentElementEnabled, JSInterfaceName=HTMLElement
+audio wrapperOnlyIfMediaIsAvailable, conditional=VIDEO, constructorNeedsCreatedByParser, customTypeHelper, JSInterfaceName=HTMLElement
+b interfaceName=HTMLElement
+base JSInterfaceName=HTMLElement
+basefont interfaceName=HTMLUnknownElement
+bdi interfaceName=HTMLBDIElement, JSInterfaceName=HTMLElement
+bdo interfaceName=HTMLElement
+bgsound interfaceName=HTMLUnknownElement
+big interfaceName=HTMLElement
+blockquote interfaceName=HTMLQuoteElement, JSInterfaceName=HTMLElement
+body JSInterfaceName=HTMLElement
+br interfaceName=HTMLBRElement, JSInterfaceName=HTMLElement
+button constructorNeedsFormElement, JSInterfaceName=HTMLElement
+canvas JSInterfaceName=HTMLElement
+caption interfaceName=HTMLTableCaptionElement, JSInterfaceName=HTMLElement
+center interfaceName=HTMLElement
+cite interfaceName=HTMLElement
+code interfaceName=HTMLElement
+col interfaceName=HTMLTableColElement, JSInterfaceName=HTMLElement
+colgroup interfaceName=HTMLTableColElement, JSInterfaceName=HTMLElement
+command interfaceName=HTMLElement
+webkitShadowContent interfaceName=HTMLElement, noConstructor
+data JSInterfaceName=HTMLElement
+datalist interfaceName=HTMLDataListElement, conditional=DATALIST_ELEMENT, JSInterfaceName=HTMLElement
+dd interfaceName=HTMLElement
+del interfaceName=HTMLModElement, JSInterfaceName=HTMLElement
+details conditional=DETAILS_ELEMENT, JSInterfaceName=HTMLElement
+dfn interfaceName=HTMLElement
+dir interfaceName=HTMLDirectoryElement, JSInterfaceName=HTMLElement
+div JSInterfaceName=HTMLElement
+dl interfaceName=HTMLDListElement, JSInterfaceName=HTMLElement
+dt interfaceName=HTMLElement
+em interfaceName=HTMLElement
+embed constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+fieldset interfaceName=HTMLFieldSetElement, constructorNeedsFormElement, JSInterfaceName=HTMLElement
+figcaption interfaceName=HTMLElement
+figure interfaceName=HTMLElement
+font JSInterfaceName=HTMLElement
+footer interfaceName=HTMLElement
+form JSInterfaceName=HTMLElement
+frame JSInterfaceName=HTMLElement
+frameset interfaceName=HTMLFrameSetElement, JSInterfaceName=HTMLElement
+h1 interfaceName=HTMLHeadingElement, JSInterfaceName=HTMLElement
+h2 interfaceName=HTMLHeadingElement, JSInterfaceName=HTMLElement
+h3 interfaceName=HTMLHeadingElement, JSInterfaceName=HTMLElement
+h4 interfaceName=HTMLHeadingElement, JSInterfaceName=HTMLElement
+h5 interfaceName=HTMLHeadingElement, JSInterfaceName=HTMLElement
+h6 interfaceName=HTMLHeadingElement, JSInterfaceName=HTMLElement
+head JSInterfaceName=HTMLElement
+header interfaceName=HTMLElement
+hgroup interfaceName=HTMLElement
+hr interfaceName=HTMLHRElement, JSInterfaceName=HTMLElement
+html JSInterfaceName=HTMLElement
+i interfaceName=HTMLElement
+iframe interfaceName=HTMLIFrameElement, JSInterfaceName=HTMLElement
+image interfaceName=HTMLUnknownElement
+img interfaceName=HTMLImageElement, constructorNeedsFormElement
+input constructorNeedsFormElement, constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+ins interfaceName=HTMLModElement, JSInterfaceName=HTMLElement
+isindex interfaceName=HTMLUnknownElement
+kbd interfaceName=HTMLElement
+label JSInterfaceName=HTMLElement
+layer interfaceName=HTMLElement
+legend JSInterfaceName=HTMLElement
+li interfaceName=HTMLLIElement, JSInterfaceName=HTMLElement
+link constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+listing interfaceName=HTMLPreElement, JSInterfaceName=HTMLElement
+main interfaceName=HTMLElement
+map JSInterfaceName=HTMLElement
+mark interfaceName=HTMLElement
+marquee JSInterfaceName=HTMLElement
+menu JSInterfaceName=HTMLElement
+meta JSInterfaceName=HTMLElement
+meter interfaceName=HTMLMeterElement, conditional=METER_ELEMENT, JSInterfaceName=HTMLElement
+nav interfaceName=HTMLElement
+nobr interfaceName=HTMLElement
+noembed interfaceName=HTMLElement
+noframes interfaceName=HTMLElement
+nolayer interfaceName=HTMLElement
+object constructorNeedsFormElement, constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+ol interfaceName=HTMLOListElement, JSInterfaceName=HTMLElement
+optgroup interfaceName=HTMLOptGroupElement, JSInterfaceName=HTMLElement
+option
+output constructorNeedsFormElement, JSInterfaceName=HTMLElement
+p interfaceName=HTMLParagraphElement, JSInterfaceName=HTMLElement
+param JSInterfaceName=HTMLElement
+picture interfaceName=HTMLPictureElement, JSInterfaceName=HTMLElement
+plaintext interfaceName=HTMLElement
+pre JSInterfaceName=HTMLElement
+progress interfaceName=HTMLProgressElement, JSInterfaceName=HTMLElement
+q interfaceName=HTMLQuoteElement, JSInterfaceName=HTMLElement
+rb interfaceName=HTMLElement
+rp interfaceName=HTMLElement
+rt interfaceName=RubyTextElement, JSInterfaceName=HTMLElement
+rtc interfaceName=HTMLElement
+ruby interfaceName=RubyElement, JSInterfaceName=HTMLElement
+s interfaceName=HTMLElement
+samp interfaceName=HTMLElement
+script constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+section interfaceName=HTMLElement
+select constructorNeedsFormElement, JSInterfaceName=HTMLElement
+slot conditional=SHADOW_DOM, JSInterfaceName=HTMLElement
+small interfaceName=HTMLElement
+source JSInterfaceName=HTMLElement
+span JSInterfaceName=HTMLElement
+strike interfaceName=HTMLElement
+strong interfaceName=HTMLElement
+style constructorNeedsCreatedByParser, JSInterfaceName=HTMLElement
+sub interfaceName=HTMLElement
+summary interfaceName=HTMLSummaryElement, JSInterfaceName=HTMLElement, conditional=DETAILS_ELEMENT
+sup interfaceName=HTMLElement
+table JSInterfaceName=HTMLElement
+tbody interfaceName=HTMLTableSectionElement, JSInterfaceName=HTMLElement
+td interfaceName=HTMLTableDataCellElement, JSInterfaceName=HTMLElement
+template conditional=TEMPLATE_ELEMENT, JSInterfaceName=HTMLElement
+textarea interfaceName=HTMLTextAreaElement, constructorNeedsFormElement, JSInterfaceName=HTMLElement
+tfoot interfaceName=HTMLTableSectionElement, JSInterfaceName=HTMLElement
+th interfaceName=HTMLTableHeaderCellElement, JSInterfaceName=HTMLElement
+thead interfaceName=HTMLTableSectionElement, JSInterfaceName=HTMLElement
+time JSInterfaceName=HTMLElement
+title JSInterfaceName=HTMLElement
+tr interfaceName=HTMLTableRowElement, JSInterfaceName=HTMLElement
+track wrapperOnlyIfMediaIsAvailable, conditional=VIDEO_TRACK, JSInterfaceName=HTMLElement
+tt interfaceName=HTMLElement
+u interfaceName=HTMLElement
+ul interfaceName=HTMLUListElement, JSInterfaceName=HTMLElement
+var interfaceName=HTMLElement
+video wrapperOnlyIfMediaIsAvailable, conditional=VIDEO, constructorNeedsCreatedByParser, customTypeHelper, JSInterfaceName=HTMLElement
+wbr interfaceName=HTMLWBRElement, JSInterfaceName=HTMLElement
+xmp interfaceName=HTMLPreElement, JSInterfaceName=HTMLElement
+noscript interfaceName=HTMLElement

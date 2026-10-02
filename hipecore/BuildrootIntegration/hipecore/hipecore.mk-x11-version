@@ -1,0 +1,61 @@
+################################################################################
+#
+# hipecore
+#
+################################################################################
+
+HIPECORE_VERSION = 0.1.0
+
+HIPECORE_SITE = /path/to/hipecore  #<---- EDIT THIS
+HIPECORE_SITE_METHOD = local
+HIPECORE_SOURCE = qtwebkit-$(QT5WEBKIT_VERSION).tar.xz
+HIPECORE_DEPENDENCIES = \
+	host-bison host-flex host-gperf host-python3 host-ruby gstreamer1 \
+	gst1-plugins-base icu leveldb jpeg libpng libxml2 libxslt \
+	openssl qt5sensors sqlite webp woff2
+HIPECORE_INSTALL_STAGING = YES
+
+HIPECORE_LICENSE_FILES = Source/WebCore/LICENSE-LGPL-2 Source/WebCore/LICENSE-LGPL-2.1
+
+HIPECORE_LICENSE = LGPL-2.1+, BSD-3-Clause, BSD-2-Clause
+# Source files contain references to LGPL_EXCEPTION.txt but it is not included
+# in the archive.
+HIPECORE_LICENSE_FILES += LICENSE.LGPLv21
+
+ifeq ($(BR2_PACKAGE_QT5BASE_OPENGL),y)
+HIPECORE_CONF_OPTS += \
+	-DENABLE_OPENGL=ON 
+else
+HIPECORE_CONF_OPTS += \
+	-DENABLE_OPENGL=OFF 
+endif
+
+ifeq ($(BR2_PACKAGE_QT5BASE_XCB),y)
+HIPECORE_DEPENDENCIES += xlib_libXcomposite xlib_libXext xlib_libXrender
+endif
+
+ifeq ($(BR2_PACKAGE_QT5DECLARATIVE),y)
+HIPECORE_DEPENDENCIES += qt5declarative
+endif
+
+ifeq ($(BR2_PACKAGE_LIBEXECINFO),y)
+HIPECORE_DEPENDENCIES += libexecinfo
+endif
+
+HIPECORE_CONF_OPTS += \
+	-DENABLE_TOOLS=OFF \
+	-DENABLE_GRAPHICS_CONTEXT_3D=ON
+	-DPORT=Qt \
+	-DPYTHON_EXECUTABLE=$(HOST_DIR)/bin/python3 \
+	-DSHARED_CORE=ON
+
+HIPECORE_CONF_OPTS += \
+    -DPORT=Qt \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DENABLE_TOOLS=OFF \
+    -DENABLE_NETSCAPE_PLUGIN_API=OFF \
+    -DENABLE_DEVICE_ORIENTATION=OFF \
+    -DCMAKE_LIBRARY_PATH="$(STAGING_DIR)/usr/lib" \
+    -DCMAKE_INCLUDE_PATH="$(STAGING_DIR)/usr/include" \
+
+$(eval $(cmake-package))

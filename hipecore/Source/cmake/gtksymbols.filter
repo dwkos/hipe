@@ -1,0 +1,11 @@
+{
+global:
+  webkit_*;
+  WebProcessMainUnix;
+  NetworkProcessMainUnix;
+  PluginProcessMainUnix;
+  DatabaseProcessMainUnix;
+local:
+  webkit_media_player_debug;
+  *;
+};
