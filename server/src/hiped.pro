@@ -8,6 +8,8 @@ QT       += core gui
 QT       += svg
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+#In Qt 6, QOpenGLWidget (the --opengl viewport) is in a module of its own.
+greaterThan(QT_MAJOR_VERSION, 5): QT += openglwidgets
 
 TARGET = hiped
 CONFIG   += console

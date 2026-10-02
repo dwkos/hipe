@@ -34,3 +34,4 @@ api/test/hipe-showcase
 .claude/local-notes.md
 .claude/settings.local.json
 hipecore/.claude/settings.local.json
+server/build-*/
