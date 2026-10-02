@@ -30,6 +30,7 @@
 #include "Pasteboard.h"
 
 #include "CachedImage.h"
+#include "ClipboardUtilitiesQt.h"
 #include "DocumentFragment.h"
 #include "DragData.h"
 #include "Editor.h"
@@ -43,7 +44,6 @@
 #include <qdebug.h>
 #include <qguiapplication.h>
 #include <qmimedata.h>
-#include <qtextcodec.h>
 #include <qurl.h>
 
 namespace WebCore {
@@ -322,9 +322,7 @@ String Pasteboard::readString(const String& type)
     if (isTextMimeType(mimeType) && data->hasText())
         return data->text();
 
-    QByteArray rawData = data->data(mimeType);
-    QString stringData = QTextCodec::codecForName("UTF-16")->toUnicode(rawData);
-    return stringData;
+    return decodeUTF16ClipboardData(data->data(mimeType));
 }
 
 void Pasteboard::writeString(const String& type, const String& data)

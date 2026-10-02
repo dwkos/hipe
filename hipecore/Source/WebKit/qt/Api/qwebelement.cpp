@@ -1907,7 +1907,7 @@ void QWebElement::setDefaultPrevention(const QString& eventName, const QString& 
     }
 
     Vector<PreventionRule> parsed;
-    for (const QString& item : rules.split(QLatin1Char(';'), QString::SkipEmptyParts)) {
+    for (const QString& item : rules.split(QLatin1Char(';'), Qt::SkipEmptyParts)) {
         QStringList fields = item.trimmed().split(QLatin1Char(','));
         PreventionRule rule;
         if (fields.size() > 2 || !parsePreventionField(fields[0].trimmed(), 0x10FFFF, rule.code))
@@ -3242,7 +3242,7 @@ QStringList QWebElement::classes() const
     if (!hasAttribute(QLatin1String("class")))
         return QStringList();
 
-    QStringList classes =  attribute(QLatin1String("class")).simplified().split(QLatin1Char(' '), QString::SkipEmptyParts);
+    QStringList classes =  attribute(QLatin1String("class")).simplified().split(QLatin1Char(' '), Qt::SkipEmptyParts);
     classes.removeDuplicates();
     return classes;
 }

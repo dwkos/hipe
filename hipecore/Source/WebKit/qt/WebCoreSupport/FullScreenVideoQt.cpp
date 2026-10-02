@@ -126,7 +126,6 @@ void FullScreenVideoQt::aboutToClose()
 bool FullScreenVideoQt::requiresFullScreenForVideoPlayback()
 {
     return false;
-#endif
 }
 
 bool FullScreenVideoQt::isValid() const

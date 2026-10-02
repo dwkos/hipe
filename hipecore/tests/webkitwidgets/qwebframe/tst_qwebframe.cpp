@@ -164,7 +164,7 @@ void tst_QWebFrame::popupFocus()
 
     // open the popup by clicking. check if focus is on the popup
     const QWebElement webCombo = view.page()->mainFrame()->documentElement().findFirst(QLatin1String("select[name=select]"));
-    QTest::mouseClick(&view, Qt::LeftButton, 0, webCombo.geometry().center());
+    QTest::mouseClick(&view, Qt::LeftButton, Qt::NoModifier, webCombo.geometry().center());
 
     QComboBox* combo = view.findChild<QComboBox*>();
     QVERIFY(combo != 0);
@@ -194,7 +194,7 @@ void tst_QWebFrame::inputFieldFocus()
     bool autoSipEnabled = qApp->autoSipEnabled();
     qApp->setAutoSipEnabled(false);
     const QWebElement inputElement = view.page()->mainFrame()->documentElement().findFirst(QLatin1String("input[type=text]"));
-    QTest::mouseClick(&view, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&view, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     m_inputFieldsTestView = &view;
     view.installEventFilter( this );
     QTest::qWait(delay);
@@ -408,25 +408,22 @@ void tst_QWebFrame::renderHints()
     page.mainFrame()->render(&painter);
     QVERIFY(!(buffer.renderHints() & QPainter::TextAntialiasing));
     QVERIFY(!(buffer.renderHints() & QPainter::SmoothPixmapTransform));
-    QVERIFY(!(buffer.renderHints() & QPainter::HighQualityAntialiasing));
 
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     page.mainFrame()->render(&painter);
     QVERIFY(buffer.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(!(buffer.renderHints() & QPainter::SmoothPixmapTransform));
-    QVERIFY(!(buffer.renderHints() & QPainter::HighQualityAntialiasing));
 
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
     page.mainFrame()->render(&painter);
     QVERIFY(buffer.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(buffer.renderHints() & QPainter::SmoothPixmapTransform);
-    QVERIFY(!(buffer.renderHints() & QPainter::HighQualityAntialiasing));
 
-    painter.setRenderHint(QPainter::HighQualityAntialiasing, true);
+    painter.setRenderHint(QPainter::Antialiasing, true);
     page.mainFrame()->render(&painter);
     QVERIFY(buffer.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(buffer.renderHints() & QPainter::SmoothPixmapTransform);
-    QVERIFY(buffer.renderHints() & QPainter::HighQualityAntialiasing);
+    QVERIFY(buffer.renderHints() & QPainter::Antialiasing);
 }
 
 void tst_QWebFrame::scrollPosition()

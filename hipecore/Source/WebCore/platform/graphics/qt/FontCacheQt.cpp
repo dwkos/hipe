@@ -83,7 +83,8 @@ Vector<String> FontCache::systemFontFamilies()
 
 Ref<Font> FontCache::lastResortFallbackFont(const FontDescription& fontDescription)
 {
-    const AtomicString fallbackFamily = QFont(/*fontDescription.firstFamily()*/).lastResortFamily(); // FIXME
+    // Used when nothing in the font-family list is installed, and while a web font loads.
+    const AtomicString fallbackFamily = QFont().defaultFamily();
     FontPlatformData platformData(fontDescription, fallbackFamily);
     return fontForPlatformData(platformData);
 }

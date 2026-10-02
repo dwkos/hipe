@@ -26,7 +26,6 @@
 
 QT_BEGIN_NAMESPACE
 class QInputEvent;
-class QWheelEvent;
 class QTouchEvent;
 QT_END_NAMESPACE
 
@@ -42,7 +41,7 @@ class PlatformMouseEvent;
 class PlatformWheelEvent;
 
 PlatformMouseEvent convertMouseEvent(QInputEvent*, int clickCount);
-PlatformWheelEvent convertWheelEvent(QWheelEvent*, int wheelScrollLines);
+PlatformWheelEvent convertWheelEvent(const QPoint& position, const QPoint& globalPosition, const QPoint& angleDelta, Qt::KeyboardModifiers, int wheelScrollLines);
 
 #if ENABLE(TOUCH_EVENTS)
 class PlatformTouchEvent;

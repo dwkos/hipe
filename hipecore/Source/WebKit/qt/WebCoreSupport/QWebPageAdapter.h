@@ -275,7 +275,8 @@ public:
     void mouseReleaseEvent(QMouseEvent*);
     void handleSoftwareInputPanel(Qt::MouseButton, const QPoint&);
 #ifndef QT_NO_WHEELEVENT
-    void wheelEvent(QWheelEvent*, int wheelScrollLines);
+    // Marks the event accepted or ignored according to whether the page handled it.
+    void wheelEvent(QEvent*, const QPoint& position, const QPoint& globalPosition, const QPoint& angleDelta, Qt::KeyboardModifiers, int wheelScrollLines);
 #endif
 #if ENABLE(DRAG_SUPPORT)
     Qt::DropAction dragEntered(const QMimeData*, const QPoint&, Qt::DropActions);

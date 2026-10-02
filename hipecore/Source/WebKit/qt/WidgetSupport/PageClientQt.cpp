@@ -183,8 +183,8 @@ bool PageClientQGraphicsWidget::makeOpenGLContextCurrentIfAvailable()
     if (graphicsView && graphicsView->viewport()) {
         QWidget* widget = graphicsView->viewport();
         if (widget->inherits("QOpenGLWidget")) {
-            // The GL context belonging to the viewport must be current when TextureMapper is being created.
             QOpenGLWidget* qoglWidget = static_cast<QOpenGLWidget*>(widget);
+            // The GL context belonging to the viewport must be current when TextureMapper is being created.
             qoglWidget->makeCurrent();
             return true;
         }

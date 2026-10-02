@@ -74,15 +74,10 @@ bool getFileSize(const String& path, long long& result)
 bool getFileModificationTime(const String& path, time_t& result)
 {
     QFileInfo info(path);
-    result = info.lastModified().toTime_t();
-    return info.exists();
-}
-
-bool getFileCreationTime(const String& path, time_t& result)
-{
-    QFileInfo info(path);
-    result = info.created().toTime_t();
-    return info.exists();
+    if (!info.exists())
+        return false;
+    result = info.lastModified().toSecsSinceEpoch();
+    return true;
 }
 
 bool getFileMetadata(const String& path, FileMetadata& result)
@@ -90,7 +85,7 @@ bool getFileMetadata(const String& path, FileMetadata& result)
     QFileInfo info(path);
     if (!info.exists())
         return false;
-    result.modificationTime = info.lastModified().toTime_t();
+    result.modificationTime = info.lastModified().toSecsSinceEpoch();
     result.length = info.size();
     result.type = info.isDir() ? FileMetadata::TypeDirectory : FileMetadata::TypeFile;
     return true;

@@ -52,10 +52,6 @@ static bool isFormatWhiteListed(const QByteArray &format)
 {
     static QSet<QByteArray> whiteListSet;
     if (whiteListSet.isEmpty()) {
-        QByteArray whiteListEnv = qgetenv("QTWEBKIT_IMAGEFORMAT_WHITELIST");
-        if (!whiteListEnv.isEmpty())
-            whiteListSet = QSet<QByteArray>::fromList(whiteListEnv.split(','));
-
         const char **formatIt  = s_formatWhiteList;
         while (*formatIt) {
             whiteListSet.insert(QByteArray(*formatIt));
@@ -238,7 +234,7 @@ bool ImageDecoderQt::internalHandleCurrentImage(size_t frameIndex)
 
     if (reinterpret_cast<const uchar*>(image.constBits()) != reinterpret_cast<const uchar*>(buffer->getAddr(0, 0))) {
         // The in-buffer was replaced during decoding with another, so copy into it manually.
-        memcpy(buffer->getAddr(0, 0), image.constBits(),  image.byteCount());
+        memcpy(buffer->getAddr(0, 0), image.constBits(),  image.sizeInBytes());
     }
 
     if (image.isNull()) {

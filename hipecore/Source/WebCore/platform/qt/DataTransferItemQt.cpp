@@ -31,13 +31,13 @@
 
 #include "Blob.h"
 #include "Clipboard.h"
+#include "ClipboardUtilitiesQt.h"
 #include "File.h"
 #include "NotImplemented.h"
 #include "StringCallback.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QMimeData>
-#include <QTextCodec>
 
 namespace WebCore {
 
@@ -113,8 +113,7 @@ void DataTransferItemQt::getAsString(PassRefPtr<StringCallback> callback) const
     else if (type() == "text/html")
         data = mimeData->html();
     else {
-        QByteArray rawData = mimeData->data(type());
-        data = QTextCodec::codecForName("UTF-16")->toUnicode(rawData);
+        data = decodeUTF16ClipboardData(mimeData->data(type()));
     }
 
     callback->scheduleCallback(m_context, data);

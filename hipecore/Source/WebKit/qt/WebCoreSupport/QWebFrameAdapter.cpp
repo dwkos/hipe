@@ -396,9 +396,9 @@ void QWebFrameAdapter::renderRelativeCoords(QPainter* painter, int layers, const
     if (!frame->view() || !frame->contentRenderer())
         return;
 
-    QVector<QRect> vector = clip.rects();
-    if (vector.isEmpty())
+    if (clip.isEmpty())
         return;
+    QVector<QRect> vector(clip.begin(), clip.end());
 
     WebCore::FrameView* view = frame->view();
     view->updateLayoutAndStyleIfNeededRecursive();
@@ -472,9 +472,7 @@ void QWebFrameAdapter::renderFrameExtras(GraphicsContext& context, int layers, c
         return;
     QPainter* painter = context.platformContext();
     WebCore::FrameView* view = frame->view();
-    QVector<QRect> vector = clip.rects();
-    for (int i = 0; i < vector.size(); ++i) {
-        const QRect& clipRect = vector.at(i);
+    for (const QRect& clipRect : clip) {
 
         QRect intersectedRect = clipRect.intersected(view->frameRect());
 

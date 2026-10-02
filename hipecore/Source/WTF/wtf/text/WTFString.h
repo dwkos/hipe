@@ -427,7 +427,6 @@ public:
 
 #if PLATFORM(QT)
     WTF_EXPORT_STRING_API String(const QString&);
-    WTF_EXPORT_STRING_API String(const QStringRef&);
     WTF_EXPORT_STRING_API operator QString() const;
 #endif
 

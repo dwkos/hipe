@@ -541,13 +541,13 @@ void QWebPageAdapter::handleSoftwareInputPanel(Qt::MouseButton button, const QPo
 }
 
 #ifndef QT_NO_WHEELEVENT
-void QWebPageAdapter::wheelEvent(QWheelEvent *ev, int wheelScrollLines)
+void QWebPageAdapter::wheelEvent(QEvent* ev, const QPoint& position, const QPoint& globalPosition, const QPoint& angleDelta, Qt::KeyboardModifiers modifiers, int wheelScrollLines)
 {
     WebCore::Frame* frame = mainFrameAdapter().frame;
     if (!frame->view())
         return;
 
-    PlatformWheelEvent pev = convertWheelEvent(ev, wheelScrollLines);
+    PlatformWheelEvent pev = convertWheelEvent(position, globalPosition, angleDelta, modifiers, wheelScrollLines);
     bool accepted = frame->eventHandler().handleWheelEvent(pev);
     ev->setAccepted(accepted);
 }
@@ -705,7 +705,7 @@ QVariant QWebPageAdapter::inputMethodQuery(Qt::InputMethodQuery property) const
         renderTextControl = downcast<RenderTextControl>(renderer);
 
     switch (property) {
-    case Qt::ImMicroFocus: {
+    case Qt::ImCursorRectangle: {
         WebCore::FrameView* view = frame->view();
         if (view && view->needsLayout()) {
             // We can't access absoluteCaretBounds() while the view needs to layout.

@@ -86,30 +86,25 @@ void tst_QWebView::renderHints()
     QVERIFY(!(webView.renderHints() & QPainter::Antialiasing));
     QVERIFY(webView.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(webView.renderHints() & QPainter::SmoothPixmapTransform);
-    QVERIFY(!(webView.renderHints() & QPainter::HighQualityAntialiasing));
 
     webView.setRenderHint(QPainter::Antialiasing, true);
     QVERIFY(webView.renderHints() & QPainter::Antialiasing);
     QVERIFY(webView.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(webView.renderHints() & QPainter::SmoothPixmapTransform);
-    QVERIFY(!(webView.renderHints() & QPainter::HighQualityAntialiasing));
 
     webView.setRenderHint(QPainter::Antialiasing, false);
     QVERIFY(!(webView.renderHints() & QPainter::Antialiasing));
     QVERIFY(webView.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(webView.renderHints() & QPainter::SmoothPixmapTransform);
-    QVERIFY(!(webView.renderHints() & QPainter::HighQualityAntialiasing));
 
     webView.setRenderHint(QPainter::SmoothPixmapTransform, true);
     QVERIFY(!(webView.renderHints() & QPainter::Antialiasing));
     QVERIFY(webView.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(webView.renderHints() & QPainter::SmoothPixmapTransform);
-    QVERIFY(!(webView.renderHints() & QPainter::HighQualityAntialiasing));
 
     webView.setRenderHint(QPainter::SmoothPixmapTransform, false);
     QVERIFY(webView.renderHints() & QPainter::TextAntialiasing);
     QVERIFY(!(webView.renderHints() & QPainter::SmoothPixmapTransform));
-    QVERIFY(!(webView.renderHints() & QPainter::HighQualityAntialiasing));
 }
 
 void tst_QWebView::getWebKitVersion()
@@ -155,12 +150,12 @@ void tst_QWebView::microFocusCoordinates()
 
     page->mainFrame()->setFocus();
 
-    QVariant initialMicroFocus = page->inputMethodQuery(Qt::ImMicroFocus);
+    QVariant initialMicroFocus = page->inputMethodQuery(Qt::ImCursorRectangle);
     QVERIFY(initialMicroFocus.isValid());
 
     page->mainFrame()->scroll(0,50);
 
-    QVariant currentMicroFocus = page->inputMethodQuery(Qt::ImMicroFocus);
+    QVariant currentMicroFocus = page->inputMethodQuery(Qt::ImCursorRectangle);
     QVERIFY(currentMicroFocus.isValid());
 
     QCOMPARE(initialMicroFocus.toRect().translated(QPoint(0,-50)), currentMicroFocus.toRect());
@@ -187,61 +182,61 @@ void tst_QWebView::focusInputTypes()
 
     // 'text' type
     QWebElement inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=text]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     QVERIFY(webView.inputMethodHints() == Qt::ImhNone);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'password' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=password]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhHiddenText);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'tel' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=tel]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhDialableCharactersOnly);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'number' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=number]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhDigitsOnly);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'email' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=email]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhEmailCharactersOnly);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'url' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=url]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhUrlCharactersOnly);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'password' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=password]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhHiddenText);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'text' type
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=text]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     QVERIFY(webView.inputMethodHints() == Qt::ImhNone);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'password' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("input[type=password]"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     VERIFY_INPUTMETHOD_HINTS(webView.inputMethodHints(), Qt::ImhHiddenText);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 
     // 'text area' field
     inputElement = mainFrame->documentElement().findFirst(QLatin1String("textarea"));
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, inputElement.geometry().center());
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, inputElement.geometry().center());
     QVERIFY(webView.inputMethodHints() == Qt::ImhNone);
     QVERIFY(webView.testAttribute(Qt::WA_InputMethodEnabled));
 }
@@ -261,11 +256,11 @@ void tst_QWebView::horizontalScrollbarTest()
     QVERIFY(webView.page()->mainFrame()->scrollPosition() == QPoint(0, 0));
 
     // Note: The test below assumes that the layout direction is Qt::LeftToRight.
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, QPoint(550, 595));
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, QPoint(550, 595));
     QVERIFY(webView.page()->mainFrame()->scrollPosition().x() > 0);
 
     // Note: The test below assumes that the layout direction is Qt::LeftToRight.
-    QTest::mouseClick(&webView, Qt::LeftButton, 0, QPoint(20, 595));
+    QTest::mouseClick(&webView, Qt::LeftButton, Qt::NoModifier, QPoint(20, 595));
     QVERIFY(webView.page()->mainFrame()->scrollPosition() == QPoint(0, 0));
 }
 

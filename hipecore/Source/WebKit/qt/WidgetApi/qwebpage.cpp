@@ -1965,15 +1965,16 @@ bool QWebPage::event(QEvent *ev)
 #endif
 #endif
 #ifndef QT_NO_WHEELEVENT
-    case QEvent::Wheel:
-        d->wheelEvent(static_cast<QWheelEvent*>(ev), QApplication::wheelScrollLines());
+    case QEvent::Wheel: {
+        QWheelEvent* wheelEv = static_cast<QWheelEvent*>(ev);
+        d->wheelEvent(ev, wheelEv->position().toPoint(), wheelEv->globalPosition().toPoint(), wheelEv->angleDelta(), wheelEv->modifiers(), QApplication::wheelScrollLines());
         break;
+    }
 #if !defined(QT_NO_GRAPHICSVIEW)
     case QEvent::GraphicsSceneWheel: {
         QGraphicsSceneWheelEvent *gsEv = static_cast<QGraphicsSceneWheelEvent*>(ev);
-        QWheelEvent dummyEvent(gsEv->pos(), gsEv->screenPos(), gsEv->delta(), gsEv->buttons(), gsEv->modifiers(), gsEv->orientation());
-        d->wheelEvent(&dummyEvent, QApplication::wheelScrollLines());
-        ev->setAccepted(dummyEvent.isAccepted());
+        const QPoint angleDelta = gsEv->orientation() == Qt::Horizontal ? QPoint(gsEv->delta(), 0) : QPoint(0, gsEv->delta());
+        d->wheelEvent(ev, gsEv->pos().toPoint(), gsEv->screenPos(), angleDelta, gsEv->modifiers(), QApplication::wheelScrollLines());
         break;
     }
 #endif

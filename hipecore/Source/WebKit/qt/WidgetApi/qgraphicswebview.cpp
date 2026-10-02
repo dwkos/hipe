@@ -39,10 +39,6 @@
 #include <qstyleoption.h>
 #include <qtimer.h>
 
-#if defined(Q_WS_X11)
-#include <QX11Info>
-#endif
-
 using namespace WebCore;
 
 class QGraphicsWebViewPrivate {

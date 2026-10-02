@@ -664,7 +664,7 @@ void tst_QWebElement::eventDetailModifiers()
     QVERIFY(log.contains("click:1,3"));
 
     log.clear();
-    QWheelEvent wheel(p, p, QPoint(), QPoint(0, -120), -120, Qt::Vertical, Qt::NoButton, Qt::MetaModifier);
+    QWheelEvent wheel(p, p, QPoint(), QPoint(0, -120), Qt::NoButton, Qt::MetaModifier, Qt::NoScrollPhase, false);
     m_page->event(&wheel);
     QCOMPARE(log.size(), 1);
     QVERIFY(log.at(0).startsWith("wheel:"));

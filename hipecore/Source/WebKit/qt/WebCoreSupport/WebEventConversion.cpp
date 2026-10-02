@@ -75,7 +75,7 @@ static void mouseEventTypeAndMouseButtonFromQEvent(const QEvent* event, Platform
         mouseButton = LeftButton;
     else if (mouseButtons & Qt::RightButton)
         mouseButton = RightButton;
-    else if (mouseButtons & Qt::MidButton)
+    else if (mouseButtons & Qt::MiddleButton)
         mouseButton = MiddleButton;
     else
         mouseButton = NoButton;
@@ -122,21 +122,16 @@ PlatformMouseEvent convertMouseEvent(QInputEvent* event, int clickCount)
 
 class WebKitPlatformWheelEvent : public PlatformWheelEvent {
 public:
-    WebKitPlatformWheelEvent(QWheelEvent*, int wheelScrollLines);
+    WebKitPlatformWheelEvent(const QPoint& position, const QPoint& globalPosition, const QPoint& angleDelta, Qt::KeyboardModifiers, int wheelScrollLines);
 
 private:
-    void applyDelta(int delta, Qt::Orientation, int wheelScrollLines);
+    void applyDelta(const QPoint& angleDelta, int wheelScrollLines);
 };
 
-void WebKitPlatformWheelEvent::applyDelta(int delta, Qt::Orientation orientation, int wheelScrollLines)
+void WebKitPlatformWheelEvent::applyDelta(const QPoint& angleDelta, int wheelScrollLines)
 {
-    if (orientation == Qt::Horizontal) {
-        m_deltaX = delta;
-        m_deltaY = 0;
-    } else {
-        m_deltaX = 0;
-        m_deltaY = delta;
-    }
+    m_deltaX = angleDelta.x();
+    m_deltaY = angleDelta.y();
     m_wheelTicksX = m_deltaX / 120.0f;
     m_wheelTicksY = m_deltaY / 120.0f;
 
@@ -147,15 +142,15 @@ void WebKitPlatformWheelEvent::applyDelta(int delta, Qt::Orientation orientation
     m_deltaY = m_wheelTicksY * wheelScrollLines * cDefaultQtScrollStep;
 }
 
-WebKitPlatformWheelEvent::WebKitPlatformWheelEvent(QWheelEvent* e, int wheelScrollLines)
+WebKitPlatformWheelEvent::WebKitPlatformWheelEvent(const QPoint& position, const QPoint& globalPosition, const QPoint& angleDelta, Qt::KeyboardModifiers modifiers, int wheelScrollLines)
 {
     m_timestamp = WTF::currentTime();
-    mouseEventModifiersFromQtKeyboardModifiers(e->modifiers(), m_modifiers);
-    m_position = e->pos();
-    m_globalPosition = e->globalPos();
+    mouseEventModifiersFromQtKeyboardModifiers(modifiers, m_modifiers);
+    m_position = position;
+    m_globalPosition = globalPosition;
     m_granularity = ScrollByPixelWheelEvent;
     m_directionInvertedFromDevice = false;
-    applyDelta(e->delta(), e->orientation(), wheelScrollLines);
+    applyDelta(angleDelta, wheelScrollLines);
 }
 
 #if ENABLE(TOUCH_EVENTS)
@@ -225,11 +220,10 @@ WebKitPlatformTouchPoint::WebKitPlatformTouchPoint(const QTouchEvent::TouchPoint
     m_state = state;
     m_screenPos = point.screenPos().toPoint();
     m_pos = point.pos().toPoint();
-    // Qt reports touch point size as rectangles, but we will pretend it is an oval.
-    QRect touchRect = point.rect().toAlignedRect();
-    if (touchRect.isValid()) {
-        m_radiusX = point.rect().width() / 2;
-        m_radiusY = point.rect().height() / 2;
+    QSizeF diameters = point.ellipseDiameters();
+    if (!diameters.isEmpty()) {
+        m_radiusX = diameters.width() / 2;
+        m_radiusY = diameters.height() / 2;
     } else {
         // http://www.w3.org/TR/2011/WD-touch-events-20110505: 1 if no value is known.
         m_radiusX = 1;
@@ -269,9 +263,9 @@ WebKitPlatformGestureEvent::WebKitPlatformGestureEvent(QGestureEventFacade* even
 
 #endif
 
-PlatformWheelEvent convertWheelEvent(QWheelEvent* event, int wheelScrollLines)
+PlatformWheelEvent convertWheelEvent(const QPoint& position, const QPoint& globalPosition, const QPoint& angleDelta, Qt::KeyboardModifiers modifiers, int wheelScrollLines)
 {
-    return WebKitPlatformWheelEvent(event, wheelScrollLines);
+    return WebKitPlatformWheelEvent(position, globalPosition, angleDelta, modifiers, wheelScrollLines);
 }
 
 #if ENABLE(TOUCH_EVENTS)

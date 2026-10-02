@@ -63,7 +63,7 @@ public:
 #ifndef QT_NO_CURSOR
     inline void resetCursor()
     {
-        if (!cursor().bitmap() && cursor().shape() == m_lastCursor.shape())
+        if (cursor().shape() != Qt::BitmapCursor && cursor().shape() == m_lastCursor.shape())
             return;
         updateCursor(m_lastCursor);
     }
@@ -71,7 +71,7 @@ public:
     inline void setCursor(const QCursor& cursor)
     {
         m_lastCursor = cursor;
-        if (!cursor.bitmap() && cursor.shape() == this->cursor().shape())
+        if (cursor.shape() != Qt::BitmapCursor && cursor.shape() == this->cursor().shape())
             return;
         updateCursor(cursor);
     }

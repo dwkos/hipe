@@ -163,7 +163,7 @@ void TextureMapperImageBuffer::drawNumber(int number, const Color& color, const 
     font.setStyleHint(QFont::TypeWriter);
 
     QFontMetrics fontMetrics(font);
-    int width = fontMetrics.width(counterString) + 4;
+    int width = fontMetrics.horizontalAdvance(counterString) + 4;
     int height = fontMetrics.height();
 
     IntSize size(width, height);

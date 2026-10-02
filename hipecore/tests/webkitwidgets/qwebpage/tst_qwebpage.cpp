@@ -793,7 +793,7 @@ void tst_QWebPage::inputMethods()
     QVERIFY(testContext.isInputPanelVisible());
 
     //ImMicroFocus
-    QVariant variant = page->inputMethodQuery(Qt::ImMicroFocus);
+    QVariant variant = page->inputMethodQuery(Qt::ImCursorRectangle);
     QVERIFY(inputs.at(0).geometry().contains(variant.toRect().topLeft()));
 
     // We assigned the serif font famility to be the same as the fixef font family.
