@@ -49,7 +49,6 @@ class ChromeClientQt;
 class Frame;
 class Page;
 class UndoStep;
-struct ViewportArguments;
 }
 
 class QtPluginWidgetAdapter;
@@ -207,7 +206,6 @@ public:
 
     virtual QWebFrameAdapter& mainFrameAdapter() = 0;
 
-    virtual void emitViewportChangeRequested() = 0;
     virtual void emitRestoreFrameStateRequested(QWebFrameAdapter *) = 0;
     virtual void emitFrameCreated(QWebFrameAdapter*) = 0;
     virtual QtPluginWidgetAdapter* createPlugin(const QString&, const QUrl&, const QStringList&, const QStringList&) = 0;
@@ -248,7 +246,6 @@ public:
     void setPluginsVisible(bool);
 
     static QWebPageAdapter* kit(WebCore::Page*);
-    WebCore::ViewportArguments viewportArguments() const;
     void registerUndoStep(WTF::PassRefPtr<WebCore::UndoStep>, const void* group);
     // The frame whose document a step edited (its undo group), or null if unknown.
     WebCore::Frame* frameForUndoStep(WebCore::UndoStep*) const;
@@ -319,16 +316,6 @@ public:
 
     QObject* currentFrame() const;
     bool hasFocusedNode() const;
-    struct ViewportAttributes {
-        qreal initialScaleFactor;
-        qreal minimumScaleFactor;
-        qreal maximumScaleFactor;
-        qreal devicePixelRatio;
-        bool isUserScalable;
-        QSizeF size;
-    };
-
-    ViewportAttributes viewportAttributesForSize(const QSize& availableSize, const QSize& deviceSize) const;
     void setDevicePixelRatio(float devicePixelRatio);
     float devicePixelRatio();
 

@@ -46,7 +46,6 @@
 #include <QBitArray>
 #include <QClipboard>
 #include <QColorDialog>
-#include <QDesktopWidget>
 #include <QDragEnterEvent>
 #include <QDragLeaveEvent>
 #include <QDragMoveEvent>
@@ -413,11 +412,6 @@ void QWebPagePrivate::clearCustomActions()
 {
     qDeleteAll(customActions);
     customActions.clear();
-}
-
-void QWebPagePrivate::emitViewportChangeRequested()
-{
-    emit q->viewportChangeRequested();
 }
 
 void QWebPagePrivate::updateUndoActions()
@@ -897,110 +891,6 @@ QVariant QWebPage::inputMethodQuery(Qt::InputMethodQuery property) const
     \value WebBrowserWindow The window is a regular web browser window.
     \value WebModalDialog The window acts as modal dialog.
 */
-
-/*!
-    \class QWebPage::ViewportAttributes
-    \since 4.7
-    \brief The QWebPage::ViewportAttributes class describes hints that can be applied to a viewport.
-
-    QWebPage::ViewportAttributes provides a description of a viewport, such as viewport geometry,
-    initial scale factor with limits, plus information about whether a user should be able
-    to scale the contents in the viewport or not, ie. by zooming.
-
-    ViewportAttributes can be set by a web author using the viewport meta tag extension, documented
-    at \l{http://developer.apple.com/safari/library/documentation/appleapplications/reference/safariwebcontent/usingtheviewport/usingtheviewport.html}{Safari Reference Library: Using the Viewport Meta Tag}.
-
-    All values might not be set, as such when dealing with the hints, the developer needs to
-    check whether the values are valid. Negative values denote an invalid qreal value.
-
-    \inmodule QtWebKit
-*/
-
-/*!
-    Constructs an empty QWebPage::ViewportAttributes.
-*/
-QWebPage::ViewportAttributes::ViewportAttributes()
-    : d(0)
-    , m_initialScaleFactor(-1.0)
-    , m_minimumScaleFactor(-1.0)
-    , m_maximumScaleFactor(-1.0)
-    , m_devicePixelRatio(-1.0)
-    , m_isUserScalable(true)
-    , m_isValid(false)
-{
-
-}
-
-/*!
-    Constructs a QWebPage::ViewportAttributes which is a copy from \a other .
-*/
-QWebPage::ViewportAttributes::ViewportAttributes(const QWebPage::ViewportAttributes& other)
-    : d(other.d)
-    , m_initialScaleFactor(other.m_initialScaleFactor)
-    , m_minimumScaleFactor(other.m_minimumScaleFactor)
-    , m_maximumScaleFactor(other.m_maximumScaleFactor)
-    , m_devicePixelRatio(other.m_devicePixelRatio)
-    , m_isUserScalable(other.m_isUserScalable)
-    , m_isValid(other.m_isValid)
-    , m_size(other.m_size)
-{
-
-}
-
-/*!
-    Destroys the QWebPage::ViewportAttributes.
-*/
-QWebPage::ViewportAttributes::~ViewportAttributes()
-{
-
-}
-
-/*!
-    Assigns the given QWebPage::ViewportAttributes to this viewport hints and returns a
-    reference to this.
-*/
-QWebPage::ViewportAttributes& QWebPage::ViewportAttributes::operator=(const QWebPage::ViewportAttributes& other)
-{
-    if (this != &other) {
-        d = other.d;
-        m_initialScaleFactor = other.m_initialScaleFactor;
-        m_minimumScaleFactor = other.m_minimumScaleFactor;
-        m_maximumScaleFactor = other.m_maximumScaleFactor;
-        m_isUserScalable = other.m_isUserScalable;
-        m_isValid = other.m_isValid;
-        m_size = other.m_size;
-    }
-
-    return *this;
-}
-
-/*! \fn inline bool QWebPage::ViewportAttributes::isValid() const
-    Returns whether this is a valid ViewportAttributes or not.
-
-    An invalid ViewportAttributes will have an empty QSize, negative values for scale factors and
-    true for the boolean isUserScalable.
-*/
-
-/*! \fn inline QSize QWebPage::ViewportAttributes::size() const
-    Returns the size of the viewport.
-*/
-
-/*! \fn inline qreal QWebPage::ViewportAttributes::initialScaleFactor() const
-    Returns the initial scale of the viewport as a multiplier.
-*/
-
-/*! \fn inline qreal QWebPage::ViewportAttributes::minimumScaleFactor() const
-    Returns the minimum scale value of the viewport as a multiplier.
-*/
-
-/*! \fn inline qreal QWebPage::ViewportAttributes::maximumScaleFactor() const
-    Returns the maximum scale value of the viewport as a multiplier.
-*/
-
-/*! \fn inline bool QWebPage::ViewportAttributes::isUserScalable() const
-    Determines whether or not the scale can be modified by the user.
-*/
-
 
 /*!
     \class QWebPage
@@ -1632,93 +1522,6 @@ void QWebPage::resetDevicePixelRatio()
 {
     d->m_customDevicePixelRatioIsSet = false;
     d->updateWindow();
-}
-
-static int getintenv(const char* variable)
-{
-    bool ok;
-    int value = qgetenv(variable).toInt(&ok);
-    return (ok) ? value : -1;
-}
-
-static QSize queryDeviceSizeForScreenContainingWidget(const QWidget* widget)
-{
-    QDesktopWidget* desktop = QApplication::desktop();
-    if (!desktop)
-        return QSize();
-
-    QSize size;
-
-    if (widget) {
-        // Returns the available geometry of the screen which contains widget.
-        // NOTE: this must be the the full screen size including any fixed status areas etc.
-        size = desktop->availableGeometry(widget).size();
-    } else
-        size = desktop->availableGeometry().size();
-
-    // This must be in portrait mode, adjust if not.
-    if (size.width() > size.height()) {
-        int width = size.width();
-        size.setWidth(size.height());
-        size.setHeight(width);
-    }
-
-    return size;
-}
-
-/*!
-    Computes the optimal viewport configuration given the \a availableSize, when
-    user interface components are disregarded.
-
-    The configuration is also dependent on the device screen size which is obtained
-    automatically. For testing purposes the size can be overridden by setting two
-    environment variables QTWEBKIT_DEVICE_WIDTH and QTWEBKIT_DEVICE_HEIGHT, which
-    both needs to be set.
-
-    The ViewportAttributes includes a pixel density ratio, which will also be exposed to
-    the web author though the -webkit-pixel-ratio media feature. This is the ratio
-    between 1 density-independent pixel (DPI) and physical pixels.
-
-    A density-independent pixel is equivalent to one physical pixel on a 160 DPI screen,
-    so on our platform assumes that as the baseline density.
-
-    The conversion of DIP units to screen pixels is quite simple:
-
-    pixels = DIPs * (density / 160).
-
-    Thus, on a 240 DPI screen, 1 DIPs would equal 1.5 physical pixels.
-
-    An invalid instance will be returned in the case an empty size is passed to the
-    method.
-
-    \note The density is automatically obtained from the DPI of the screen where the page
-    is being shown, but as many X11 servers are reporting wrong DPI, it is possible to
-    override it using QX11Info::setAppDpiY().
-*/
-
-QWebPage::ViewportAttributes QWebPage::viewportAttributesForSize(const QSize& availableSize) const
-{
-    ViewportAttributes result;
-
-    if (availableSize.isEmpty())
-        return result; // Returns an invalid instance.
-
-    QSize deviceSize(getintenv("QTWEBKIT_DEVICE_WIDTH"), getintenv("QTWEBKIT_DEVICE_HEIGHT"));
-
-    // Both environment variables need to be set - or they will be ignored.
-    if (deviceSize.isNull())
-        deviceSize = queryDeviceSizeForScreenContainingWidget(view());
-    QWebPageAdapter::ViewportAttributes attr = d->viewportAttributesForSize(availableSize, deviceSize);
-
-    result.m_isValid = true;
-    result.m_size = attr.size;
-    result.m_initialScaleFactor = attr.initialScaleFactor;
-    result.m_minimumScaleFactor = attr.minimumScaleFactor;
-    result.m_maximumScaleFactor = attr.maximumScaleFactor;
-    result.m_devicePixelRatio = attr.devicePixelRatio;
-    result.m_isUserScalable = attr.isUserScalable;
-
-    return result;
 }
 
 QSize QWebPage::preferredContentsSize() const
@@ -2526,16 +2329,6 @@ bool QWebPage::recentlyAudible() const
     return d->isPlayingAudio();
 }
 
-
-/*!
-    \since 4.8
-    \fn void QWebPage::viewportChangeRequested()
-
-    Page authors can provide the supplied values by using the viewport meta tag. More information
-    about this can be found at \l{http://developer.apple.com/safari/library/documentation/appleapplications/reference/safariwebcontent/usingtheviewport/usingtheviewport.html}{Safari Reference Library: Using the Viewport Meta Tag}.
-
-    \sa QWebPage::ViewportAttributes, setPreferredContentsSize(), QGraphicsWebView::setScale()
-*/
 
 /*!
     \fn void QWebPage::loadStarted()

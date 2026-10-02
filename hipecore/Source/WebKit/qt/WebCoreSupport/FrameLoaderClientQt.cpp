@@ -72,7 +72,6 @@
 #include "SubframeLoader.h"
 #include "SubresourceLoader.h"
 #include "UserGestureIndicator.h"
-#include "ViewportArguments.h"
 #include "qwebpluginfactory.h"
 #include "qwebsettings.h"
 #include <QCoreApplication>
@@ -405,12 +404,6 @@ void FrameLoaderClientQt::dispatchDidCommitLoad()
     // will be called very soon with the correct title.
     // This properly resets the title when we navigate to a URI without a title.
     emit titleChanged(QString());
-
-    bool isMainFrame = (m_frame == &m_frame->page()->mainFrame());
-    if (!isMainFrame)
-        return;
-
-    emit m_webFrame->pageAdapter->emitViewportChangeRequested();
 }
 
 

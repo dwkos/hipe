@@ -93,7 +93,6 @@
 
 // from text/qfont.cpp
 QT_BEGIN_NAMESPACE
-extern Q_GUI_EXPORT int qt_defaultDpi();
 QT_END_NAMESPACE
 
 using namespace WebCore;
@@ -214,11 +213,6 @@ void QWebPageAdapter::deletePage()
 QWebPageAdapter* QWebPageAdapter::kit(Page* page)
 {
     return static_cast<ChromeClientQt&>(page->chrome().client()).m_webPage;
-}
-
-ViewportArguments QWebPageAdapter::viewportArguments() const
-{
-    return page ? page->viewportArguments() : WebCore::ViewportArguments();
 }
 
 
@@ -1130,29 +1124,6 @@ bool QWebPageAdapter::hasFocusedNode() const
         hasFocus = document && document->focusedElement();
     }
     return hasFocus;
-}
-
-QWebPageAdapter::ViewportAttributes QWebPageAdapter::viewportAttributesForSize(const QSize &availableSize, const QSize &deviceSize) const
-{
-    static const int desktopWidth = 980;
-
-    float devicePixelRatio = qt_defaultDpi() / WebCore::ViewportArguments::deprecatedTargetDPI;
-
-    WebCore::ViewportAttributes conf = WebCore::computeViewportAttributes(viewportArguments(), desktopWidth, deviceSize.width(), deviceSize.height(), devicePixelRatio, availableSize);
-    WebCore::restrictMinimumScaleFactorToViewportSize(conf, availableSize, devicePixelRatio);
-    WebCore::restrictScaleFactorToInitialScaleIfNotUserScalable(conf);
-
-    page->setDeviceScaleFactor(devicePixelRatio);
-    QWebPageAdapter::ViewportAttributes result;
-
-    result.size = QSizeF(conf.layoutSize.width(), conf.layoutSize.height());
-    result.initialScaleFactor = conf.initialScale;
-    result.minimumScaleFactor = conf.minimumScale;
-    result.maximumScaleFactor = conf.maximumScale;
-    result.devicePixelRatio = devicePixelRatio;
-    result.isUserScalable = static_cast<bool>(conf.userScalable);
-
-    return result;
 }
 
 void QWebPageAdapter::setDevicePixelRatio(float devicePixelRatio)

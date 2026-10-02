@@ -46,7 +46,6 @@ class QWebPageAdapter;
 class QWebPagePrivate;
 class QWebPluginFactory;
 class QWebSecurityOrigin;
-class QtViewportAttributesPrivate;
 
 namespace WebCore {
     class ChromeClientQt;
@@ -202,37 +201,6 @@ public:
         InfoMessageLevel = 5,
     };
 
-    class QWEBKITWIDGETS_EXPORT ViewportAttributes {
-    public:
-        ViewportAttributes();
-        ViewportAttributes(const QWebPage::ViewportAttributes& other);
-
-        ~ViewportAttributes();
-
-        QWebPage::ViewportAttributes& operator=(const QWebPage::ViewportAttributes& other);
-
-        inline qreal initialScaleFactor() const { return m_initialScaleFactor; }
-        inline qreal minimumScaleFactor() const { return m_minimumScaleFactor; }
-        inline qreal maximumScaleFactor() const { return m_maximumScaleFactor; }
-        inline qreal devicePixelRatio() const { return m_devicePixelRatio; }
-        inline bool isUserScalable() const { return m_isUserScalable; }
-        inline bool isValid() const { return m_isValid; }
-        inline QSizeF size() const { return m_size; }
-
-    private:
-        QSharedDataPointer<QtViewportAttributesPrivate> d;
-        qreal m_initialScaleFactor;
-        qreal m_minimumScaleFactor;
-        qreal m_maximumScaleFactor;
-        qreal m_devicePixelRatio;
-        bool m_isUserScalable;
-        bool m_isValid;
-        QSizeF m_size;
-
-        friend class WebCore::ChromeClientQt;
-        friend class QWebPage;
-    };
-
     typedef void (*ContextMenuCallback)(void* userPtr, const QPoint& globalPos, const QWebElement& element);
 
     explicit QWebPage(QObject *parent = Q_NULLPTR);
@@ -280,7 +248,6 @@ public:
 
     QSize viewportSize() const;
     void setViewportSize(const QSize &size) const;
-    ViewportAttributes viewportAttributesForSize(const QSize& availableSize) const;
 
     QSize preferredContentsSize() const;
     void setPreferredContentsSize(const QSize &size) const;
@@ -336,8 +303,6 @@ Q_SIGNALS:
     void contentsChanged();
 
     void restoreFrameStateRequested(QWebFrame* frame);
-
-    void viewportChangeRequested();
 
     void consoleMessageReceived(MessageSource source, MessageLevel level, const QString& message, int lineNumber, const QString& sourceID);
 

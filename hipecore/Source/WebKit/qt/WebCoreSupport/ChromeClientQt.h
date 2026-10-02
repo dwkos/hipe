@@ -52,7 +52,6 @@ class Page;
 class RefreshAnimation;
 struct FrameLoadRequest;
 class QtAbstractWebPopup;
-struct ViewportArguments;
 #if ENABLE(VIDEO)
 class FullScreenVideoQt;
 #endif
@@ -179,7 +178,6 @@ public:
 
     std::unique_ptr<QWebSelectMethod> createSelectPopup() const;
 
-    void dispatchViewportPropertiesDidChange(const ViewportArguments&) const final;
 
     void wheelEventHandlersChanged(bool) final { }
 

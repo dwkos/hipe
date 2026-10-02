@@ -61,15 +61,6 @@ class QtPluginWidgetAdapter;
 class QWebFrameAdapter;
 class UndoStepQt;
 
-class QtViewportAttributesPrivate : public QSharedData {
-public:
-    QtViewportAttributesPrivate(QWebPage::ViewportAttributes* qq)
-        : q(qq)
-    { }
-
-    QWebPage::ViewportAttributes* q;
-};
-
 class QWebPagePrivate : public QWebPageAdapter {
 public:
     QWebPagePrivate(QWebPage*);
@@ -115,7 +106,6 @@ public:
 
     void clearCustomActions() override;
 
-    void emitViewportChangeRequested() override;
     void emitRestoreFrameStateRequested(QWebFrameAdapter*) override;
     void emitFrameCreated(QWebFrameAdapter*) override;
     QtPluginWidgetAdapter* createPlugin(const QString &, const QUrl &, const QStringList &, const QStringList &) override;

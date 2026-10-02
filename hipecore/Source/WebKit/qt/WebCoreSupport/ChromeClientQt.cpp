@@ -58,7 +58,6 @@
 #if USE(TILED_BACKING_STORE)
 #include "TiledBackingStore.h"
 #endif
-#include "ViewportArguments.h"
 #include "WindowFeatures.h"
 #include "qwebkitplatformplugin.h"
 #include "qwebsecurityorigin.h"
@@ -659,11 +658,6 @@ std::unique_ptr<QWebSelectMethod> ChromeClientQt::createSelectPopup() const
 #else
     return nullptr;
 #endif
-}
-
-void ChromeClientQt::dispatchViewportPropertiesDidChange(const ViewportArguments&) const
-{
-    m_webPage->emitViewportChangeRequested();
 }
 
 #if USE(QT_MULTIMEDIA)
