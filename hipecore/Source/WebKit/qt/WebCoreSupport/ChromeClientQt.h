@@ -43,7 +43,6 @@ QT_END_NAMESPACE
 
 class QWebPage;
 class QWebPageAdapter;
-class QWebFullScreenVideoHandler;
 
 namespace WebCore {
 
@@ -149,7 +148,7 @@ public:
 
     void isPlayingMediaDidChange(MediaProducer::MediaStateFlags, uint64_t) final;
 
-#if ENABLE(VIDEO) && ((USE(GSTREAMER) && USE(NATIVE_FULLSCREEN_VIDEO)) || USE(QT_MULTIMEDIA))
+#if ENABLE(VIDEO) && USE(GSTREAMER) && USE(NATIVE_FULLSCREEN_VIDEO)
     bool supportsVideoFullscreen(MediaPlayerEnums::VideoFullscreenMode) final;
     void enterVideoFullscreenForVideoElement(HTMLVideoElement&, MediaPlayerEnums::VideoFullscreenMode) final;
     void exitVideoFullscreenForVideoElement(WebCore::HTMLVideoElement&) final;
@@ -183,8 +182,6 @@ public:
 
     void attachViewOverlayGraphicsLayer(Frame *, GraphicsLayer *) final;
 
-    QWebFullScreenVideoHandler* createFullScreenVideoHandler();
-
     QWebPageAdapter* m_webPage;
     URL lastHoverURL;
     String lastHoverTitle;
@@ -199,7 +196,7 @@ public:
 #endif
     MediaProducer::MediaStateFlags m_mediaState { WebCore::MediaProducer::IsNotPlaying };
 
-#if ENABLE(VIDEO) && (USE(GSTREAMER) || USE(QT_MULTIMEDIA))
+#if ENABLE(VIDEO) && USE(GSTREAMER)
     FullScreenVideoQt* m_fullScreenVideo;
 #endif
 

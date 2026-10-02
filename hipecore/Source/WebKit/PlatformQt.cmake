@@ -214,14 +214,6 @@ list(APPEND WebKit_LIBRARIES
         ${Qt5Gui_LIBRARIES}
 )
 
-if (USE_QT_MULTIMEDIA)
-    list(APPEND WebKit_SOURCES
-        qt/Api/qwebfullscreenvideohandler.h
-
-        qt/WebCoreSupport/FullScreenVideoQt.cpp
-    )
-endif ()
-
 if (ENABLE_X11_TARGET)
     list(APPEND WebKit_SOURCES
         qt/WebCoreSupport/X11EmbedWidgetQt.cpp
@@ -243,7 +235,7 @@ ecm_generate_headers(
     QtWebKit_FORWARDING_HEADERS
     HEADER_NAMES
         QWebElement,QWebElementCollection
-        QWebKitPlatformPlugin,QWebHapticFeedbackPlayer,QWebFullScreenVideoHandler,QWebSelectData,QWebSelectMethod,QWebSpellChecker,QWebTouchModifier
+        QWebKitPlatformPlugin,QWebHapticFeedbackPlayer,QWebSelectData,QWebSelectMethod,QWebSpellChecker,QWebTouchModifier
         QWebPluginFactory
         QWebSecurityOrigin
         QWebSettings
@@ -305,15 +297,7 @@ install(
 
 set(WEBKIT_PKGCONFIG_DEPS "Qt5Core Qt5Gui")
 
-if (USE_QT_MULTIMEDIA)
-    set(WEBKIT_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} Qt5Multimedia")
-endif ()
-
 set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} Qt5Widgets HipeCore")
-
-if (USE_QT_MULTIMEDIA)
-    set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKITWIDGETS_PKGCONFIG_DEPS} Qt5MultimediaWidgets")
-endif ()
 
 if (QT_STATIC_BUILD)
     set(EXTRA_LIBS_NAMES WebCore WTF)
@@ -390,22 +374,10 @@ set(WebKitWidgets_SYSTEM_INCLUDE_DIRECTORIES
 )
 
 set(WebKitWidgets_LIBRARIES
-    PRIVATE
-        ${Qt5MultimediaWidgets_LIBRARIES}
     PUBLIC
         ${Qt5Widgets_LIBRARIES}
         WebKit
 )
-
-if (USE_QT_MULTIMEDIA)
-    list(APPEND WebKitWidgets_SOURCES
-        qt/WidgetSupport/DefaultFullScreenVideoHandler.cpp
-        qt/WidgetSupport/FullScreenVideoWidget.cpp
-    )
-    list(APPEND WebKitWidgets_SYSTEM_INCLUDE_DIRECTORIES
-        ${Qt5MultimediaWidgets_INCLUDE_DIRS}
-    )
-endif ()
 
 ecm_generate_headers(
     QtWebKitWidgets_FORWARDING_HEADERS

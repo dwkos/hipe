@@ -82,9 +82,6 @@ public:
     bool javaScriptPrompt(QWebFrameAdapter*, const QString& msg, const QString& defaultValue, QString* result) override;
     bool shouldInterruptJavaScript() override;
     void setToolTip(const QString&) override;
-#if USE(QT_MULTIMEDIA)
-    QWebFullScreenVideoHandler* createFullScreenVideoHandler() override;
-#endif
     QWebFrameAdapter& mainFrameAdapter() override;
     QColor colorSelectionRequested(const QColor& selectedColor) override;
     std::unique_ptr<QWebSelectMethod> createSelectPopup() override;

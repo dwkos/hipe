@@ -269,16 +269,6 @@ if (USE_MEDIA_FOUNDATION)
     )
 endif ()
 
-if (USE_QT_MULTIMEDIA)
-    list(APPEND WebCore_SOURCES
-        platform/graphics/qt/MediaPlayerPrivateQt.cpp
-    )
-    list(APPEND WebCore_LIBRARIES
-        ${Qt5Multimedia_LIBRARIES}
-    )
-    QTWEBKIT_GENERATE_MOC_FILES_H(WebCore platform/graphics/qt/MediaPlayerPrivateQt.h)
-endif ()
-
 if (ENABLE_VIDEO)
     # The <video>/<audio> control shadow DOM is styled by this UA stylesheet.
     list(APPEND WebCore_USER_AGENT_STYLE_SHEETS

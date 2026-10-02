@@ -59,7 +59,6 @@ class QWebPluginFactory;
 class QWebSecurityOrigin;
 class QWebSelectMethod;
 class QWebSettings;
-class QWebFullScreenVideoHandler;
 class UndoStepQt;
 
 class QWEBKIT_EXPORT QWebPageAdapter {
@@ -181,9 +180,6 @@ public:
     virtual std::unique_ptr<QWebSelectMethod> createSelectPopup() = 0;
     virtual QRect viewRectRelativeToWindow() = 0;
 
-#if USE(QT_MULTIMEDIA)
-    virtual QWebFullScreenVideoHandler* createFullScreenVideoHandler() = 0;
-#endif
 
     virtual void respondToChangedContents() = 0;
     virtual void respondToChangedSelection() = 0;
