@@ -778,8 +778,6 @@ void handle_SET_STYLE(Container* c, hipe_instruction*, bool locationSpecified, Q
             }
         } else {  //styling another element
             location.setStyleProperty(arg[0].c_str(), arg[1].c_str());
-            //std::string jsEval = std::string("this.style.['") + arg[0] + "']=\"" + arg[1]+";\";";
-            //location.evaluateJavaScript(jsEval.c_str());
         }
     }
 }
@@ -1071,9 +1069,8 @@ void handle_TAKE_SNAPSHOT(Container* c, hipe_instruction* instruction, bool, QWe
 
 //REQUIRES 1 ARG
 void handle_USE_CANVAS(Container* c, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
-    // No JS string is built here, so Sanitation::sanitiseCanvasInstruction (which
-    // guards against JS injection) doesn't apply -- QWebElement::useCanvasContext()
-    // validates the context type itself and no-ops on anything unsupported.
+    // QWebElement::useCanvasContext() validates the context type itself and no-ops on
+    // anything unsupported.
     c->currentCanvas = location;
     c->currentCanvas.useCanvasContext(QString(arg[0].c_str()));
 }
@@ -1251,8 +1248,7 @@ void handle_GET_RANGE_GEOMETRY(Container* c, hipe_instruction* instruction, bool
 void handle_CARAT_POSITION(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
     //set the selection anchor/focus position...
     //(note, this instruction may also be sent from Hipe to indicate a current carat position)
-    arg[0] = Sanitation::sanitiseCanvasInstruction(arg[0]); //selection anchor
-    arg[1] = Sanitation::sanitiseCanvasInstruction(arg[1]); //selection focus, if specified
+    //arg[0] is the selection anchor; arg[1] the selection focus, if specified.
     if(!arg[0].size()) return; //empty: GET_CARAT_POSITION's "not in this element" reply. Leave it alone.
     if(!arg[1].size()) arg[1] = arg[0]; //if unspecified, focus=anchor means cursor without selection.
     //Offsets are characters (code points); negative values count from the end, -1 being after the last
@@ -1391,7 +1387,7 @@ void handle_GET_SELECTION(Container* c, hipe_instruction* instruction, bool, QWe
         if(c->isTopLevel) {
             selectedText = ((ContainerTopLevel*)c)->getGlobalSelection(false);
         }
-    } else { //get local (this frame's) selection using javascript.
+    } else { //get local (this frame's) selection.
         selectedText = location.getSelection().toStdString();
     }
     //return the contents of the selection...

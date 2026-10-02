@@ -5,9 +5,6 @@
 #-------------------------------------------------
 
 QT       += core gui
-#QT       += webkit
-#QT       += webkitwidgets
-QT       += network
 QT       += opengl
 QT       += svg
 
@@ -50,7 +47,7 @@ HEADERS += main.hpp \
 
 QMAKE_CXXFLAGS += -std=c++17 -Ofast -pthread
 
-#change libs if webkit version is not libQt5WebKit
+#hipecore, Hipe's display engine, installs under Qt5WebKit's library names.
 LIBS += -pthread -lQt5WebKit -lQt5WebKitWidgets
 
 

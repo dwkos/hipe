@@ -282,19 +282,9 @@ QAction* Container::getEditQtAction(char action) {
 }
 
 
-bool Container::findText(std::string userQuery, bool searchBackwards, bool wrapAtEnd, bool caseSensitive) {
-    QWebPage::FindFlags flags;
-    if(searchBackwards) flags |= QWebPage::FindBackward;
-    if(wrapAtEnd)       flags |= QWebPage::FindWrapsAroundDocument;
-    if(caseSensitive)   flags |= QWebPage::FindCaseSensitively;
-    flags |= QWebPage::HighlightAllOccurrences;
-    return frame->page()->findText(userQuery.c_str(), flags);
-}
-
-
 void Container::_receiveKeyEventOnBody(const QString& eventName, void* containerPtr, uint64_t isKeyUp, uint64_t requestor, const QString& eventDetails)
 //keyup and keydown events are treated as a special case when they happen on the body element.
-//receiveGuiEvent is not called directly, instead this callback is ALWAYS called, since we want to receive
+//The event is not sent to the client directly; instead this callback is ALWAYS called, since we want to receive
 //the event and propagate it up the client tree regardless of whether the user has asked to be notified of it.
 {
     Container* _this = (Container*) containerPtr;

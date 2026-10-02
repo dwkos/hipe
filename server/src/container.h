@@ -147,7 +147,6 @@ public:
     //input within the last few seconds. Gates actions such as paste, which would otherwise
     //let a framed app read the clipboard whenever it likes.
 
-    bool findText(std::string userQuery, bool searchBackwards, bool wrapAtEnd, bool caseSensitive);
 
     bool bgColorChanged(std::string newColor);
     bool fgColorChanged(std::string newColor);
@@ -169,9 +168,7 @@ public:
 
     QWebElement currentCanvas; //the <canvas> element most recently selected by
     //HIPE_OP_USE_CANVAS, acted on by later HIPE_OP_CANVAS_ACTION/CANVAS_SET_PROPERTY
-    //instructions. Mirrors the single-current-canvas model the old JS-eval
-    //implementation used (a single global JS variable) -- matches how hipe's own
-    //client API already calls these opcodes (without specifying a location each time).
+    //instructions, which the client API sends without specifying a location each time.
 
     bool isTopLevel = false; //some instructions are only permitted to be carried out
     //by the top level frame.

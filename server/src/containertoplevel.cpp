@@ -87,8 +87,7 @@ void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
         webElement = w->initBoilerplate(
             std::string("<html><head><style>")
             + stylesheet
-            + "</style><script>var canvascontext;</script></head><body "
-            "></body></html>"
+            + "</style></head><body></body></html>"
         ); //initialiser. If ommitted, resource images won't display (!)
         initYet = true;
         webElement.removeAllChildren();

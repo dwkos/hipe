@@ -51,8 +51,7 @@ void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
 {
     if(!parent || !frame) return;
     if(!initYet) {
-        frame->setHtml(QString("<html><head><style>") + stylesheet.c_str() + "</style><script>var canvascontext;</script></head><body "
-            "></body></html>");
+        frame->setHtml(QString("<html><head><style>") + stylesheet.c_str() + "</style></head><body></body></html>");
         stylesheet = ""; //clear already-applied stylesheet data.
         webElement = frame->documentElement().lastChild();
         initYet = true;

@@ -55,8 +55,6 @@ public:
     //text content should pass the client's text mode.
     //convert HTML syntactical characters in input into harmless escaped character entities.
 
-    static std::string sanitiseCanvasInstruction(std::string input);
-
     static std::string toBase64(const std::string& binaryData);
     static std::string toBase64(const char* data, size_t size);
     static std::string toLower(const char* text, size_t size); //convert to lowercase

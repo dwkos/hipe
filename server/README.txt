@@ -8,8 +8,7 @@ qt5-qtsvg-devel; Arch: qt5-svg) - hiped uses QSvgGenerator for the "svg"
 HIPE_OP_TAKE_SNAPSHOT format. Missing it shows up as
 "Project ERROR: Unknown module(s) in QT: svg" at qmake time.
 You must also have hipecore, Hipe's display engine, installed on the system:
-build and install it from ../hipecore first. (Building against stock Qt5WebKit
-still works in this version, but that support is being removed.)
+build and install it from ../hipecore first.
 Qt must be built with STL support included.
 
 BUILD INSTRUCTIONS:

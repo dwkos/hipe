@@ -36,8 +36,8 @@ Status of this version
 one project. It starts from Hipe 2.12 and hipecore 0.6 beta, which were published separately
 and remain available from the website's Download page as "classic" Hipe.
 
-Classic Hipe could also be built against stock Qt5WebKit. That support is still present in
-this version but is being removed: from 3.0, hipecore is Hipe's display engine.
+Classic Hipe could also be built against stock Qt5WebKit. Version 3.0 cannot: hipecore is
+Hipe's display engine, and the server needs it.
 
 Licensing
 ---------

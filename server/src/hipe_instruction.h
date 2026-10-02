@@ -77,11 +77,9 @@ extern "C" {
  * 'arg[0]' is the type of event, and 'location' is the tag for which events of 'arg[0]' were requested.
  * 'requestor' returns the same client-supplied value as was used for HIPE_OP_EVENT_REQUEST.
  * 'arg[1]' provides event-specific detail about the event -- e.g. for "click" events it returns the
- * number of clicks registered. For "wheel" events (hipecore builds only -- requires hipecore commit
- * e0382d74 or later), 'arg[1]' is a comma-separated "deltaX,deltaY,deltaMode" triple:
+ * number of clicks registered. For "wheel" events, 'arg[1]' is a comma-separated "deltaX,deltaY,deltaMode" triple:
  * deltaX/deltaY are positive when scrolling right/down respectively, and deltaMode is 0 (pixel),
- * 1 (line) or 2 (page), per the WheelEvent.deltaMode convention. Builds linked against stock
- * Qt5WebKit do not currently provide wheel delta information.
+ * 1 (line) or 2 (page), per the WheelEvent.deltaMode convention.
  * */
 
 #define HIPE_OP_EVENT_CANCEL       8
@@ -92,7 +90,7 @@ extern "C" {
 
 #define HIPE_OP_EVENT_REQUEST      9
 /*Sent by the client to request notification of event 'arg[0]' on location 'location'.
- * arg[1] (hipecore only) optionally cancels the event's default action (e.g. Tab moving the focus, or the wheel
+ * arg[1] optionally cancels the event's default action (e.g. Tab moving the focus, or the wheel
  * scrolling), for events on the element or inside it that match any of a list of rules separated by ';'. Each
  * rule is "code,modifiers", written like the event's detail: code = keyCode (keydown/keyup), charCode (keypress)
  * or mouse button; modifiers = the mask (1 Shift, 2 Alt, 4 Ctrl, 8 Meta), matched exactly. "*" matches anything,
@@ -160,8 +158,7 @@ extern "C" {
  * means this is the final (or only) chunk. Chunking lets a large file be streamed in progressively
  * -- decoded and rendered incrementally as each chunk arrives, same as an image loading over a
  * slow network -- rather than needing the whole file assembled client-side first. Images only for
- * now, and hipecore builds only (stock Qt5WebKit's base64 data: URI fallback is atomic -- arg[2]
- * is ignored there, every call is treated as a complete image).
+ * now.
  *
  * A client that doesn't know in advance which chunk will be the last one can keep sending arg[2]
  * "1" through every real chunk, then finalize with one extra, separate SET_SRC call carrying no

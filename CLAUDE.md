@@ -25,10 +25,9 @@ The parts talk to each other only at two seams: clients and server over the sock
 and engine through the `QWeb*` C++ API. There is no shared build system.
 
 **Version 3.0 alpha.** The tree starts from Hipe 2.12 and hipecore 0.6 beta ("classic" Hipe), which were
-separate projects. Classic Hipe could also be built against stock Qt5WebKit; that support is still in
-`server/src` (the `#ifndef HAVE_HIPECORE` / `#else` branches, most of them built on `evaluateJavaScript`)
-but is being removed. Don't add new stock-Qt5WebKit code paths, and don't remove the existing ones
-piecemeal without being asked: the removal is planned as its own piece of work.
+separate projects. Classic Hipe could also be built against stock Qt5WebKit; 3.0 cannot. The server's
+stock-Qt5WebKit code paths (the `HAVE_HIPECORE` guards and their `evaluateJavaScript` fallbacks) have been
+removed: don't add new ones. hipecore is the only engine, and JavaScript is not available to the server.
 
 ## Licensing
 
@@ -64,8 +63,9 @@ Produces `./hiped` in `server/`. There is no `make install` for the server; copy
 `hiped.pro` deliberately does **not** use `QT += webkit webkitwidgets`; it links manually via
 `LIBS += -lQt5WebKit -lQt5WebKitWidgets`. This avoids depending on the qmake `.pri` module files for the
 WebKit modules, at the cost of qmake not adding their include paths, so the source uses fully qualified
-includes (`<QtWebKit/QWebElement>`, `<QtWebKitWidgets/QWebFrame>`). Engine-only features are guarded by
-`HAVE_HIPECORE`, which the engine's `qwebelement.h` defines itself: never define it in the build files.
+includes (`<QtWebKit/QWebElement>`, `<QtWebKitWidgets/QWebFrame>`). The engine's `qwebelement.h` defines
+`HAVE_HIPECORE`; `container.h` stops the build with an `#error` if it is missing (i.e. the installed library
+is stock Qt5WebKit). Never define it in the build files.
 
 **Client library** (`api/`, plain Makefile, `gcc`/`ar`):
 ```sh

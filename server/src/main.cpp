@@ -18,11 +18,11 @@
 
 
 // Hipe.
-// A display layer/window system in pure webkit.
+// A display server that renders application interfaces as HTML elements.
 // It allows applications to produce web-like interfaces and manipulate them directly without the overhead of standard web protocols.
 // It supplies a socket which applications connect to.
 // Applications request a container via a key.
-// They then do stuff by manipulating html code elements and executing javascript.
+// They then build and change their interface by sending instructions that manipulate HTML elements.
 
 
 #include <QApplication>
