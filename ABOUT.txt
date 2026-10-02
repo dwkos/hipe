@@ -1,5 +1,6 @@
 
-  Hipe: A Hypertext Pipe.
+  Hipe: HTML Interface Pipe.
+  A display server for native applications, from desktops to embedded devices.
  
  
   Hipe is an effort to turn Webkit from a web browser engine into a fully-fledged HTML-powered display server.

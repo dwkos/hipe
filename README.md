@@ -1,5 +1,7 @@
-Hipe: Hypertext Pipe
-====================
+Hipe: HTML Interface Pipe
+=========================
+
+A display server for native applications, from desktops to embedded devices.
 
 Hipe is a display server whose native language is HTML. Applications don't draw pixels or
 send pages: they connect over a local socket and build their interface as a live document of

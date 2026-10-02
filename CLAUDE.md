@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Hipe ("Hypertext Pipe") is a stateful, local, HTML-powered **display server**, analogous to X11/Wayland
+Hipe ("HTML Interface Pipe") is a stateful, local, HTML-powered **display server**, analogous to X11/Wayland
 but rendering native app UIs as directly-manipulated DOM elements instead of pages. Client applications
 don't send HTML or URLs: they connect over a local UNIX socket and issue a binary instruction protocol
 (`HIPE_OP_*` opcodes) to build and mutate a live DOM tree that the server renders. See `ABOUT.txt` for the
