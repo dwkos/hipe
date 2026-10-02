@@ -1,4 +1,4 @@
-                       Hipe: Hypertext Pipe
+                     Hipe: HTML Interface Pipe
   Copyright (C) 2015-2026 Daniel Kos, General Development Systems
      Copyright (C) 2021 Harrison Schaefer, Thomas Templeton,
                    Amesh Fernando, Scott Guiney
