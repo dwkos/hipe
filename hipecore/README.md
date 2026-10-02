@@ -109,6 +109,8 @@ units clear, then `-j4` — a blanket `-j4` can exhaust memory.
 
 ### Dependencies (Ubuntu/Debian)
 
+Qt 5.15 is required. Earlier Qt 5 releases are not supported, and Qt 6 is not supported yet.
+
     ninja-build bison gperf libjpeg-dev libpng-dev libicu-dev libxml2-dev
     libxslt1-dev qtbase5-private-dev libxcomposite-dev
     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev

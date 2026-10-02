@@ -28,9 +28,7 @@ QFramebufferPaintDevice::QFramebufferPaintDevice(const QSize& size,
         , m_framebufferObject(size, attachment)
 {
     m_surface = QOpenGLContext::currentContext()->surface();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
     setPaintFlipped(true);
-#endif
     if (clearOnInit) {
         m_framebufferObject.bind();
 
@@ -54,11 +52,7 @@ QImage QFramebufferPaintDevice::toImage() const
 
     context()->makeCurrent(m_surface);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
     QImage image = m_framebufferObject.toImage(false);
-#else
-    QImage image = m_framebufferObject.toImage();
-#endif
 
     if (currentContext)
         currentContext->makeCurrent(currentSurface);

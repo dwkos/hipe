@@ -80,12 +80,7 @@ void Font::platformInit()
     advances = rawFont.advancesForGlyphIndexes(indexes);
     float zeroWidth = advances.at(0).x();
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 8, 0)
-    indexes = rawFont.glyphIndexesForString(QStringLiteral("H"));
-    float capHeight = rawFont.boundingRect(indexes.at(0)).height();
-#else
     float capHeight = rawFont.capHeight();
-#endif
 
     // The line spacing should always be >= (ascent + descent), but this
     // may be false in some cases due to misbehaving platform libraries.

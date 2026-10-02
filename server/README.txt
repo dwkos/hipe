@@ -2,7 +2,8 @@ Source code for Hipe server process.
 
 DEPENDENCIES:
 
-You must have the development files for Qt5 installed on the system.
+You must have the development files for Qt 5.15 installed on the system
+(earlier Qt 5 releases are not supported, and Qt 6 is not supported yet).
 This includes the QtSvg module (Debian/Ubuntu: libqt5svg5-dev; Fedora:
 qt5-qtsvg-devel; Arch: qt5-svg) - hiped uses QSvgGenerator for the "svg"
 HIPE_OP_TAKE_SNAPSHOT format. Missing it shows up as

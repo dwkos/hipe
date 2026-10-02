@@ -170,7 +170,8 @@ add_definitions(-DBUILDING_QT__=1)
 add_definitions(-DQT_NO_EXCEPTIONS)
 add_definitions(-DQT_USE_QSTRINGBUILDER)
 add_definitions(-DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS)
-add_definitions(-DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000)
+# Everything Qt deprecated before 6.0 is disabled: a call to it is a compile error.
+add_definitions(-DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x060000)
 # We use -fno-rtti with GCC and Clang, see OptionsCommon.cmake
 if (COMPILER_IS_GCC_OR_CLANG)
     add_definitions(-DQT_NO_DYNAMIC_CAST)
@@ -223,7 +224,9 @@ endif ()
 set(ENABLE_GAMEPAD_DEPRECATED_DEFAULT OFF)
 
 # FIXME: Move Qt handling here
-set(REQUIRED_QT_VERSION 5.2.0)
+# Qt 5.15 is the only Qt 5 release supported. The code avoids everything Qt 5 deprecates, so that
+# it also compiles against Qt 6's API (see QT_DISABLE_DEPRECATED_BEFORE below).
+set(REQUIRED_QT_VERSION 5.15.0)
 find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core Gui QUIET)
 
 get_target_property(QT_CORE_TYPE Qt5::Core TYPE)
@@ -533,7 +536,7 @@ if (QT_STATIC_BUILD)
 endif ()
 
 if (COMPILER_IS_GCC_OR_CLANG AND UNIX)
-    if (APPLE OR CMAKE_SYSTEM_NAME MATCHES "Android" OR ${Qt5_VERSION} VERSION_LESS 5.6)
+    if (APPLE OR CMAKE_SYSTEM_NAME MATCHES "Android")
         set(USE_LINKER_VERSION_SCRIPT_DEFAULT OFF)
     else ()
         set(USE_LINKER_VERSION_SCRIPT_DEFAULT ON)

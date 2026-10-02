@@ -42,7 +42,7 @@ never move GPL server code into `api/`.
 
 Build in this order: engine, server, client library.
 
-**Engine** (`hipecore/`, CMake + Ninja; details and caveats in `hipecore/CLAUDE.md`):
+**Engine** (`hipecore/`, CMake + Ninja, Qt 5.15; details and caveats in `hipecore/CLAUDE.md`):
 ```sh
 cd hipecore && mkdir build && cd build
 cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..

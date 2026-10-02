@@ -323,7 +323,6 @@ String keyIdentifierForQtKeyCode(int keyCode)
         return ASCIILiteral("Red");
     case Qt::Key_Yellow:
         return ASCIILiteral("Yellow");
-#if QT_VERSION >= QT_VERSION_CHECK(5,4,0)
     case Qt::Key_Find:
         return ASCIILiteral("Find");
     case Qt::Key_Info:
@@ -336,7 +335,6 @@ String keyIdentifierForQtKeyCode(int keyCode)
         return ASCIILiteral("Guide");
     case Qt::Key_Settings:
         return ASCIILiteral("Settings");
-#endif
     // Keys we have returned U+charcode for in the past.
     // FIXME: Change them to correct standard values if others do.
     case Qt::Key_Tab:

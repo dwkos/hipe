@@ -4,6 +4,9 @@ The three parts are built in this order. Each directory has fuller notes, and th
 Installation section of the manual (http://hipe.generaldevelopment.net, or the archived
 copy in manual.html) explains how to set Hipe up to run.
 
+Hipe needs Qt 5.15, for both the display engine and the display server. Earlier Qt 5
+releases are not supported, and Qt 6 is not supported yet.
+
 
 1. BUILD AND INSTALL THE DISPLAY ENGINE (hipecore)
 ==================================================

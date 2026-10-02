@@ -27,7 +27,6 @@
 #include <QGraphicsView>
 
 #include <QOpenGLWidget>
-#endif
 
 QWindow* QWebPageClient::ownerWindow() const
 {
@@ -188,7 +187,6 @@ bool PageClientQGraphicsWidget::makeOpenGLContextCurrentIfAvailable()
             qoglWidget->makeCurrent();
             return true;
         }
-#endif
     }
 #endif
     return false;
@@ -204,7 +202,6 @@ QOpenGLContext* PageClientQGraphicsWidget::openGLContextIfAvailable()
             QOpenGLWidget* qoglWidget = static_cast<QOpenGLWidget*>(widget);
             return qoglWidget->context();
         }
-#endif
     }
 #endif
     return 0;

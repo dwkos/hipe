@@ -37,10 +37,8 @@
 #elif PLATFORM(QT)
 #define FUNCTIONS m_context->m_functions
 #include "OpenGLShimsQt.h"
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #define VAO_FUNCTIONS m_vaoFunctions
 #include "OpenGLShimsQtVAO.h"
-#endif
 #elif PLATFORM(GTK) || PLATFORM(WIN)
 #include "OpenGLShims.h"
 #endif
@@ -52,7 +50,7 @@ namespace WebCore {
 Extensions3DOpenGL::Extensions3DOpenGL(GraphicsContext3D* context)
     : Extensions3DOpenGLCommon(context)
 {
-#if PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#if PLATFORM(QT)
     context->makeContextCurrent();
     m_vaoFunctions = new QOpenGLVertexArrayObjectHelper(context->platformGraphicsContext3D());
 #endif
@@ -60,7 +58,7 @@ Extensions3DOpenGL::Extensions3DOpenGL(GraphicsContext3D* context)
 
 Extensions3DOpenGL::~Extensions3DOpenGL()
 {
-#if PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
+#if PLATFORM(QT)
     delete m_vaoFunctions;
     m_vaoFunctions = 0;
 #endif
@@ -245,7 +243,7 @@ bool Extensions3DOpenGL::supportsExtension(const String& name)
         return m_availableExtensions.contains("GL_EXT_texture_filter_anisotropic");
 
     if (name == "GL_EXT_draw_buffers") {
-#if PLATFORM(MAC) || PLATFORM(GTK) || (PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if PLATFORM(MAC) || PLATFORM(GTK) || PLATFORM(QT)
         return m_availableExtensions.contains("GL_ARB_draw_buffers");
 #else
         // FIXME: implement support for other platforms.
@@ -261,7 +259,7 @@ void Extensions3DOpenGL::drawBuffersEXT(GC3Dsizei n, const GC3Denum* bufs)
     //  FIXME: implement support for other platforms.
 #if PLATFORM(MAC)
     ::glDrawBuffersARB(n, bufs);
-#elif PLATFORM(GTK) || (PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#elif PLATFORM(GTK) || PLATFORM(QT)
     ::glDrawBuffers(n, bufs);
 #else
     UNUSED_PARAM(n);
@@ -272,7 +270,7 @@ void Extensions3DOpenGL::drawBuffersEXT(GC3Dsizei n, const GC3Denum* bufs)
 void Extensions3DOpenGL::drawArraysInstanced(GC3Denum mode, GC3Dint first, GC3Dsizei count, GC3Dsizei primcount)
 {
     m_context->makeContextCurrent();
-#if PLATFORM(GTK) || (PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if PLATFORM(GTK) || PLATFORM(QT)
     ::glDrawArraysInstanced(mode, first, count, primcount);
 #elif PLATFORM(COCOA)
     ::glDrawArraysInstancedARB(mode, first, count, primcount);
@@ -287,7 +285,7 @@ void Extensions3DOpenGL::drawArraysInstanced(GC3Denum mode, GC3Dint first, GC3Ds
 void Extensions3DOpenGL::drawElementsInstanced(GC3Denum mode, GC3Dsizei count, GC3Denum type, long long offset, GC3Dsizei primcount)
 {
     m_context->makeContextCurrent();
-#if PLATFORM(GTK) || (PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if PLATFORM(GTK) || PLATFORM(QT)
     ::glDrawElementsInstanced(mode, count, type, reinterpret_cast<GLvoid*>(static_cast<intptr_t>(offset)), primcount);
 #elif PLATFORM(COCOA)
     ::glDrawElementsInstancedARB(mode, count, type, reinterpret_cast<GLvoid*>(static_cast<intptr_t>(offset)), primcount);
@@ -303,7 +301,7 @@ void Extensions3DOpenGL::drawElementsInstanced(GC3Denum mode, GC3Dsizei count, G
 void Extensions3DOpenGL::vertexAttribDivisor(GC3Duint index, GC3Duint divisor)
 {
     m_context->makeContextCurrent();
-#if PLATFORM(GTK) || (PLATFORM(QT) && QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if PLATFORM(GTK) || PLATFORM(QT)
     ::glVertexAttribDivisor(index, divisor);
 #elif PLATFORM(COCOA)
     ::glVertexAttribDivisorARB(index, divisor);
@@ -327,11 +325,7 @@ bool Extensions3DOpenGL::isVertexArrayObjectSupported()
 #elif PLATFORM(QT)
 bool Extensions3DOpenGL::isVertexArrayObjectSupported()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
     return m_vaoFunctions && m_vaoFunctions->isValid();
-#else
-    return false;
-#endif
 }
 #endif
 

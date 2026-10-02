@@ -31,7 +31,6 @@
 namespace WebCore {
 
 // See http://www.w3.org/TR/css3-fonts/#font-weight-prop
-#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
 static inline QFont::Weight toQFontWeight(FontWeight fontWeight)
 {
     switch (fontWeight) {
@@ -56,28 +55,6 @@ static inline QFont::Weight toQFontWeight(FontWeight fontWeight)
     }
     Q_UNREACHABLE();
 }
-#else
-static inline QFont::Weight toQFontWeight(FontWeight fontWeight)
-{
-    switch (fontWeight) {
-    case FontWeight100:
-    case FontWeight200:
-    case FontWeight300:
-        return QFont::Light; // QFont::Light == Weight of 25
-    case FontWeight400:
-    case FontWeight500:
-        return QFont::Normal; // QFont::Normal == Weight of 50
-    case FontWeight600:
-        return QFont::DemiBold; // QFont::DemiBold == Weight of 63
-    case FontWeight700:
-        return QFont::Bold; // QFont::Bold == Weight of 75
-    case FontWeight800:
-    case FontWeight900:
-        return QFont::Black; // QFont::Black == Weight of 87
-    }
-    Q_UNREACHABLE();
-}
-#endif
 
 static inline bool isEmptyValue(const float size, const bool bold, const bool oblique)
 {

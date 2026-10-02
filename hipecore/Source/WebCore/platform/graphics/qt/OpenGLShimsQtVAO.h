@@ -31,11 +31,7 @@
 #error You must define VAO_FUNCTIONS macro before including this header
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #define LOOKUP_VAO_FUNCTION(f, ...) VAO_FUNCTIONS->f(__VA_ARGS__)
-#else
-#define LOOKUP_VAO_FUNCTION(f, ...)
-#endif
 
 #define glGenVertexArrays(...)                    LOOKUP_VAO_FUNCTION(glGenVertexArrays, __VA_ARGS__)
 #define glDeleteVertexArrays(...)                 LOOKUP_VAO_FUNCTION(glDeleteVertexArrays, __VA_ARGS__)
