@@ -1,35 +1,20 @@
 hipecore
 ========
 
-hipecore is a cut-down fork of the Qt5WebKit library. It keeps WebKit's HTML/CSS/DOM
-rendering engine but strips out the browser: no JavaScript, no network, no plugins, no
-persistent storage. Hipe drives the DOM directly through an extended `QWebElement` C++
-API rather than through scripts, so the parts of a web engine that exist to support
-stateless, asynchronous, networked pages are dead weight here.
+hipecore is Hipe's display engine: the part of the project that turns a document of HTML
+elements and CSS styles into pixels. The display server, hiped (in `../server`), is built on
+it.
+
+It is a cut-down fork of the Qt5WebKit library. It keeps WebKit's HTML/CSS/DOM rendering
+engine but strips out the browser: no JavaScript, no network, no plugins, no persistent
+storage. hiped drives the DOM directly through an extended `QWebElement` C++ API rather than
+through scripts, so the parts of a web engine that exist to support stateless, asynchronous,
+networked pages are dead weight here.
 
 Forked from Qt5WebKit 5.212.0-alpha4 (`qtwebkit-1.212.0-alpha4.tar.xz`, from
 https://github.com/qtwebkit/qtwebkit/releases/). The newer community fork was not used:
 different build requirements, it breaks iframes in Hipe, and its aims (WebKit2, better
 JavaScript, browser features) are the opposite of this project's.
-
-For use with hipe 2.12 or later.
-
-
-Releases
---------
-
-- **v0.6 beta — 2026-10-02.** The engine for Hipe 2.12, which is the planned final version
-  of Hipe that also supports stock Qt5WebKit. Adds finding text, text measurement and
-  `QWebPage::insertText()`.
-- **v0.5 alpha — 2026-09-20.** Canvas 2D drawing is implemented directly in C++. Images,
-  audio and video can be loaded progressively, in chunks. The QStyle-backed form-control
-  theme is removed. Requires hipe 2.11.
-- **v0.4 alpha — 2026-09-03.** Frame snapshots (PDF and PNG) render exactly what is on
-  screen. The browser printing stack and the `Qt5PrintSupport` dependency are removed.
-- **v0.3 alpha — 2026-08-31.** JavaScriptCore is removed.
-- **v0.2 alpha — 2026-08-16.** Web navigation, the database APIs and device-orientation
-  support are removed.
-- **v0.1 alpha — 2026-08-13.**
 
 
 What changed vs. QtWebKit

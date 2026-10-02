@@ -1,29 +1,59 @@
 HIPE INSTALLATION SUMMARY
 
+The three parts are built in this order. Each directory has fuller notes, and the
+Installation section of the manual (http://hipe.generaldevelopment.net, or the archived
+copy in manual.html) explains how to set Hipe up to run.
 
-1. BUILD AND INSTALL THE DISPLAY SERVER
-=======================================
 
-The server process is a Qt application. To build the server, follow the 
-instructions in the ./server directory, or refer to the Installation section
-of manual.html (also online at http://hipe.generaldevelopment.net).
+1. BUILD AND INSTALL THE DISPLAY ENGINE (hipecore)
+==================================================
 
-The display server can be deployed in a variety of ways depending on the 
-target system. See the installation instructions in the ./server directory 
-for more information.
+hipecore is built with CMake and Ninja. See hipecore/README.md for its dependencies.
 
-2. INSTALL THE API
-=======================================
+$ cd hipecore
+$ mkdir build && cd build
+$ cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
+$ ninja
+$ sudo ninja install
 
-The API is an ordinary C library with minimal dependencies. To build and 
-install the API, see the instructions in the ./api/ directory. You may need 
-to edit the makefile if your distribution doesn't follow typical Debian-style 
-filesystem layout.
+hipecore installs under the same names as Qt5WebKit, so it cannot be installed alongside
+a Qt5WebKit package.
 
-3. TEST THE INSTALLATION
-=======================================
 
-The Hipe API includes multiple test applications. These can be compiled 
-once the API has been installed on the target system. They will function 
-properly if the display server is running correctly.
+2. BUILD THE DISPLAY SERVER (hiped)
+===================================
 
+The server is a Qt application built with qmake. See server/README.txt for its
+dependencies and for the ways it can be run.
+
+$ cd server
+$ qmake -makefile ./src/hiped.pro
+$ make
+
+This produces the hiped executable in the server directory. Copy it wherever you like,
+for example /usr/local/bin/.
+
+
+3. BUILD AND INSTALL THE CLIENT LIBRARY (libhipe)
+=================================================
+
+The client library is an ordinary C library with minimal dependencies. See api/INSTALL.txt
+if your system doesn't use /usr/local/.
+
+$ cd api
+$ make
+$ sudo make install
+
+
+4. TRY IT
+=========
+
+Build the sample applications, start the display server, and run one of them:
+
+$ cd api
+$ make testing
+$ ../server/hiped &
+$ ./test/hipe-clock
+
+A window with a digital clock should open. The samples' source code, in api/test/, is the
+quickest way to see how a Hipe application is written.

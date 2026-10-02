@@ -7,8 +7,9 @@ This includes the QtSvg module (Debian/Ubuntu: libqt5svg5-dev; Fedora:
 qt5-qtsvg-devel; Arch: qt5-svg) - hiped uses QSvgGenerator for the "svg"
 HIPE_OP_TAKE_SNAPSHOT format. Missing it shows up as
 "Project ERROR: Unknown module(s) in QT: svg" at qmake time.
-You must also have either hipecore (a modified version of Qt5WebKit)
-or Qt5WebKit (with development files) installed on the system.
+You must also have hipecore, Hipe's display engine, installed on the system:
+build and install it from ../hipecore first. (Building against stock Qt5WebKit
+still works in this version, but that support is being removed.)
 Qt must be built with STL support included.
 
 BUILD INSTRUCTIONS:
@@ -40,9 +41,9 @@ of your choice.
 
 RUNNING THE SERVER:
 
-The default build for the backend (Hipecore or Qt5WebKit) requires that hiped be run within an X
-or Wayland environment. The backend can also be built and configured for EGLFS which uses
-Linux's direct rendering infrastructure without the need for another display server.
+The default build of hipecore requires that hiped be run within an X or Wayland environment.
+hipecore can also be built and configured for EGLFS, which uses Linux's direct rendering
+infrastructure without the need for another display server.
 
 You can either run ./hiped directly from within your favourite desktop environment 
 (rootless mode), or you can deploy the Hipe display server on its own (e.g. EGLFS through
