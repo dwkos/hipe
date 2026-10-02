@@ -20,8 +20,8 @@
 #ifndef QGraphicsWebView_h
 #define QGraphicsWebView_h
 
-#include <QtWebKit/qwebkitglobal.h>
-#include <QtWebKitWidgets/qwebpage.h>
+#include <HipeCore/qwebkitglobal.h>
+#include <HipeCore/qwebpage.h>
 #include <QtCore/qurl.h>
 #include <QtGui/qevent.h>
 #include <QtGui/qicon.h>

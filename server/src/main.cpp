@@ -35,7 +35,7 @@
 #include <sys/types.h> //for getuid()
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <QtWebKit/QWebSettings>
+#include <HipeCore/QWebSettings>
 #include <QPixmap>
 #include "connectionmanager.h"
 #include "containertoplevel.h"
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     a.setApplicationName("Hipe display server");
-    a.setApplicationVersion("v0 beta. Check README.md for more specific info.");
+    a.setApplicationVersion("3.0 alpha");
 
     std::stringstream userid; userid << getuid();
     uid = userid.str();

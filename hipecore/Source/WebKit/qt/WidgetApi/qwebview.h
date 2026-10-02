@@ -21,8 +21,8 @@
 #ifndef QWEBVIEW_H
 #define QWEBVIEW_H
 
-#include <QtWebKit/qwebkitglobal.h>
-#include <QtWebKitWidgets/qwebpage.h>
+#include <HipeCore/qwebkitglobal.h>
+#include <HipeCore/qwebpage.h>
 #include <QtCore/qurl.h>
 #include <QtGui/qpainter.h>
 #include <QtWidgets/qwidget.h>

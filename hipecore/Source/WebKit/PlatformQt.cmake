@@ -236,7 +236,8 @@ if (NOT SHARED_CORE)
     )
 endif ()
 
-WEBKIT_CREATE_FORWARDING_HEADERS(QtWebKit DIRECTORIES qt/Api)
+# Both libraries' headers share one directory: they are included as <HipeCore/...>.
+WEBKIT_CREATE_FORWARDING_HEADERS(HipeCore DIRECTORIES qt/Api qt/WidgetApi)
 
 ecm_generate_headers(
     QtWebKit_FORWARDING_HEADERS
@@ -247,17 +248,17 @@ ecm_generate_headers(
         QWebSecurityOrigin
         QWebSettings
     COMMON_HEADER
-        QtWebKit
+        HipeCore
     COMMON_HEADER_EXTRAS
-        <QtWebKit/QtWebKitDepends>
+        <HipeCore/HipeCoreDepends>
         \"qwebkitglobal.h\"
         \"qtwebkitversion.h\"
     COMMON_HEADER_GUARD_NAME
-        QT_QTWEBKIT_MODULE_H
+        HIPECORE_MODULE_H
     RELATIVE
         qt/Api
     OUTPUT_DIR
-        "${FORWARDING_HEADERS_DIR}/QtWebKit"
+        "${FORWARDING_HEADERS_DIR}/HipeCore"
     REQUIRED_HEADERS
         QtWebKit_HEADERS
 )
@@ -268,16 +269,16 @@ set(WebKit_PUBLIC_HEADERS
     ${QtWebKit_FORWARDING_HEADERS}
 )
 
-generate_version_header("${FORWARDING_HEADERS_DIR}/QtWebKit/qtwebkitversion.h"
+generate_version_header("${FORWARDING_HEADERS_DIR}/HipeCore/qtwebkitversion.h"
     WebKit_PUBLIC_HEADERS
     QTWEBKIT
 )
 
-generate_header("${FORWARDING_HEADERS_DIR}/QtWebKit/QtWebKitVersion"
+generate_header("${FORWARDING_HEADERS_DIR}/HipeCore/QtWebKitVersion"
     WebKit_PUBLIC_HEADERS
     "#include \"qtwebkitversion.h\"")
 
-generate_header("${FORWARDING_HEADERS_DIR}/QtWebKit/QtWebKitDepends"
+generate_header("${FORWARDING_HEADERS_DIR}/HipeCore/HipeCoreDepends"
     WebKit_PUBLIC_HEADERS
     "#ifdef __cplusplus /* create empty PCH in C mode */
 #include <QtCore/QtCore>
@@ -289,7 +290,7 @@ install(
     FILES
         ${WebKit_PUBLIC_HEADERS}
     DESTINATION
-        ${KDE_INSTALL_INCLUDEDIR}/QtWebKit
+        ${HIPECORE_INCLUDE_INSTALL_DIR}
     COMPONENT Data
 )
 
@@ -298,34 +299,20 @@ install(
     FILES
         ${WebKit_PRIVATE_HEADERS}
     DESTINATION
-        ${KDE_INSTALL_INCLUDEDIR}/QtWebKit/${PROJECT_VERSION}/QtWebKit/private
+        ${HIPECORE_INCLUDE_INSTALL_DIR}/${PROJECT_VERSION}/HipeCore/private
     COMPONENT Data
 )
 
 set(WEBKIT_PKGCONFIG_DEPS "Qt5Core Qt5Gui")
-set(WEBKIT_PRI_DEPS "core gui")
-set(WEBKIT_PRI_EXTRA_LIBS "")
-set(WEBKIT_PRI_RUNTIME_DEPS "core_private gui_private")
 
-if (USE_MEDIA_FOUNDATION)
-    set(WEBKIT_PRI_EXTRA_LIBS "-lmfuuid -lstrmiids ${WEBKIT_PRI_EXTRA_LIBS}")
-endif ()
 if (USE_QT_MULTIMEDIA)
     set(WEBKIT_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} Qt5Multimedia")
-    set(WEBKIT_PRI_RUNTIME_DEPS "multimedia ${WEBKIT_PRI_RUNTIME_DEPS}")
 endif ()
 
-set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} Qt5Widgets Qt5WebKit")
-set(WEBKITWIDGETS_PRI_DEPS "${WEBKIT_PRI_DEPS} widgets webkit")
-set(WEBKITWIDGETS_PRI_RUNTIME_DEPS "${WEBKIT_PRI_RUNTIME_DEPS} widgets_private")
-
-if (Qt5OpenGL_FOUND)
-    set(WEBKITWIDGETS_PRI_RUNTIME_DEPS "${WEBKITWIDGETS_PRI_RUNTIME_DEPS} opengl")
-endif ()
+set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} Qt5Widgets HipeCore")
 
 if (USE_QT_MULTIMEDIA)
     set(WEBKITWIDGETS_PKGCONFIG_DEPS "${WEBKITWIDGETS_PKGCONFIG_DEPS} Qt5MultimediaWidgets")
-    set(WEBKITWIDGETS_PRI_RUNTIME_DEPS "${WEBKITWIDGETS_PRI_RUNTIME_DEPS} multimediawidgets")
 endif ()
 
 if (QT_STATIC_BUILD)
@@ -349,15 +336,14 @@ if (QT_STATIC_BUILD)
     list(REMOVE_DUPLICATES EXTRA_LIBS_NAMES)
     foreach (LIB_NAME ${EXTRA_LIBS_NAMES})
         set(WEBKIT_PKGCONFIG_DEPS "${WEBKIT_PKGCONFIG_DEPS} ${LIB_PREFIX}${LIB_NAME}")
-        set(WEBKIT_PRI_EXTRA_LIBS "${WEBKIT_PRI_EXTRA_LIBS} -l${LIB_PREFIX}${LIB_NAME}")
     endforeach ()
 endif ()
 
 if (NOT MACOS_BUILD_FRAMEWORKS)
     ecm_generate_pkgconfig_file(
-        BASE_NAME Qt5WebKit
-        DESCRIPTION "Qt WebKit module"
-        INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}/QtWebKit"
+        BASE_NAME HipeCore
+        DESCRIPTION "hipecore, Hipe's display engine"
+        INCLUDE_INSTALL_DIR "${HIPECORE_INCLUDE_INSTALL_DIR}"
         DEPS "${WEBKIT_PKGCONFIG_DEPS}"
         FILENAME_VAR WebKit_PKGCONFIG_FILENAME
     )
@@ -365,93 +351,7 @@ if (NOT MACOS_BUILD_FRAMEWORKS)
     install(FILES ${WebKit_PKGCONFIG_FILENAME} DESTINATION ${ECM_PKGCONFIG_INSTALL_DIR} COMPONENT Data)
 endif ()
 
-if (KDE_INSTALL_USE_QT_SYS_PATHS)
-    set(WebKit_PRI_ARGUMENTS
-        BIN_INSTALL_DIR "$$QT_MODULE_BIN_BASE"
-        LIB_INSTALL_DIR "$$QT_MODULE_LIB_BASE"
-    )
-    if (MACOS_BUILD_FRAMEWORKS)
-        list(APPEND WebKit_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_LIB_BASE/QtWebKit.framework/Headers"
-            MODULE_CONFIG "lib_bundle"
-        )
-        list(APPEND WebKit_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_LIB_BASE/QtWebKit.framework/Headers/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "$$QT_MODULE_LIB_BASE/QtWebKit.framework/Headers/${PROJECT_VERSION}/QtWebKit"
-        )
-    else ()
-        list(APPEND WebKit_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_INCLUDE_BASE"
-            INCLUDE_INSTALL_DIR2 "$$QT_MODULE_INCLUDE_BASE/QtWebKit"
-        )
-        list(APPEND WebKit_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_INCLUDE_BASE/QtWebKit/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "$$QT_MODULE_INCLUDE_BASE/QtWebKit/${PROJECT_VERSION}/QtWebKit"
-        )
-    endif ()
-else ()
-    set(WebKit_PRI_ARGUMENTS
-        SET_RPATH ON
-    )
-    if (MACOS_BUILD_FRAMEWORKS)
-        list(APPEND WebKit_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "${LIB_INSTALL_DIR}/QtWebKit.framework/Headers"
-            MODULE_CONFIG "lib_bundle"
-        )
-        list(APPEND WebKit_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "${LIB_INSTALL_DIR}/QtWebKit.framework/Headers/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "${LIB_INSTALL_DIR}/QtWebKit.framework/Headers/${PROJECT_VERSION}/QtWebKit"
-        )
-    else ()
-        list(APPEND WebKit_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR ${KDE_INSTALL_INCLUDEDIR}
-            INCLUDE_INSTALL_DIR2 "${KDE_INSTALL_INCLUDEDIR}/QtWebKit"
-        )
-        list(APPEND WebKit_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}/QtWebKit/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "${KDE_INSTALL_INCLUDEDIR}/QtWebKit/${PROJECT_VERSION}/QtWebKit"
-        )
-    endif ()
-endif ()
-
-list(APPEND WebKit_Private_PRI_ARGUMENTS MODULE_CONFIG "internal_module no_link")
-
-if (MACOS_BUILD_FRAMEWORKS)
-    set(WebKit_OUTPUT_NAME QtWebKit)
-else ()
-    set(WebKit_OUTPUT_NAME Qt5WebKit)
-endif ()
-
-ecm_generate_pri_file(
-    BASE_NAME webkit
-    NAME QtWebKit
-    LIB_NAME ${WebKit_OUTPUT_NAME}
-    INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}/QtWebKit"
-    DEPS "${WEBKIT_PRI_DEPS}"
-    RUNTIME_DEPS "${WEBKIT_PRI_RUNTIME_DEPS}"
-    DEFINES QT_WEBKIT_LIB
-    QT_MODULES webkit
-    EXTRA_LIBS "${WEBKIT_PRI_EXTRA_LIBS}"
-    FILENAME_VAR WebKit_PRI_FILENAME
-    ${WebKit_PRI_ARGUMENTS}
-)
-ecm_generate_pri_file(
-    BASE_NAME webkit_private
-    NAME "QtWebKit"
-    LIB_NAME " "
-    DEPS "webkit"
-    RUNTIME_DEPS " "
-    DEFINES " "
-    QT_MODULES webkit
-    EXTRA_LIBS " "
-    FILENAME_VAR WebKit_Private_PRI_FILENAME
-    ${WebKit_Private_PRI_ARGUMENTS}
-)
-install(
-    FILES ${WebKit_PRI_FILENAME} ${WebKit_Private_PRI_FILENAME}
-    DESTINATION ${ECM_MKSPECS_INSTALL_DIR}
-    COMPONENT Data
-)
+set(WebKit_OUTPUT_NAME HipeCore)
 
 if (QT_STATIC_BUILD)
     set(WebKit_LIBRARY_TYPE STATIC)
@@ -507,8 +407,6 @@ if (USE_QT_MULTIMEDIA)
     )
 endif ()
 
-WEBKIT_CREATE_FORWARDING_HEADERS(QtWebKitWidgets DIRECTORIES qt/WidgetApi)
-
 ecm_generate_headers(
     QtWebKitWidgets_FORWARDING_HEADERS
     HEADER_NAMES
@@ -517,16 +415,16 @@ ecm_generate_headers(
         QWebPage
         QWebView
     COMMON_HEADER
-        QtWebKitWidgets
+        HipeCoreWidgets
     COMMON_HEADER_EXTRAS
-        <QtWebKitWidgets/QtWebKitWidgetsDepends>
+        <HipeCore/HipeCoreWidgetsDepends>
         \"qtwebkitwidgetsversion.h\"
     COMMON_HEADER_GUARD_NAME
-        QT_QTWEBKITWIDGETS_MODULE_H
+        HIPECOREWIDGETS_MODULE_H
     RELATIVE
         qt/WidgetApi
     OUTPUT_DIR
-        "${FORWARDING_HEADERS_DIR}/QtWebKitWidgets"
+        "${FORWARDING_HEADERS_DIR}/HipeCore"
     REQUIRED_HEADERS
         QtWebKitWidgets_HEADERS
 )
@@ -536,22 +434,22 @@ set(WebKitWidgets_PUBLIC_HEADERS
     ${QtWebKitWidgets_FORWARDING_HEADERS}
 )
 
-generate_version_header("${FORWARDING_HEADERS_DIR}/QtWebKitWidgets/qtwebkitwidgetsversion.h"
+generate_version_header("${FORWARDING_HEADERS_DIR}/HipeCore/qtwebkitwidgetsversion.h"
     WebKitWidgets_PUBLIC_HEADERS
     QTWEBKITWIDGETS
 )
 
-generate_header("${FORWARDING_HEADERS_DIR}/QtWebKitWidgets/QtWebKitWidgetsVersion"
+generate_header("${FORWARDING_HEADERS_DIR}/HipeCore/QtWebKitWidgetsVersion"
     WebKitWidgets_PUBLIC_HEADERS
     "#include \"qtwebkitwidgetsversion.h\"")
 
-generate_header("${FORWARDING_HEADERS_DIR}/QtWebKitWidgets/QtWebKitWidgetsDepends"
+generate_header("${FORWARDING_HEADERS_DIR}/HipeCore/HipeCoreWidgetsDepends"
     WebKitWidgets_PUBLIC_HEADERS
     "#ifdef __cplusplus /* create empty PCH in C mode */
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtWidgets/QtWidgets>
-#include <QtWebKit/QtWebKit>
+#include <HipeCore/HipeCore>
 #endif
 ")
 
@@ -559,7 +457,7 @@ install(
     FILES
         ${WebKitWidgets_PUBLIC_HEADERS}
     DESTINATION
-        ${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets
+        ${HIPECORE_INCLUDE_INSTALL_DIR}
     COMPONENT Data
 )
 
@@ -568,107 +466,22 @@ install(
     FILES
         ${WebKitWidgets_PRIVATE_HEADERS}
     DESTINATION
-        ${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets/${PROJECT_VERSION}/QtWebKitWidgets/private
+        ${HIPECORE_INCLUDE_INSTALL_DIR}/${PROJECT_VERSION}/HipeCore/private
     COMPONENT Data
 )
 
 if (NOT MACOS_BUILD_FRAMEWORKS)
     ecm_generate_pkgconfig_file(
-        BASE_NAME Qt5WebKitWidgets
-        DESCRIPTION "Qt WebKitWidgets module"
-        INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets"
+        BASE_NAME HipeCoreWidgets
+        DESCRIPTION "hipecore, Hipe's display engine: the Qt Widgets classes"
+        INCLUDE_INSTALL_DIR "${HIPECORE_INCLUDE_INSTALL_DIR}"
         DEPS "${WEBKITWIDGETS_PKGCONFIG_DEPS}"
         FILENAME_VAR WebKitWidgets_PKGCONFIG_FILENAME
     )
     install(FILES ${WebKitWidgets_PKGCONFIG_FILENAME} DESTINATION ${ECM_PKGCONFIG_INSTALL_DIR} COMPONENT Data)
 endif ()
 
-if (KDE_INSTALL_USE_QT_SYS_PATHS)
-    set(WebKitWidgets_PRI_ARGUMENTS
-        BIN_INSTALL_DIR "$$QT_MODULE_BIN_BASE"
-        LIB_INSTALL_DIR "$$QT_MODULE_LIB_BASE"
-    )
-    if (MACOS_BUILD_FRAMEWORKS)
-        list(APPEND WebKitWidgets_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_LIB_BASE/QtWebKitWidgets.framework/Headers"
-            MODULE_CONFIG "lib_bundle"
-        )
-        list(APPEND WebKitWidgets_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_LIB_BASE/QtWebKitWidgets.framework/Headers/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "$$QT_MODULE_LIB_BASE/QtWebKitWidgets.framework/Headers/${PROJECT_VERSION}/QtWebKitWidgets"
-        )
-    else ()
-        list(APPEND WebKitWidgets_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_INCLUDE_BASE"
-            INCLUDE_INSTALL_DIR2 "$$QT_MODULE_INCLUDE_BASE/QtWebKitWidgets"
-        )
-        list(APPEND WebKitWidgets_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "$$QT_MODULE_INCLUDE_BASE/QtWebKitWidgets/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "$$QT_MODULE_INCLUDE_BASE/QtWebKitWidgets/${PROJECT_VERSION}/QtWebKitWidgets"
-        )
-    endif ()
-else ()
-    set(WebKitWidgets_PRI_ARGUMENTS
-        SET_RPATH ON
-    )
-    if (MACOS_BUILD_FRAMEWORKS)
-        list(APPEND WebKitWidgets_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "${LIB_INSTALL_DIR}/QtWebKitWidgets.framework/Headers"
-            MODULE_CONFIG "lib_bundle"
-        )
-        list(APPEND WebKitWidgets_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "${LIB_INSTALL_DIR}/QtWebKitWidgets.framework/Headers/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "${LIB_INSTALL_DIR}/QtWebKitWidgets.framework/Headers/${PROJECT_VERSION}/QtWebKitWidgets"
-        )
-    else ()
-        list(APPEND WebKitWidgets_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR ${KDE_INSTALL_INCLUDEDIR}
-            INCLUDE_INSTALL_DIR2 "${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets"
-        )
-        list(APPEND WebKitWidgets_Private_PRI_ARGUMENTS
-            INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets/${PROJECT_VERSION}"
-            INCLUDE_INSTALL_DIR2 "${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets/${PROJECT_VERSION}/QtWebKitWidgets"
-        )
-    endif ()
-endif ()
-
-list(APPEND WebKitWidgets_Private_PRI_ARGUMENTS MODULE_CONFIG "internal_module no_link")
-
-if (MACOS_BUILD_FRAMEWORKS)
-    set(WebKitWidgets_OUTPUT_NAME QtWebKitWidgets)
-else ()
-    set(WebKitWidgets_OUTPUT_NAME Qt5WebKitWidgets)
-endif ()
-
-ecm_generate_pri_file(
-    BASE_NAME webkitwidgets
-    NAME QtWebKitWidgets
-    LIB_NAME ${WebKitWidgets_OUTPUT_NAME}
-    INCLUDE_INSTALL_DIR "${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets"
-    DEPS "${WEBKITWIDGETS_PRI_DEPS}"
-    RUNTIME_DEPS "${WEBKITWIDGETS_PRI_RUNTIME_DEPS}"
-    DEFINES QT_WEBKITWIDGETS_LIB
-    QT_MODULES webkitwidgets
-    FILENAME_VAR WebKitWidgets_PRI_FILENAME
-    ${WebKitWidgets_PRI_ARGUMENTS}
-)
-ecm_generate_pri_file(
-    BASE_NAME webkitwidgets_private
-    NAME "QtWebKitWidgets"
-    LIB_NAME " "
-    DEPS "webkitwidgets"
-    RUNTIME_DEPS " "
-    DEFINES " "
-    QT_MODULES webkitwidgets
-    EXTRA_LIBS " "
-    FILENAME_VAR WebKitWidgets_Private_PRI_FILENAME
-    ${WebKitWidgets_Private_PRI_ARGUMENTS}
-)
-install(
-    FILES ${WebKitWidgets_PRI_FILENAME}  ${WebKitWidgets_Private_PRI_FILENAME}
-    DESTINATION ${ECM_MKSPECS_INSTALL_DIR}
-    COMPONENT Data
-)
+set(WebKitWidgets_OUTPUT_NAME HipeCoreWidgets)
 
 if (MSVC)
     list(APPEND WebKit_INCLUDE_DIRECTORIES
@@ -684,12 +497,12 @@ else ()
     set(WebKitWidgets_LIBRARY_TYPE SHARED)
 endif ()
 
-set(WebKitWidgets_PRIVATE_HEADERS_LOCATION Headers/${PROJECT_VERSION}/QtWebKitWidgets/private)
+set(WebKitWidgets_PRIVATE_HEADERS_LOCATION Headers/${PROJECT_VERSION}/HipeCore/private)
 
 WEBKIT_FRAMEWORK(WebKitWidgets)
 add_dependencies(WebKitWidgets WebKit)
 set_target_properties(WebKitWidgets PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
-install(TARGETS WebKitWidgets EXPORT Qt5WebKitWidgetsTargets
+install(TARGETS WebKitWidgets EXPORT HipeCoreWidgetsTargets
         DESTINATION "${LIB_INSTALL_DIR}"
         RUNTIME DESTINATION "${BIN_INSTALL_DIR}"
 )

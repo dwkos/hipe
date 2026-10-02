@@ -24,7 +24,7 @@
 #include "main.hpp"
 #include "instructionhandler.h"
 
-#include <QtWebKitWidgets/QWebPage>
+#include <HipeCore/QWebPage>
 #include <QInputMethodEvent>
 #include <stdio.h>
 

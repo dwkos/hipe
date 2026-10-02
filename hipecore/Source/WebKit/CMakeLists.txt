@@ -42,7 +42,7 @@ if (MSVC)
     endif ()
 endif ()
 
-set(WebKit_PRIVATE_HEADERS_LOCATION Headers/${PROJECT_VERSION}/QtWebKit/private)
+set(WebKit_PRIVATE_HEADERS_LOCATION Headers/${PROJECT_VERSION}/HipeCore/private)
 
 WEBKIT_FRAMEWORK(WebKit)
 

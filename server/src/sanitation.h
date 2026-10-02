@@ -25,8 +25,8 @@
 #include <string>
 #include <set>
 #include <map>
-#include <QtWebKitWidgets/QWebPage>
-#include <QtWebKit/QWebElement>
+#include <HipeCore/QWebPage>
+#include <HipeCore/QWebElement>
 
 class Sanitation
 {

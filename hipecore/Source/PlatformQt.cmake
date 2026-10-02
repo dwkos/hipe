@@ -65,15 +65,17 @@ endif ()
 
 target_compile_definitions(WebKit INTERFACE QT_WEBKIT_LIB)
 target_include_directories(WebKit INTERFACE
-    $<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}>
-    $<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/QtWebKit>
+    $<INSTALL_INTERFACE:${HIPECORE_INCLUDE_INSTALL_PARENT_DIR}>
+    $<INSTALL_INTERFACE:${HIPECORE_INCLUDE_INSTALL_DIR}>
 )
+set_target_properties(WebKit PROPERTIES EXPORT_NAME HipeCore)
 
 target_compile_definitions(WebKitWidgets INTERFACE QT_WEBKITWIDGETS_LIB)
 target_include_directories(WebKitWidgets INTERFACE
-    $<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}>
-    $<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR}/QtWebKitWidgets>
+    $<INSTALL_INTERFACE:${HIPECORE_INCLUDE_INSTALL_PARENT_DIR}>
+    $<INSTALL_INTERFACE:${HIPECORE_INCLUDE_INSTALL_DIR}>
 )
+set_target_properties(WebKitWidgets PROPERTIES EXPORT_NAME HipeCoreWidgets)
 
 if (QT_ORIGIN_RPATH)
     set(WEBKIT_SHARED_LIBRARY_TARGETS WebKit)
@@ -101,88 +103,88 @@ endmacro ()
 set(_package_footer_template "
 ####### Expanded from QTWEBKIT_PACKAGE_FOOTER variable #######
 
-set(Qt5@MODULE_NAME@_LIBRARIES Qt5::@MODULE_NAME@)
-set(Qt5@MODULE_NAME@_VERSION_STRING \${Qt5@MODULE_NAME@_VERSION})
-set(Qt5@MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS \"\")
-set(Qt5@MODULE_NAME@_PRIVATE_INCLUDE_DIRS \"\") # FIXME: Support private headers
+set(@MODULE_NAME@_LIBRARIES HipeCore::@MODULE_NAME@)
+set(@MODULE_NAME@_VERSION_STRING \${@MODULE_NAME@_VERSION})
+set(@MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS \"\")
+set(@MODULE_NAME@_PRIVATE_INCLUDE_DIRS \"\") # FIXME: Support private headers
 
-get_target_property(Qt5@MODULE_NAME@_INCLUDE_DIRS        Qt5::@MODULE_NAME@ INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(Qt5@MODULE_NAME@_COMPILE_DEFINITIONS Qt5::@MODULE_NAME@ INTERFACE_COMPILE_DEFINITIONS)
+get_target_property(@MODULE_NAME@_INCLUDE_DIRS        HipeCore::@MODULE_NAME@ INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(@MODULE_NAME@_COMPILE_DEFINITIONS HipeCore::@MODULE_NAME@ INTERFACE_COMPILE_DEFINITIONS)
 
-foreach (_module_dep \${_Qt5@MODULE_NAME@_MODULE_DEPENDENCIES})
-    list(APPEND Qt5@MODULE_NAME@_INCLUDE_DIRS \${Qt5\${_module_dep}_INCLUDE_DIRS})
-    list(APPEND Qt5@MODULE_NAME@_PRIVATE_INCLUDE_DIRS \${Qt5\${_module_dep}_PRIVATE_INCLUDE_DIRS})
-    list(APPEND Qt5@MODULE_NAME@_DEFINITIONS \${Qt5\${_module_dep}_DEFINITIONS})
-    list(APPEND Qt5@MODULE_NAME@_COMPILE_DEFINITIONS \${Qt5\${_module_dep}_COMPILE_DEFINITIONS})
-    list(APPEND Qt5@MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS \${Qt5\${_module_dep}_EXECUTABLE_COMPILE_FLAGS})
+foreach (_module_dep \${_@MODULE_NAME@_MODULE_DEPENDENCIES})
+    list(APPEND @MODULE_NAME@_INCLUDE_DIRS \${Qt5\${_module_dep}_INCLUDE_DIRS})
+    list(APPEND @MODULE_NAME@_PRIVATE_INCLUDE_DIRS \${Qt5\${_module_dep}_PRIVATE_INCLUDE_DIRS})
+    list(APPEND @MODULE_NAME@_DEFINITIONS \${Qt5\${_module_dep}_DEFINITIONS})
+    list(APPEND @MODULE_NAME@_COMPILE_DEFINITIONS \${Qt5\${_module_dep}_COMPILE_DEFINITIONS})
+    list(APPEND @MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS \${Qt5\${_module_dep}_EXECUTABLE_COMPILE_FLAGS})
 endforeach ()
-list(REMOVE_DUPLICATES Qt5@MODULE_NAME@_INCLUDE_DIRS)
-list(REMOVE_DUPLICATES Qt5@MODULE_NAME@_PRIVATE_INCLUDE_DIRS)
-list(REMOVE_DUPLICATES Qt5@MODULE_NAME@_DEFINITIONS)
-list(REMOVE_DUPLICATES Qt5@MODULE_NAME@_COMPILE_DEFINITIONS)
-list(REMOVE_DUPLICATES Qt5@MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS)
+list(REMOVE_DUPLICATES @MODULE_NAME@_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES @MODULE_NAME@_PRIVATE_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES @MODULE_NAME@_DEFINITIONS)
+list(REMOVE_DUPLICATES @MODULE_NAME@_COMPILE_DEFINITIONS)
+list(REMOVE_DUPLICATES @MODULE_NAME@_EXECUTABLE_COMPILE_FLAGS)
 
 # Fixup order of configurations to match behavior of other Qt modules
 # See also https://bugreports.qt.io/browse/QTBUG-29186
-get_target_property(_configurations Qt5::@MODULE_NAME@ IMPORTED_CONFIGURATIONS)
+get_target_property(_configurations HipeCore::@MODULE_NAME@ IMPORTED_CONFIGURATIONS)
 list(FIND _configurations RELEASE _index)
 if (\${_index} GREATER -1)
     list(REMOVE_AT _configurations \${_index})
     list(INSERT _configurations 0 RELEASE)
-    set_property(TARGET Qt5::@MODULE_NAME@ PROPERTY IMPORTED_CONFIGURATIONS \"\${_configurations}\")
+    set_property(TARGET HipeCore::@MODULE_NAME@ PROPERTY IMPORTED_CONFIGURATIONS \"\${_configurations}\")
 endif ()
 unset(_configurations)
 unset(_index)
 ")
 
-set(MODULE_NAME WebKit)
+set(MODULE_NAME HipeCore)
 string(CONFIGURE ${_package_footer_template} QTWEBKIT_PACKAGE_FOOTER @ONLY)
-ecm_configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Qt5WebKitConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitConfig.cmake"
-    INSTALL_DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKit"
+ecm_configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/HipeCoreConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/HipeCoreConfig.cmake"
+    INSTALL_DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/HipeCore"
 )
 
-set(MODULE_NAME WebKitWidgets)
+set(MODULE_NAME HipeCoreWidgets)
 string(CONFIGURE ${_package_footer_template} QTWEBKIT_PACKAGE_FOOTER @ONLY)
-ecm_configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Qt5WebKitWidgetsConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitWidgetsConfig.cmake"
-    INSTALL_DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKitWidgets"
+ecm_configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/HipeCoreWidgetsConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/HipeCoreWidgetsConfig.cmake"
+    INSTALL_DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/HipeCoreWidgets"
 )
 
 unset(MODULE_NAME)
 unset(QTWEBKIT_PACKAGE_FOOTER)
 
-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitConfigVersion.cmake"
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/HipeCoreConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion)
-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitWidgetsConfigVersion.cmake"
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/HipeCoreWidgetsConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion)
 
 install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitConfigVersion.cmake"
-    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKit"
+    "${CMAKE_CURRENT_BINARY_DIR}/HipeCoreConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/HipeCoreConfigVersion.cmake"
+    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/HipeCore"
     COMPONENT Data
 )
 install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitWidgetsConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/Qt5WebKitWidgetsConfigVersion.cmake"
-    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKitWidgets"
+    "${CMAKE_CURRENT_BINARY_DIR}/HipeCoreWidgetsConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/HipeCoreWidgetsConfigVersion.cmake"
+    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/HipeCoreWidgets"
     COMPONENT Data
 )
 
 # We need to install separate config files for debug and release, so use "Code" component
 install(EXPORT WebKitTargets
-    FILE WebKitTargets.cmake
-    NAMESPACE Qt5::
-    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKit"
+    FILE HipeCoreTargets.cmake
+    NAMESPACE HipeCore::
+    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/HipeCore"
     COMPONENT Code
 )
-install(EXPORT Qt5WebKitWidgetsTargets
-    FILE Qt5WebKitWidgetsTargets.cmake
-    NAMESPACE Qt5::
-    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/Qt5WebKitWidgets"
+install(EXPORT HipeCoreWidgetsTargets
+    FILE HipeCoreWidgetsTargets.cmake
+    NAMESPACE HipeCore::
+    DESTINATION "${KDE_INSTALL_CMAKEPACKAGEDIR}/HipeCoreWidgets"
     COMPONENT Code
 )
 

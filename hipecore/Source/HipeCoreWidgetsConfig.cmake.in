@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+@QTWEBKIT_PACKAGE_INIT@
+
+find_dependency(HipeCore @PROJECT_VERSION_STRING@ EXACT)
+find_dependency_with_major_and_minor(Qt5Widgets @Qt5_VERSION_MAJOR@ @Qt5_VERSION_MINOR@)
+
+include("${CMAKE_CURRENT_LIST_DIR}/HipeCoreWidgetsTargets.cmake")
+
+set(_HipeCoreWidgets_MODULE_DEPENDENCIES "Widgets;Gui;Core")
+set(HipeCoreWidgets_DEFINITIONS -DQT_WEBKITWIDGETS_LIB)
+
+@QTWEBKIT_PACKAGE_FOOTER@

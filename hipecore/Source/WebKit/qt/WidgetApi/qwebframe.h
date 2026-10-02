@@ -25,7 +25,7 @@
 #include <QtCore/qurl.h>
 #include <QtCore/qvariant.h>
 #include <QtGui/qicon.h>
-#include <QtWebKit/qwebkitglobal.h>
+#include <HipeCore/qwebkitglobal.h>
 
 QT_BEGIN_NAMESPACE
 class QRect;

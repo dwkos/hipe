@@ -16,8 +16,9 @@ $ cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
 $ ninja
 $ sudo ninja install
 
-hipecore installs under the same names as Qt5WebKit, so it cannot be installed alongside
-a Qt5WebKit package.
+This installs the libraries libHipeCore and libHipeCoreWidgets, and their headers in
+/usr/include/HipeCore. hipecore has its own names, so it can be installed on a system
+that also has Qt5WebKit.
 
 
 2. BUILD THE DISPLAY SERVER (hiped)

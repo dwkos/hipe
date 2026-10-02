@@ -18,7 +18,7 @@
 
 #include "containerframe.h"
 #include "connection.h"
-#include <QtWebKitWidgets/QWebPage>
+#include <HipeCore/QWebPage>
 
 //ContainerFrame is an alternative version of ContainerTopLevel, that exists within an iframe
 //of another.

@@ -24,8 +24,8 @@
 #include "main.hpp"
 #include "mousecursor.h"
 
-#include <QtWebKitWidgets/QWebFrame>
-#include <QtWebKitWidgets/QWebPage>
+#include <HipeCore/QWebFrame>
+#include <HipeCore/QWebPage>
 #include <QGraphicsSceneMouseEvent>
 #include <QSizePolicy>
 #include <QPalette>

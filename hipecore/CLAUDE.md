@@ -25,8 +25,10 @@ encountered rather than preserve it "just in case". Don't reintroduce JavaScript
 browser history, or network/URL-navigation logic: these were eliminated deliberately, for security and
 simplicity, not by oversight.
 
-hipecore compiles and installs under the same names as Qt5WebKit, so it conflicts with an existing
-QtWebKit installation. This is expected (see `README.md`, "Notes").
+hipecore installs as `libHipeCore` and `libHipeCoreWidgets`, with both libraries' headers in one
+directory, `<prefix>/include/HipeCore`, outside Qt's include directory. Inside the build the targets are
+still called `WebKit` and `WebKitWidgets`, and the classes keep their `QWeb*` names. Nothing is installed
+under Qt5WebKit's names, so it does not conflict with a QtWebKit installation.
 
 ## Build
 
@@ -43,14 +45,14 @@ sudo ninja install
   supported in practice.
 - `hiped` links the *installed* libraries, so `sudo ninja install` is part of testing any change against
   the server. Run `ninja` as yourself first; `sudo ninja install` builds whatever is out of date as root.
-- Every `ninja` run relinks `libQt5WebKit` and the test programs even when nothing changed: the link step
+- Every `ninja` run relinks `libHipeCore` and the test programs even when nothing changed: the link step
   regenerates `QtWebKit.version`, which ninja then sees as a newer input. It is harmless.
 - On a small machine, the large "AllInOne" translation units can exhaust memory at high parallelism:
   build with `-j2` until they are through.
 - A clean build (delete `build/` and reconfigure) is the only reliable check after changing generated
   code or removing files: an incremental build can pass while a clean one fails.
-- On Ubuntu/Debian, `sudo apt-get build-dep libqt5webkit5` pulls most dependencies (do **not** install
-  `libqt5webkit5` itself: it conflicts). `README.md` has the package list and the dependencies that have
+- On Ubuntu/Debian, `sudo apt-get build-dep libqt5webkit5` pulls most dependencies (the
+  `libqt5webkit5` library itself is not needed). `README.md` has the package list and the dependencies that have
   been dropped (ruby-dev, SQLite, Qt5Sensors, Qt5Network, libhyphen, qtpositioning, qtwebchannel).
 - The Perl build wrapper at `Tools/Scripts/build-webkit`, inherited from upstream, is **non-functional**:
   `Tools/Scripts/webkitdirs.pm` has a syntax error (dangling `elsif` blocks left from a removed `isEfl()`

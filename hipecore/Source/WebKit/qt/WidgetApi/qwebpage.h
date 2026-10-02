@@ -22,8 +22,8 @@
 #ifndef QWEBPAGE_H
 #define QWEBPAGE_H
 
-#include <QtWebKit/qwebkitglobal.h>
-#include <QtWebKit/qwebsettings.h>
+#include <HipeCore/qwebkitglobal.h>
+#include <HipeCore/qwebsettings.h>
 
 #include <QtCore/qobject.h>
 #include <QtCore/qurl.h>

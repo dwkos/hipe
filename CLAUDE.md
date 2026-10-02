@@ -27,7 +27,7 @@ and engine through the `QWeb*` C++ API. There is no shared build system.
 **Version 3.0 alpha.** The tree starts from Hipe 2.12 and hipecore 0.6 beta ("classic" Hipe), which were
 separate projects. Classic Hipe could also be built against stock Qt5WebKit; 3.0 cannot. The server's
 stock-Qt5WebKit code paths (the `HAVE_HIPECORE` guards and their `evaluateJavaScript` fallbacks) have been
-removed: don't add new ones. hipecore is the only engine, and JavaScript is not available to the server.
+removed, and the macro itself is gone: don't add new ones. hipecore is the only engine, and JavaScript is not available to the server.
 
 ## Licensing
 
@@ -49,8 +49,8 @@ cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
 ninja
 sudo ninja install
 ```
-It installs under Qt5WebKit's library names, and the server links the *installed* copy, so a change in
-`hipecore/` only reaches `hiped` after `sudo ninja install`.
+It installs as `libHipeCore` and `libHipeCoreWidgets`, with headers in `/usr/include/HipeCore`. The server
+links the *installed* copy, so a change in `hipecore/` only reaches `hiped` after `sudo ninja install`.
 
 **Server** (`server/`, qmake + Qt5; needs the Qt SVG and OpenGL modules as well as the installed engine):
 ```sh
@@ -60,12 +60,10 @@ make
 ```
 Produces `./hiped` in `server/`. There is no `make install` for the server; copy it where you like.
 
-`hiped.pro` deliberately does **not** use `QT += webkit webkitwidgets`; it links manually via
-`LIBS += -lQt5WebKit -lQt5WebKitWidgets`. This avoids depending on the qmake `.pri` module files for the
-WebKit modules, at the cost of qmake not adding their include paths, so the source uses fully qualified
-includes (`<QtWebKit/QWebElement>`, `<QtWebKitWidgets/QWebFrame>`). The engine's `qwebelement.h` defines
-`HAVE_HIPECORE`; `container.h` stops the build with an `#error` if it is missing (i.e. the installed library
-is stock Qt5WebKit). Never define it in the build files.
+`hiped.pro` links the engine with `LIBS += -lHipeCore -lHipeCoreWidgets` and the source includes its headers
+as `<HipeCore/QWebElement>`, `<HipeCore/QWebFrame>` and so on. If the engine was installed under a prefix
+other than `/usr`, pass `HIPECORE_PREFIX=<prefix>` to qmake. The engine installs no qmake module files, so
+there is no `QT += ...` for it.
 
 **Client library** (`api/`, plain Makefile, `gcc`/`ar`):
 ```sh

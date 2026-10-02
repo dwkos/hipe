@@ -19,8 +19,8 @@
 #ifndef CLIENTCONTAINER_H
 #define CLIENTCONTAINER_H
 
-#include <QtWebKit/QWebElement>
-#include <QtWebKitWidgets/QWebFrame>
+#include <HipeCore/QWebElement>
+#include <HipeCore/QWebFrame>
 #include <QObject>
 #include <QAction>
 #include <stack>
@@ -31,10 +31,6 @@
 #include "ExpArray.hh"
 #include "common.h"
 #include "keylist.h"
-
-#ifndef HAVE_HIPECORE //defined by hipecore's qwebelement.h
-#error "hiped needs hipecore, Hipe's display engine: build and install it from ../hipecore. Stock Qt5WebKit is not supported."
-#endif
 
 class Connection;
 

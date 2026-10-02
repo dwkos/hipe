@@ -1,10 +1,19 @@
+# TODO: revise before use. These files predate Hipe 3.0 and have not been updated for it:
+#   - hipecore is now the hipecore/ subdirectory of the Hipe project, not a distribution of its own;
+#   - it installs as libHipeCore and libHipeCoreWidgets, with headers in <prefix>/include/HipeCore,
+#     and no longer under Qt5WebKit's names or inside Qt's include directory;
+#   - it no longer installs qmake module (.pri) files;
+#   - the .mk files still carry settings from Buildroot's qt5webkit package (the -bak and
+#     -x11-version variants name a qtwebkit source tarball).
+# The paths, install steps and staging rules below need checking against all of that.
+
 ################################################################################
 #
 # hipecore
 #
 ################################################################################
 
-HIPECORE_VERSION = 0.6.0
+HIPECORE_VERSION = 3.0.0
 
 HIPECORE_SITE = /path/to/hipecore   #<---- EDIT THIS!
 HIPECORE_SITE_METHOD = local

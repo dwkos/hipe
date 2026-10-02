@@ -76,9 +76,11 @@ have been taken out.
 Notes
 -----
 
-hipecore compiles and installs under the same names as Qt5WebKit — because that is what
-it is, in cut-down form. It will therefore conflict with an existing QtWebKit
-installation. Do not install `libqt5webkit5` alongside it.
+hipecore installs as two libraries, `libHipeCore` and `libHipeCoreWidgets`, with the headers
+of both in `<prefix>/include/HipeCore` (included as `<HipeCore/QWebElement>` and so on). The
+classes keep their `QWeb*` names. Because the library and header names are hipecore's own, it
+can be installed on a system that also has QtWebKit. It also installs pkg-config files and
+CMake packages named `HipeCore` and `HipeCoreWidgets`; it does not install qmake module files.
 
 
 Licence and origin
@@ -111,8 +113,7 @@ units clear, then `-j4` — a blanket `-j4` can exhaust memory.
     libxslt1-dev qtbase5-private-dev libxcomposite-dev
     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
-`sudo apt-get build-dep libqt5webkit5` pulls most of these (but do not install
-`libqt5webkit5` itself). A failing configure/build names whatever is still missing.
+`sudo apt-get build-dep libqt5webkit5` pulls most of these. A failing configure/build names whatever is still missing.
 
 Dependencies dropped relative to stock Qt5WebKit: `ruby-dev` and `ruby` (were only for
 JavaScriptCore's Ruby assembler), `flex` (no lexer inputs remain — only bison grammars),

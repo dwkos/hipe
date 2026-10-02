@@ -24,15 +24,6 @@
 #ifndef QWEBELEMENT_H
 #define QWEBELEMENT_H
 
-#ifndef HAVE_HIPECORE
-//Hipe can check if HAVE_HIPECORE is defined to determine whether to enable
-//additional QWebElement functions.
-//- If linked to stock QtWebKit, certain ops must be done via JavaScript.
-//- If linked to hipecore, JavaScript evaluation will not be available.
-#define HAVE_HIPECORE
-#endif
-
-
 #include <QtCore/qstring.h>
 #include <QtCore/qstringlist.h>
 #include <QtCore/qrect.h>

@@ -36,7 +36,7 @@
 #include <QDesktopServices>
 #include <QCoreApplication>
 
-#include <QtWebKit/QWebElement>
+#include <HipeCore/QWebElement>
 #include <unistd.h>
 #include <iostream>
 #include <iomanip> //for debugging

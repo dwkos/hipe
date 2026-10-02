@@ -20,12 +20,12 @@
 #define CLIENTWINDOW_H
 
 #include <QMainWindow>
-#include <QtWebKitWidgets/QWebView>
-#include <QtWebKit/QWebElement>
+#include <HipeCore/QWebView>
+#include <HipeCore/QWebElement>
 #include <QCloseEvent>
 #include <QGraphicsView>
 #include <QGraphicsScene>
-#include <QtWebKitWidgets/QGraphicsWebView>
+#include <HipeCore/QGraphicsWebView>
 #include <QGLWidget>      // Add OpenGL widget support
 
 #include "container.h"

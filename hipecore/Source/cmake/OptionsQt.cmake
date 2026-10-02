@@ -5,8 +5,9 @@ include(ECMPackageConfigHelpers)
 
 set(ECM_MODULE_DIR ${CMAKE_MODULE_PATH})
 
-set(PROJECT_VERSION_MAJOR 5)
-set(PROJECT_VERSION_MINOR 212)
+# hipecore's version follows Hipe's. The major number is the libraries' soname (libHipeCore.so.3).
+set(PROJECT_VERSION_MAJOR 3)
+set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION_PATCH 0)
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
 set(PROJECT_VERSION_STRING "${PROJECT_VERSION}")
@@ -823,6 +824,11 @@ include(KDEInstallDirs)
 if (NOT qt_install_prefix_dir STREQUAL "${CMAKE_INSTALL_PREFIX}")
     set(KDE_INSTALL_USE_QT_SYS_PATHS OFF)
 endif ()
+
+# hipecore's public headers are installed in a directory of their own, outside Qt's include
+# directory, and are included as <HipeCore/...>.
+set(HIPECORE_INCLUDE_INSTALL_PARENT_DIR "${CMAKE_INSTALL_PREFIX}/include")
+set(HIPECORE_INCLUDE_INSTALL_DIR "${HIPECORE_INCLUDE_INSTALL_PARENT_DIR}/HipeCore")
 
 # We split all installed files into 2 components: Code and Data. This is different from
 # traditional approach with Runtime and Devel, but we need it to fix concurrent installation of

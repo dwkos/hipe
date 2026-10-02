@@ -47,22 +47,28 @@ HEADERS += main.hpp \
 
 QMAKE_CXXFLAGS += -std=c++17 -Ofast -pthread
 
-#hipecore, Hipe's display engine, installs under Qt5WebKit's library names.
-LIBS += -pthread -lQt5WebKit -lQt5WebKitWidgets
+#hipecore, Hipe's display engine. Its headers are included as <HipeCore/...>. If it was installed
+#under a prefix other than /usr, tell qmake where: qmake HIPECORE_PREFIX=/usr/local ...
+#(and HIPECORE_LIBDIR=<dir> if its libraries are not in <prefix>/lib).
+isEmpty(HIPECORE_PREFIX): HIPECORE_PREFIX = /usr
+!equals(HIPECORE_PREFIX, /usr) {
+    INCLUDEPATH += $$HIPECORE_PREFIX/include
+    isEmpty(HIPECORE_LIBDIR): HIPECORE_LIBDIR = $$HIPECORE_PREFIX/lib
+}
+!isEmpty(HIPECORE_LIBDIR): LIBS += -L$$HIPECORE_LIBDIR
+LIBS += -pthread -lHipeCore -lHipeCoreWidgets
 
 
-# --- header-dependency tracking for the Qt WebKit / hipecore public headers ---
+# --- header-dependency tracking for hipecore's public headers ---
 # qmake's built-in #include scanner does not follow headers resolved from system
-# include paths, so a change to the installed <QtWebKit*/qweb*.h> headers (e.g. a
+# include paths, so a change to the installed <HipeCore/qweb*.h> headers (e.g. a
 # WebAction enum edit in hipecore) would not rebuild the objects that use them,
 # leaving hiped linked against a stale ABI. This is what caused the "Select All
 # pastes" bug - a stale sanitation.o holding pre-InspectElement-removal WebAction
 # values. Declare the dependency explicitly for every C++ object: GNU make merges
 # the prerequisites of like-named rules, so this augments qmake's generated
 # compile rules rather than replacing them.
-WEBKIT_HEADERS = \
-    $$files($$[QT_INSTALL_HEADERS]/QtWebKit/qweb*.h) \
-    $$files($$[QT_INSTALL_HEADERS]/QtWebKitWidgets/qweb*.h)
+WEBKIT_HEADERS = $$files($$HIPECORE_PREFIX/include/HipeCore/qweb*.h)
 for(src, SOURCES) {
     contains(src, .*\\.cpp$) {
         obj = $$replace($$list($$basename(src)), \\.cpp$, .o)
