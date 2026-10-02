@@ -39,15 +39,6 @@ Container::Container(Connection* bridge, std::string clientName, int themeIndex)
 
     keyList = new KeyList(clientName);
 
-#ifndef HAVE_HIPECORE  //without hipecore, javascript to Qt bridging has to be set up.
-    connect(this, SIGNAL(receiveGuiEvent(QString,QString,QString,QString)),
-            this, SLOT(_receiveGuiEvent(QString,QString,QString,QString)));
-    connect(this, SIGNAL(receiveKeyEventOnBody(bool,QString)),
-            this, SLOT(_receiveKeyEventOnBody(bool,QString)));
-#endif
-    //keyup/keydown events on the body element are treated as a special case,
-    //since they might need to be propagated to a parent tag.
-
     if(themeIndex > maxLoadedStyleSheetIndex || themeIndex < 0) {
     //if the requested theme index was not allocated, default to 1 (default loaded theme)
     //or 0 (no themes loaded).
@@ -192,8 +183,8 @@ void Container::keyEventOnChildFrame(QWebFrame* origin, bool keyUp, QString keyc
 //This function is called from a child container instructing this container that a keyup/keydown event has
 //occurred on the body element of this frame (or has propagated from a child frame of *that* frame).
 //The event should be propagated up to the top level so the framing manager can intercept global keyboard shortcuts.
-//It should also trigger a simulated event on the frame to this client, if this client has bound onkeydown/onkeyup
-//attributes to this frame.
+//It should also trigger a simulated event on the frame to this client, if this client has requested keydown/keyup
+//events on this frame.
 
     size_t location=0;
     QWebElement childFrame;
@@ -204,28 +195,16 @@ void Container::keyEventOnChildFrame(QWebFrame* origin, bool keyUp, QString keyc
         childFrame = sf->we; //get the web element of the child frame.
     }
 
-    //Determine if an onkeydown/onkeyup attribute is attached to this element.
+    //Determine if the client has requested keydown/keyup events on this element.
     //Fire off an event if so.
-#ifdef HAVE_HIPECORE
     if(keyUp && childFrame.handlesEvent("keyup"))
-#else
-    if(keyUp && childFrame.hasAttribute("onkeyup"))
-#endif
         client->sendInstruction(HIPE_OP_EVENT, (sf ? sf->keyUpRequestor : 0), location, {"keyup", keycode.toStdString()});
-#ifdef HAVE_HIPECORE
     else if(!keyUp && childFrame.handlesEvent("keydown"))
-#else
-    else if(!keyUp && childFrame.hasAttribute("onkeydown"))
-#endif
         client->sendInstruction(HIPE_OP_EVENT, (sf ? sf->keyDownRequestor : 0), location, {"keydown", keycode.toStdString()});
 
     //propagate the key event to the body element too, for global key handling.
     //This also propagates the key event to the parent frame of this one, etc.
-#ifdef HAVE_HIPECORE
     _receiveKeyEventOnBody(keyUp ? "keyup" : "keydown", (void*)this, keyUp, 0, keycode);
-#else
-    _receiveKeyEventOnBody(keyUp, keycode); 
-#endif
 
     //if(getParent()) { //propagate this up to *our* parent and so on, in case they need this keyboard event.
     //    getParent()->keyEventOnChildFrame(webElement.webFrame(), keyUp, keycode);
@@ -260,41 +239,11 @@ void Container::triggerEditAction(char action) {
 
 void Container::insertText(const std::string& text) {
     QWebPage* page = frame->page();
-#ifdef HAVE_HIPECORE
-    //hipecore inserts the text as typing would: it replaces the selection, can be undone, and does nothing
+    //The text is inserted as typing would insert it: it replaces the selection, can be undone, and does nothing
     //where the user couldn't type. Newlines become line breaks, and where the content keeps its white space
     //(e.g. a <pre>) the whole text goes in as a single edit, however many lines it has. Empty text deletes
     //the selected text.
     page->insertText(QString::fromUtf8(text.data(), text.size()));
-#else
-    //Qt5WebKit has no such call, so the text is committed the way an input method would commit it, which
-    //also goes through WebKit's typing command.
-    //
-    //WebKit workaround: a commit string containing '\n' is not treated like the user pressing Enter.
-    //WebKit inserts a paragraph separator for each newline, which splits the element being edited
-    //(e.g. "one\ntwo" at <pre>ab|c</pre> gives <pre>abone<div>twoc</div></pre>), even in plaintext-only editing
-    //where Enter itself inserts a plain line break. So each line is committed separately, with a line
-    //separator action between them. WebKit folds all of these into the one open typing command, so
-    //the whole insertion is still undone in one step. It is slow for many lines in a large element:
-    //each line costs two edits, and each edit lays the element's text out again.
-    if(text.empty()) {
-        //Replacing the selection with nothing means deleting it, but an empty commit string does nothing
-        //and QWebPage has no "delete selection" action. Its delete-word actions do exactly that when text
-        //is selected (and delete a word when it isn't, hence the check; hasSelection() is also true for
-        //a plain caret, so the selected text is checked instead). It is one undoable step, and like the
-        //Delete key it does nothing outside editable content.
-        if(!page->selectedText().isEmpty()) page->triggerAction(QWebPage::DeleteEndOfWord);
-        return;
-    }
-    QStringList lines = QString::fromUtf8(text.data(), text.size()).replace("\r\n", "\n").split('\n');
-    for(int i=0; i<lines.size(); i++) {
-        if(i) page->triggerAction(QWebPage::InsertLineSeparator);
-        if(lines[i].isEmpty()) continue;
-        QInputMethodEvent commit;
-        commit.setCommitString(lines[i]);
-        page->event(&commit);
-    }
-#endif
 }
 
 bool Container::containsFrame(QWebFrame* f) {
@@ -343,48 +292,6 @@ bool Container::findText(std::string userQuery, bool searchBackwards, bool wrapA
 }
 
 
-#ifndef HAVE_HIPECORE
-
-void Container::_receiveGuiEvent(QString location, QString requestor, QString event, QString detail)
-//location and requestor are hexadecimal string representations of uint64_t values.
-{
-    uint64_t loc, rq;
-    bool ok;
-    loc = location.toULongLong(&ok, 16); //LongLong conversion seems necessary on some distros to prevent truncation.
-    rq = requestor.toULongLong(&ok, 16);
-    Connection::_receiveUIEvent(event, (void*)client, loc, rq, detail);
-}
-
-//WebKit/JS version...
-void Container::_receiveKeyEventOnBody(bool keyUp, QString keycode)
-//keyup and keydown events are treated as a special case when they happen on the body element.
-//receiveGuiEvent is not called directly, instead this slot is ALWAYS called, since we want to receive
-//the event and propagate it up the client tree regardless of whether the user has asked to be notified of it.
-{
-    if(keyUp && reportKeyupOnBody)
-        _receiveGuiEvent("0", QString::number(keyUpOnBodyRequestor,16), "keyup", keycode);
-    else if(!keyUp && reportKeydownOnBody)
-        _receiveGuiEvent("0", QString::number(keyDownOnBodyRequestor,16), "keydown", keycode);
-
-    // the whole point of this function is that we'll now notify the parent of the event.
-    // if this frame has a onkeydown or onkeyup attribute specified in the parent, we'll fire off an event on that iframe.
-    // Regardless, we then propagate to *that* element's parent as well.
-    if(getParent()) { //propagate this up to *our* parent and so on, in case they need this keyboard event.
-        getParent()->keyEventOnChildFrame(webElement.webFrame(), keyUp, keycode);
-    }
-
-}
-
-void Container::frameCleared() {
-    frame->addToJavaScriptWindowObject("c", this);
-    //From Qt website: "If you want to ensure that your QObjects remain
-    //accessible after loading a new URL, you should add them in a slot
-    //connected to the javaScriptWindowObjectCleared() signal."
-}
-
-
-#else
-//Hipecore version...
 void Container::_receiveKeyEventOnBody(const QString& eventName, void* containerPtr, uint64_t isKeyUp, uint64_t requestor, const QString& eventDetails)
 //keyup and keydown events are treated as a special case when they happen on the body element.
 //receiveGuiEvent is not called directly, instead this callback is ALWAYS called, since we want to receive
@@ -398,15 +305,13 @@ void Container::_receiveKeyEventOnBody(const QString& eventName, void* container
         Connection::_receiveUIEvent(eventName, _this->client, 0, _this->keyDownOnBodyRequestor, eventDetails);
 
     // the whole point of this function is that we'll now notify the parent of the event.
-    // if this frame has a onkeydown or onkeyup attribute specified in the parent, we'll fire off an event on that iframe.
+    // if the parent has requested keydown or keyup events on this frame, we'll fire off an event on that iframe.
     // Regardless, we then propagate to *that* element's parent as well.
     if(_this->getParent()) { //propagate this up to *our* parent and so on, in case they need this keyboard event.
         _this->getParent()->keyEventOnChildFrame(_this->webElement.webFrame(), (bool)isKeyUp, eventDetails);
     }
 
 }
-
-#endif
 
 
 void Container::frameDestroyed()

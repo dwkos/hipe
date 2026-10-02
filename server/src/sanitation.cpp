@@ -133,11 +133,9 @@ void Sanitation::init()
 
     //List of attributes obtained from https://www.w3.org/TR/html4/index/attributes.html
     //This is a whitelist of safe attributes that the user can use freely without special instructions.
-    //Assigned before the HAVE_HIPECORE-gated SVG attributes below (mirroring tagWhitelist's own
-    //order just above) so that block's .insert() calls add to this list instead of a later plain
-    //assignment silently discarding them -- confirmed that was happening: this attrWhitelist used to
-    //be (re)assigned here, after the SVG insert(), wiping every SVG-specific attribute it had just
-    //added.
+    //Assigned before the SVG attributes below (mirroring tagWhitelist's own order just above):
+    //that block's .insert() calls add to this list, so a plain assignment after them would
+    //discard every SVG-specific attribute.
     //
     //Deliberately no "class" entry: HIPE_OP_TOGGLE_CLASS (a dedicated, whitelist-free opcode with
     //add/remove/toggle semantics) predates this whitelist entirely (present since hipe's very first
@@ -205,24 +203,11 @@ void Sanitation::init()
                         "step"
                     };
 
-#ifdef HAVE_HIPECORE
-    //DOM-level SVG drawing primitives. "svg" itself is whitelisted above for both profiles,
-    //but its children never were, making it useless: this list was originally kept
-    //restrictive because stock Qt5WebKit still has a JS engine and URL navigation, and SVG
-    //carries its own <script> element and xlink:href/href link-style attributes that could
-    //reach either. hipecore has no JS engine at all and no URL navigation (its loader blocks
-    //every request that isn't data:/about:), so that risk doesn't apply here - this is
-    //additive to the list above, gated to hipecore builds only.
+    //DOM-level SVG drawing primitives, added to the lists above. The engine has no JS engine
+    //and no URL navigation (its loader blocks every request that isn't data:/about:), so
+    //SVG's shapes are safe to allow.
     //
-    //Elements can be created and nested correctly (hipecore commit 882848e2 fixed the bug
-    //that made this a no-op). A previously-suspected hipecore-side bug where SVG's own
-    //geometry/animated attributes - cx/cy/r/d/x1/y1/x2/y2/points/viewBox/etc - wouldn't
-    //round-trip through HIPE_OP_SET_ATTRIBUTE/HIPE_OP_GET_ATTRIBUTE was re-investigated
-    //2026-09-12 and found not to reproduce (covered by a regression test in hipecore's
-    //tst_qwebelement now); the original finding appears to have been a testing-methodology
-    //artifact.
-    //
-    //Deliberately NOT whitelisted (kept out on both profiles, no gate needed): "script" (SVG
+    //Deliberately NOT whitelisted: "script" (SVG
     //has its own, inert or not), "foreignObject" (can embed arbitrary HTML), "a"/"use"/"image"
     //and their href/xlink:href attributes (external-resource references - not needed for
     //drawing shapes; add later as its own scoped decision if wanted).
@@ -277,7 +262,6 @@ void Sanitation::init()
                              "dy",
                              "clip-path"
                         });
-#endif
 
     //hipe's EDIT instructions (HIPE_OP_EDIT_ACTION and HIPE_OP_EDIT_STATUS)
     //use character codes such as 'x' (cut), 'z' (undo), etc. to specify

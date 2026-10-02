@@ -174,14 +174,12 @@ bool Connection::service() {
     if(!connected) return false;
     std::lock_guard<std::mutex> guard(mIncomingInstructions);
     if(incomingInstructions.empty()) return false; //unproductive call.
-#ifdef HAVE_HIPECORE
     if(container && incomingInstructions.size() >= LAYOUT_BATCHING_BUMP_THRESHOLD) {
         size_t extra = incomingInstructions.size() - LAYOUT_BATCHING_BUMP_THRESHOLD;
         int bumpMs = LAYOUT_BATCHING_BUMP_MS_BASE + (int)extra * LAYOUT_BATCHING_BUMP_MS_PER_EXTRA;
         if(bumpMs > LAYOUT_BATCHING_BUMP_MS_MAX) bumpMs = LAYOUT_BATCHING_BUMP_MS_MAX;
         container->webElement.bumpLayoutBatchingDelay(bumpMs);
     }
-#endif
     hipe_instruction* hi;
     while(!incomingInstructions.empty()) {
         hi = incomingInstructions.front();

@@ -58,28 +58,17 @@ ContainerTopLevel::ContainerTopLevel(Connection* bridge, std::string clientName,
     w = new WebWindow(this);
     frame = w->webView->webItem->page()->mainFrame();
 
-#ifndef HAVE_HIPECORE
-    connect(frame, SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(frameCleared()));
-    //make this container object accessible to the webview frame via javascript.
-    //Hipecore doesn't need a JS bridge so this is only necessary when using stock
-    //QtWebKit.
-#endif
-
     //set default toplevel icon to Hipe icon in case run in a desktop environment.
     setIcon((char*) hipeicon_rootless128_png, hipeicon_rootless128_png_len);
 
 
     //set up context menu events. These are always handled by the top level frame on behalf of all child frames.
     //This is partly because frame->page() points to a common object for all child frames of a tl frame in webkit anyway.
-    #ifdef HAVE_HIPECORE
     frame->page()->setContextMenuCallback(contextMenuTriggered, (void*) this);
-    #endif
 }
 
 ContainerTopLevel::~ContainerTopLevel() {
-    #ifdef HAVE_HIPECORE
     frame->page()->clearContextMenuCallback();
-    #endif
 
     delete w;
 }
@@ -99,11 +88,6 @@ void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
             std::string("<html><head><style>")
             + stylesheet
             + "</style><script>var canvascontext;</script></head><body "
-#ifndef HAVE_HIPECORE
-            "onkeydown=\"c.receiveKeyEventOnBody(false, event.which + ',' + " HIPE_JS_MODIFIER_MASK ");\" "
-            "onkeyup=\"c.receiveKeyEventOnBody(true, event.which + ',' + " HIPE_JS_MODIFIER_MASK ");\" "
-            "ondragstart=\"return false\" "
-#endif
             "></body></html>"
         ); //initialiser. If ommitted, resource images won't display (!)
         initYet = true;
@@ -118,14 +102,12 @@ void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
             bg = webElement.styleProperty("background-color", QWebElement::ComputedStyle).toStdString();
         bgColorChanged(bg);
 
-#ifdef HAVE_HIPECORE //set up keyboard events on the body element.
         //Only once: each requestEvent() adds another listener, and the body element (with its
         //listeners) persists for the life of the frame -- later setBody() calls only replace
         //or append to its children.
         webElement.requestEvent("keyup", (void*)this, 1, 0, _receiveKeyEventOnBody, false);
         webElement.requestEvent("keydown", (void*)this, 0, 0, _receiveKeyEventOnBody, false);
         webElement.requestEvent("dragstart", 0,0,0, _receiveDragStartEvent, true); //catch the event to override default dragging behaviour.
-#endif
     }
     if(overwrite) {
         webElement.setInnerXml(newBodyHtml.c_str());
@@ -344,16 +326,6 @@ WebWindow::WebWindow(Container* cc)
 
     webView = new WebGraphicsView();
     setCentralWidget(webView);
-
-    //Disable network access and link navigation:
-#ifndef HAVE_HIPECORE
-    //hipecore has no network backend at all, so there is nothing left for
-    //QNetworkAccessManager to disable; stock QtWebKit still needs this.
-    webView->webItem->page()->networkAccessManager()->setNetworkAccessible(QNetworkAccessManager::NotAccessible);
-    //hipecore hardcodes link-click navigation as always ignored (see FrameLoaderClientQt.cpp);
-    //stock QtWebKit still needs the delegation policy set explicitly.
-    webView->webItem->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
-#endif
 
     // Set the background color explicitly for the window and view
     QPalette pal = palette();

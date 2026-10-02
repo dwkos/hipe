@@ -309,42 +309,23 @@ void handle_GET_PREV_SIBLING(Container* c, hipe_instruction* instruction, bool, 
 }
 
 void handle_SET_FOCUS(Container*, hipe_instruction*, bool, QWebElement location) {
-#ifdef HAVE_HIPECORE
     location.setFocus();
-#else    
-    location.evaluateJavaScript("this.focus()");
-#endif
 }
 
 void handle_GET_GEOMETRY(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
-#ifdef HAVE_HIPECORE
     std::string left = std::to_string(location.offsetLeft());
     std::string top = std::to_string(location.offsetTop());
     std::string width = std::to_string(location.offsetWidth());
     std::string height = std::to_string(location.offsetHeight());
-#else
-    std::string left = location.evaluateJavaScript("this.offsetLeft;").toString().toStdString();
-    std::string top = location.evaluateJavaScript("this.offsetTop;").toString().toStdString();
-    std::string width = location.evaluateJavaScript("this.offsetWidth;").toString().toStdString();
-    std::string height = location.evaluateJavaScript("this.offsetHeight;").toString().toStdString();
-
-#endif
     c->client->sendInstruction(HIPE_OP_GEOMETRY_RETURN, instruction->requestor, instruction->location,
                             {left, top, width, height});
 }
 
 void handle_GET_SCROLL_GEOMETRY(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
-#ifdef HAVE_HIPECORE
     std::string left = std::to_string(location.scrollLeft());
     std::string top = std::to_string(location.scrollTop());
     std::string width = std::to_string(location.scrollWidth());
     std::string height = std::to_string(location.scrollHeight());
-#else
-    std::string left = location.evaluateJavaScript("this.scrollLeft;").toString().toStdString();
-    std::string top = location.evaluateJavaScript("this.scrollTop;").toString().toStdString();
-    std::string width = location.evaluateJavaScript("this.scrollWidth;").toString().toStdString();
-    std::string height = location.evaluateJavaScript("this.scrollHeight;").toString().toStdString();
-#endif
     c->client->sendInstruction(HIPE_OP_GEOMETRY_RETURN, instruction->requestor, instruction->location,
                                 {left, top, width, height});
 }
@@ -369,13 +350,7 @@ void handle_GET_FRAME_KEY(Container* c, hipe_instruction* instruction, bool, QWe
 }
 
 void handle_GET_X11_XID(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
-#ifdef HAVE_HIPECORE
     std::string xid = std::to_string(location.x11EmbedTargetXid());
-#else
-    //Stock QtWebKit has no equivalent capability, and unlike most other HAVE_HIPECORE-gated
-    //operations there's no JS fallback for creating a native embed-target window - deny.
-    std::string xid = "0";
-#endif
     c->client->sendInstruction(HIPE_OP_X11_XID_RETURN, instruction->requestor, instruction->location, {xid});
 }
 
@@ -399,14 +374,12 @@ static const size_t SET_SRC_ABSURD_BYTES = 2560ULL * 1024 * 1024; // 2.5GB
 static const size_t SET_SRC_MODEST_CONCURRENT_UPLOADS = 8;
 static const size_t SET_SRC_ABSURD_CONCURRENT_UPLOADS = 64;
 
-#ifdef HAVE_HIPECORE
 // Which begin/append/finish trio a SET_SRC target uses -- re-derived from the element's tag name
 // wherever it's needed rather than stored, per the map's own "doesn't need to know kind" design.
 static bool isBinaryMediaTarget(QWebElement& location) {
     QString tag = location.tagName();
     return tag.compare("audio", Qt::CaseInsensitive) == 0 || tag.compare("video", Qt::CaseInsensitive) == 0;
 }
-#endif
 
 void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
     // arg[2] == "1" means more chunks are still to come for this location; absent/anything else
@@ -415,18 +388,6 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
     // this is fully backward compatible with every existing SET_SRC caller.
     bool moreComing = instruction->arg_length[2] == 1 && instruction->arg[2][0] == '1';
 
-#ifndef HAVE_HIPECORE
-    // Stock Qt5WebKit has no incremental loading path -- base64 data: URIs are atomic, so
-    // chunking can't be supported without hipecore. Treat every call as a complete, one-shot
-    // resource (today's exact behaviour); "moreComing" is silently ignored rather than
-    // half-implemented.
-    (void) moreComing;
-    std::string mimetype(instruction->arg[1], instruction->arg_length[1]);
-    if(!mimetype.size()) mimetype="image/png";
-    std::string dataURI = std::string("data:") + mimetype + ";base64,"
-                 + Sanitation::toBase64(instruction->arg[0], instruction->arg_length[0]);
-    location.setAttribute("src", dataURI.c_str());
-#else //hipecore allows direct transfer of binary data where there's no surrounding content to be parsed.
     auto pendingIt = c->pendingBinaryUploads.find(instruction->location);
 
     if (pendingIt != c->pendingBinaryUploads.end()) {
@@ -510,7 +471,6 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
         location.appendBinaryImageData(instruction->arg[0], instruction->arg_length[0]);
     }
     c->pendingBinaryUploads[instruction->location] = Container::PendingBinaryUpload{instruction->arg_length[0], false};
-#endif
 }
 
 void handle_SET_STYLE_SRC(Container*, hipe_instruction* instruction, bool, QWebElement location) {
@@ -541,23 +501,17 @@ void handle_ADD_STYLE_RULE_SRC(Container* c, hipe_instruction* instruction, bool
 void handle_GET_CARAT_POSITION(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
     std::string selStart, selEnd; //left empty if the element contains neither the carat nor selected text.
 
-#ifdef HAVE_HIPECORE
     int anchor, focus;
     if(location.getSelectionRange(&anchor, &focus)) {
         selStart = std::to_string(anchor);
         selEnd = std::to_string(focus);
     }
-#else
-    selStart = location.evaluateJavaScript("this.selectionStart;").toString().toStdString();
-    selEnd = location.evaluateJavaScript("this.selectionEnd;").toString().toStdString();
-#endif    
     c->client->sendInstruction(HIPE_OP_CARAT_POSITION, instruction->requestor, 
             instruction->location, {selStart, selEnd});
 }
 
 
 void handle_GET_AUDIOVIDEO_STATE(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
-#ifdef HAVE_HIPECORE
     WebCore::HTMLMediaElement* mediaElement = location.isMediaElement();
     if (mediaElement != nullptr)
     //if this is a nullptr, it means that the selected element is not a media element, and we cannot compute values for it
@@ -573,24 +527,6 @@ void handle_GET_AUDIOVIDEO_STATE(Container* c, hipe_instruction* instruction, bo
         c->client->sendInstruction(HIPE_OP_AUDIOVIDEO_STATE, instruction->requestor,
         instruction->location, {"", "", "", ""});
     }
-#else
-    std::string position = location.evaluateJavaScript("this.currentTime+','+this.duration;").toString().toStdString();
-    //stores the position in the <audio>/<video> tag in the format
-    //"currentTime,totalTime" where both times are in seconds, and separated
-    //by a comma. When the user sends this data, they can ommit the total time,
-    //which will be ignored.
-
-    std::string speed = location.evaluateJavaScript("this.playbackRate;").toString().toStdString();
-
-    bool playing = location.evaluateJavaScript("(!this.paused || this.currentTime);").toBool();
-    //condition based on:https://stackoverflow.com/questions/9437228/html5-check-if-audio-is-playing
-    //If playing is false, the element may be paused, ended or waiting for playback to begin.
-
-    std::string volume = location.evaluateJavaScript("this.volume;").toString().toStdString();
-
-    c->client->sendInstruction(HIPE_OP_AUDIOVIDEO_STATE, instruction->requestor,
-            instruction->location, {position, speed, (playing?"1":"0"), volume});
-#endif
 
 }
 
@@ -656,16 +592,10 @@ void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locatio
     if(arg[0] == "iframe") { //will need to add the new iframe to the subFrames table.
         isIframe = true;
 
-#ifdef HAVE_HIPECORE
         //hipecore's Frame::isURLAllowed() no longer does same-URL self-reference/redirect-loop
         //detection (see hipecore commit removing the ancestor-URL walk), so every nested frame
         //can safely share a plain about:blank URL.
         newTagString += " src=\"about:blank\"";
-#else
-        newTagString += " src=\"about:blank/"; //set the URL as about:blank/[unique key] to tell webkit that
-        newTagString += arg[1];              //nested frames are not a "redirect-loop" of nested frames.
-        newTagString += "\"";
-#endif
     }
 
     newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
@@ -726,16 +656,10 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
     if(arg[0] == "iframe") { //will need to add the new iframe to the subFrames table.
         isIframe = true;
 
-#ifdef HAVE_HIPECORE
         //hipecore's Frame::isURLAllowed() no longer does same-URL self-reference/redirect-loop
         //detection (see hipecore commit removing the ancestor-URL walk), so every nested frame
         //can safely share a plain about:blank URL.
         newTagString += " src=\"about:blank\"";
-#else
-        newTagString += " src=\"about:blank/"; //set the URL as about:blank/[unique key] to tell webkit that
-        newTagString += arg[1];              //nested frames are not a "redirect-loop" of nested frames.
-        newTagString += "\"";
-#endif
     }
     newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
 
@@ -817,18 +741,8 @@ void handle_SET_TITLE(Container* c, hipe_instruction*, bool, QWebElement, std::s
 
 //REQUIRES 2 ARGS
 void handle_SET_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
-    if(Sanitation::isAllowedAttribute(arg[0])) {
-#ifdef HAVE_HIPECORE
-    location.setAttribute(QString(arg[0].c_str()), QString(arg[1].c_str()));
-#else
-        if(arg[0]=="value") { //workaround for updating input boxes after creation
-            location.evaluateJavaScript(QString("this.value='") + Sanitation::sanitisePlainText(arg[1]).c_str() + "';");
-        } else {
-            //location.setAttribute(arg[0].c_str(), Sanitation::sanitisePlainText(arg[1]).c_str());
-            location.evaluateJavaScript(QString("this.setAttribute(\"") + arg[0].c_str() + "\",\"" + Sanitation::sanitisePlainText(arg[1]).c_str() + "\");");
-        }
-#endif
-    }
+    if(Sanitation::isAllowedAttribute(arg[0]))
+        location.setAttribute(QString(arg[0].c_str()), QString(arg[1].c_str()));
 }
 
 
@@ -885,7 +799,6 @@ void handle_EVENT_REQUEST(Container* c, hipe_instruction* instruction, bool loca
         }
     }
 
-#ifdef HAVE_HIPECORE
     //arg[1]: the default actions to cancel ("code,modifiers" rules separated by ';', "-" for none), replacing any
     //set by an earlier request. A contextmenu's is cancelled unless the client says otherwise: requesting the event
     //has always replaced the framing manager's edit menu.
@@ -904,29 +817,6 @@ void handle_EVENT_REQUEST(Container* c, hipe_instruction* instruction, bool loca
         location.requestEvent(arg[0].c_str(), c->client, instruction->location, instruction->requestor,
                                 Connection::_receiveUIEvent, false);
     }
-#else
-    QString locStr = QString::number(instruction->location, 16);
-    QString reqStr = QString::number(instruction->requestor, 16); //represent as hex strings
-    QString evtDetailArgs;
-    if(arg[0] == "mousemove" || arg[0] == "mousedown" || arg[0] == "mouseup" 
-                || arg[0] == "mouseenter" || arg[0] == "mouseleave" 
-                || arg[0] == "mouseover" || arg[0] == "mouseout")
-        evtDetailArgs = "'' + event.which + ',' + event.pageX + ',' + event.pageY + ',' + (event.pageX-this.offsetLeft) + ',' + (event.pageY-this.offsetTop) + ',' + " HIPE_JS_MODIFIER_MASK;
-    else if(arg[0] == "keydown" || arg[0] == "keyup" || arg[0] == "click")
-        evtDetailArgs = "event.which + ',' + " HIPE_JS_MODIFIER_MASK;
-    else //including keypress, which deliberately carries no modifiers.
-        evtDetailArgs = "event.which";
-    if(arg[0] == "keydown" && !locationSpecified) { //keydown on body element is a special case.
-        c->reportKeydownOnBody=true;
-        c->keyDownOnBodyRequestor=instruction->requestor;
-    } else if(arg[0] == "keyup" && !locationSpecified) { //keyup on body element is a special case.
-        c->reportKeyupOnBody=true;
-        c->keyUpOnBodyRequestor=instruction->requestor;
-    } else
-        location.setAttribute(QString("on") + arg[0].c_str(), QString("c.receiveGuiEvent('") + locStr + "','" + reqStr + "','" + arg[0].c_str() + "'," + evtDetailArgs + ")");
-        //Note: since Javascript's max integer range is only about 2^52, 64 bit numbers
-        //need to be represented as strings to avoid loss of accuracy.
-#endif
 }
 
 
@@ -935,21 +825,13 @@ void handle_EVENT_CANCEL(Container* c, hipe_instruction* instruction, bool, QWeb
     if(arg[0] == "keydown" && !instruction->location) { //keydown on body element is a special case.
         c->reportKeydownOnBody=false;
         c->keyDownOnBodyRequestor=0;
-#ifdef HAVE_HIPECORE
         location.setDefaultPrevention("keydown", ""); //(cancelEvent() below would remove hiped's own listener too.)
-#endif
     } else if(arg[0] == "keyup" && !instruction->location) { //keyup on body element is a special case.
         c->reportKeyupOnBody=false;
         c->keyUpOnBodyRequestor=0;
-#ifdef HAVE_HIPECORE
         location.setDefaultPrevention("keyup", "");
-#endif
     } else {
-#ifdef HAVE_HIPECORE
         location.cancelEvent(arg[0].c_str());
-#else
-        location.removeAttribute(QString("on") + arg[0].c_str());
-#endif
     }
     if(arg[1] == "1") { //reply requested. Send back an EVENT_CANCEL instruction to tell the client it can clean up event listeners for this event now.
         c->client->sendInstruction(HIPE_OP_EVENT_CANCEL, instruction->requestor,
@@ -969,35 +851,19 @@ void handle_SCROLL_BY(Container*, hipe_instruction*, bool, QWebElement location,
     if(arg[0].size()) { //left offset which may have decimal places if zoomed in.
         try {
             float leftVal = std::stof(arg[0]); //may throw exception if invalid.
-#ifdef HAVE_HIPECORE
             if (!percentage)
                 location.setScrollLeft(location.scrollLeft() + (int) leftVal);
             else
             location.setScrollLeft(location.scrollLeft() + (int) (leftVal * (location.scrollWidth() - location.clientWidth()) / 100));
-#else            
-            if(!percentage)
-                location.evaluateJavaScript(QString("this.scrollLeft+=") + QString::number(leftVal) + ";");
-            else
-                location.evaluateJavaScript(QString("this.scrollLeft+=") + QString::number(leftVal)
-                        + "*(this.scrollWidth - this.clientWidth)/100.0;" );
-#endif
         } catch(...) {} //just do nothing on error.
     }
     if(arg[1].size()) { //top offset
         try {
             float topVal = std::stof(arg[1]); //may throw exception if invalid.
-#ifdef HAVE_HIPECORE
             if(!percentage)
                 location.setScrollTop(location.scrollTop() + (int) topVal);
             else
                 location.setScrollTop(location.scrollTop() + (int) (topVal * (location.scrollHeight() - location.clientHeight()) / 100));
-#else
-            if(!percentage)
-                location.evaluateJavaScript(QString("this.scrollTop+=") + QString::number(topVal) + ";");
-            else
-                location.evaluateJavaScript(QString("this.scrollTop+=") + QString::number(topVal)
-                        + "*(this.scrollHeight - this.clientHeight)/100.0;" );
-#endif
         } catch(...) {} //just do nothing on error.
     }
 }
@@ -1014,36 +880,20 @@ void handle_SCROLL_TO(Container*, hipe_instruction*, bool, QWebElement location,
     if(arg[0].size()) { //left offset which may have decimal places if zoomed in.
         try {
             float leftVal = std::stof(arg[0]); //may throw exception if invalid.
-#ifdef HAVE_HIPECORE
             if(!percentage)
                 location.setScrollLeft((int) leftVal);
             else
                 location.setScrollLeft((int) (leftVal * (location.scrollWidth() - location.clientWidth()) / 100));
 
-#else
-            if(!percentage)
-                location.evaluateJavaScript(QString("this.scrollLeft=") + QString::number(leftVal) + ";");
-            else
-                location.evaluateJavaScript(QString("this.scrollLeft=") + QString::number(leftVal)
-                        + "*(this.scrollWidth - this.clientWidth)/100.0;" );
-#endif
         } catch(...) {} //just do nothing on error.
     }
     if(arg[1].size()) { //top offset
         try {
             float topVal = std::stof(arg[1]); //may throw exception if invalid.
-#ifdef HAVE_HIPECORE
             if(!percentage)
                 location.setScrollTop((int) topVal);
             else
                 location.setScrollTop((int) (topVal * (location.scrollHeight() - location.clientHeight()) / 100));
-#else
-            if(!percentage)
-                location.evaluateJavaScript(QString("this.scrollTop=") + QString::number(topVal) + ";");
-            else
-                location.evaluateJavaScript(QString("this.scrollTop=") + QString::number(topVal)
-                        + "*(this.scrollHeight - this.clientHeight)/100.0;" );
-#endif
         } catch(...) {} //just do nothing on error.
     }
 }
@@ -1051,20 +901,7 @@ void handle_SCROLL_TO(Container*, hipe_instruction*, bool, QWebElement location,
 
 //REQUIRES 1 ARG
 void handle_GET_ATTRIBUTE(Container* c, hipe_instruction* instruction, bool, QWebElement location, std::string arg[]) {
-    QString attrVal;
-#ifdef HAVE_HIPECORE
-    attrVal = location.attribute(arg[0].c_str());
-#else
-    if(arg[0] == "value") {
-        attrVal = location.evaluateJavaScript("this.value;").toString();
-    } else if(arg[0] == "checked") { 
-    //special case for checkboxes and radiobuttons -- the element might be set or unset, without a value. Return the value "checked" if checked.
-        bool checkedState = location.evaluateJavaScript("this.checked;").toBool();
-        attrVal = checkedState ? "checked" : "";
-    } else {
-        attrVal = location.attribute(arg[0].c_str());
-    }
-#endif
+    QString attrVal = location.attribute(arg[0].c_str());
     /*if (attrVal == "" || attrVal == NULL){
         attrVal = "None";  //needed? why?
     }*/
@@ -1092,12 +929,7 @@ void handle_GET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
     QString mimeType, error;
     bool ok;
 
-#ifdef HAVE_HIPECORE
     ok = location.getSrcData(QString(arg[0].c_str()), data, mimeType, error);
-#else
-    ok = false;
-    error = "GET_SRC requires hipecore";
-#endif
 
     // Keep these alive until sendInstruction() below returns -- payload.arg[] below
     // points directly at their buffers, same zero-copy shape as HIPE_OP_FILE_RETURN's
@@ -1131,12 +963,7 @@ void handle_CANVAS_QUERY(Container* c, hipe_instruction* instruction, bool, QWeb
     QString result, error;
     bool ok;
 
-#ifdef HAVE_HIPECORE
     ok = c->currentCanvas.canvasQuery(QString(arg[0].c_str()), QString(arg[1].c_str()), result, error);
-#else
-    ok = false;
-    error = "CANVAS_QUERY requires hipecore";
-#endif
 
     c->client->sendInstruction(HIPE_OP_CANVAS_QUERY_RETURN, instruction->requestor, instruction->location,
         {ok ? result.toStdString() : std::string(), ok ? std::string() : error.toStdString()});
@@ -1244,44 +1071,26 @@ void handle_TAKE_SNAPSHOT(Container* c, hipe_instruction* instruction, bool, QWe
 
 //REQUIRES 1 ARG
 void handle_USE_CANVAS(Container* c, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
-#ifndef HAVE_HIPECORE
-    arg[0] = Sanitation::sanitiseCanvasInstruction(arg[0]);
-    c->webElement.evaluateJavaScript(QString("canvascontext=document.getElementById(\"")
-                                  + location.attribute("id") + "\").getContext(\"" + arg[0].c_str() + "\");");
-#else
     // No JS string is built here, so Sanitation::sanitiseCanvasInstruction (which
     // guards against JS injection) doesn't apply -- QWebElement::useCanvasContext()
     // validates the context type itself and no-ops on anything unsupported.
     c->currentCanvas = location;
     c->currentCanvas.useCanvasContext(QString(arg[0].c_str()));
-#endif
 }
 
 
 //REQUIRES 2 ARGS
 void handle_CANVAS_ACTION(Container* c, hipe_instruction*, bool, QWebElement, std::string arg[]) {
-#ifndef HAVE_HIPECORE
-    arg[0] = Sanitation::sanitiseCanvasInstruction(arg[0]);
-    arg[1] = Sanitation::sanitiseCanvasInstruction(arg[1]);
-    c->webElement.evaluateJavaScript(QString("canvascontext.") + arg[0].c_str() + "(" + arg[1].c_str() + ");");
-#else
     // Applies to whichever <canvas> the most recent HIPE_OP_USE_CANVAS selected --
     // this instruction carries no location of its own (matches the existing client
     // calling convention, e.g. hipe/api/test/canvas.c never passes one here).
     c->currentCanvas.canvasAction(QString(arg[0].c_str()), QString(arg[1].c_str()));
-#endif
 }
 
 
 //REQUIRES 2 ARGS
 void handle_CANVAS_SET_PROPERTY(Container* c, hipe_instruction*, bool, QWebElement, std::string arg[]) {
-#ifndef HAVE_HIPECORE
-    arg[0] = Sanitation::sanitiseCanvasInstruction(arg[0]);
-    arg[1] = Sanitation::sanitiseCanvasInstruction(arg[1]);
-    c->webElement.evaluateJavaScript(QString("canvascontext.") + arg[0].c_str() + "=" + arg[1].c_str() + ";");
-#else
     c->currentCanvas.canvasSetProperty(QString(arg[0].c_str()), QString(arg[1].c_str()));
-#endif
 }
 
 
@@ -1356,16 +1165,11 @@ void handle_GET_CONTENT(Container* c, hipe_instruction* instruction, bool, QWebE
     std::string contentStr;
 
     if(arg[0] == "4") { //the changes since the last mode-4 read (see sendContentChanges())
-#ifdef HAVE_HIPECORE
         QString current = location.toTextContent();
-#else
-        QString current = location.evaluateJavaScript("this.textContent;").toString();
-#endif
         sendContentChanges(c, instruction, current, arg[1] == "full");
         return;
     }
 
-#ifdef HAVE_HIPECORE
     if(arg[0] == "0" || arg[0] == "") { //default: unformatted/plain text (textContent: independent of rendering)
         contentStr = location.toTextContent().toStdString();
     } else if(arg[0] == "1") { //html-formatted content requested from element.
@@ -1375,17 +1179,6 @@ void handle_GET_CONTENT(Container* c, hipe_instruction* instruction, bool, QWebE
     } else if(arg[0] == "3") { //some form elements require data to be read via a value attribute
         contentStr = location.attribute("value").toStdString();
     }
-#else
-    if(arg[0] == "0" || arg[0] == "") { //default: unformatted/plain text
-        contentStr = location.evaluateJavaScript("this.textContent;").toString().toStdString();
-    } else if(arg[0] == "1") { //html-formatted content requested from element.
-        contentStr = location.evaluateJavaScript("this.innerHTML;").toString().toStdString();
-    } else if(arg[0] == "2") {
-        contentStr = location.evaluateJavaScript("this.innerText;").toString().toStdString();
-    } else if(arg[0] == "3") { //some form elements require data to be read via a value attribute
-        contentStr = location.evaluateJavaScript("this.value;").toString().toStdString();
-    }
-#endif
     c->client->sendInstruction(HIPE_OP_CONTENT_RETURN, instruction->requestor,
                                        instruction->location, {contentStr});
 }
@@ -1416,7 +1209,6 @@ static std::string pixelString(double value) {
 //REQUIRES 2 ARGS
 void handle_MEASURE_TEXT(Container* c, hipe_instruction* instruction, bool, QWebElement location, std::string arg[]) {
     std::string width, height, ascent, descent; //left empty if the element can't be measured.
-#ifdef HAVE_HIPECORE
     double fontSize = 0;
     if(arg[1].size()) {
         try { fontSize = std::stod(arg[1]); } catch(...) { fontSize = 0; }
@@ -1428,7 +1220,6 @@ void handle_MEASURE_TEXT(Container* c, hipe_instruction* instruction, bool, QWeb
         ascent = pixelString(metrics[2]);
         descent = pixelString(metrics[3]);
     }
-#endif
     c->client->sendInstruction(HIPE_OP_TEXT_METRICS, instruction->requestor, instruction->location,
                             {width, height, ascent, descent});
 }
@@ -1436,7 +1227,6 @@ void handle_MEASURE_TEXT(Container* c, hipe_instruction* instruction, bool, QWeb
 //REQUIRES 2 ARGS
 void handle_GET_RANGE_GEOMETRY(Container* c, hipe_instruction* instruction, bool, QWebElement location, std::string arg[]) {
     std::string rects; //left empty if there is nothing to report.
-#ifdef HAVE_HIPECORE
     int start, end;
     bool valid = true;
     if(!arg[0].size() && !arg[1].size()) { //the element's current caret (the selection's focus)
@@ -1454,7 +1244,6 @@ void handle_GET_RANGE_GEOMETRY(Container* c, hipe_instruction* instruction, bool
             rects += pixelString(r.x()) + "," + pixelString(r.y()) + "," + pixelString(r.width()) + "," + pixelString(r.height());
         }
     }
-#endif
     c->client->sendInstruction(HIPE_OP_RANGE_GEOMETRY, instruction->requestor, instruction->location, {rects});
 }
 
@@ -1466,7 +1255,6 @@ void handle_CARAT_POSITION(Container*, hipe_instruction*, bool, QWebElement loca
     arg[1] = Sanitation::sanitiseCanvasInstruction(arg[1]); //selection focus, if specified
     if(!arg[0].size()) return; //empty: GET_CARAT_POSITION's "not in this element" reply. Leave it alone.
     if(!arg[1].size()) arg[1] = arg[0]; //if unspecified, focus=anchor means cursor without selection.
-#ifdef HAVE_HIPECORE
     //Offsets are characters (code points); negative values count from the end, -1 being after the last
     //character. hipecore resolves and clamps them.
     int anchor, focus;
@@ -1479,9 +1267,6 @@ void handle_CARAT_POSITION(Container*, hipe_instruction*, bool, QWebElement loca
         return; //not a number, or out of range: ignore the instruction.
     }
     location.setSelectionRange(anchor, focus, arg[2] == "1");
-#else
-    location.evaluateJavaScript(QString("this.setSelectionRange(")+arg[0].c_str()+","+arg[1].c_str()+");");
-#endif
 }
 
 
@@ -1491,7 +1276,6 @@ void handle_FIND_TEXT(Container* c, hipe_instruction* instruction, bool location
     //including everything nested in it) or the client's whole document. A client can't name anything
     //outside its own document and child frames, so it can never search a sibling's or parent's content.
     std::string count = "0", index = "0", wrapped = "0", capped;
-#ifdef HAVE_HIPECORE
     if(!locationSpecified) location = c->webElement;
     const std::string& options = arg[1];
     QVector<int> result = location.findText(QString::fromStdString(arg[0]),
@@ -1501,9 +1285,6 @@ void handle_FIND_TEXT(Container* c, hipe_instruction* instruction, bool location
     index = std::to_string(result[1]);
     wrapped = result[2] ? "1" : "0";
     if(result[3]) capped = "+";
-#else
-    c->findText(arg[0], false, false, false); //stock QtWebKit: page-wide highlighting only.
-#endif
     c->client->sendInstruction(HIPE_OP_FIND_RESULT, instruction->requestor, instruction->location,
                                {count, index, wrapped, capped});
 }
@@ -1511,7 +1292,6 @@ void handle_FIND_TEXT(Container* c, hipe_instruction* instruction, bool location
 
 //REQUIRES 4 ARGS
 void handle_AUDIOVIDEO_STATE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
-#ifdef HAVE_HIPECORE
     double argValue;
     WebCore::HTMLMediaElement* mediaElement = location.isMediaElement();
     if (mediaElement != nullptr) {
@@ -1538,32 +1318,6 @@ void handle_AUDIOVIDEO_STATE(Container*, hipe_instruction*, bool, QWebElement lo
         }
 
     }
-#else
-    float argValue;
-    //if arg[0] is non-null, parse the new playback position as the first "%f" in the string.
-    if(sscanf(arg[0].c_str(), "%f", &argValue) == 1) {
-        location.evaluateJavaScript(QString("this.currentTime=")+QString::number(argValue)+";");
-    }
-
-    //if arg[1] is non-null, take the playback speed as a float.
-    if(sscanf(arg[1].c_str(), "%f", &argValue) == 1) {
-        location.evaluateJavaScript(QString("this.playbackRate=")+QString::number(argValue)+";");
-    }
-
-    //if arg[2] is "1" call play() and if "0" then pause().
-    if(arg[2].size()) {  //arg is specified.
-        if(arg[2]=="1")
-            location.evaluateJavaScript("this.play();");
-        else if(arg[2]=="0")
-            location.evaluateJavaScript("this.pause();");
-    }
-
-    //if arg[3] is non-null, take volume as a float.
-    if(arg[3].size()) {
-        if(sscanf(arg[3].c_str(), "%f", &argValue) == 1)
-            location.evaluateJavaScript(QString("this.volume=")+QString::number(argValue)+";");
-    }
-#endif
 }
 
 
@@ -1638,11 +1392,7 @@ void handle_GET_SELECTION(Container* c, hipe_instruction* instruction, bool, QWe
             selectedText = ((ContainerTopLevel*)c)->getGlobalSelection(false);
         }
     } else { //get local (this frame's) selection using javascript.
-#ifdef HAVE_HIPECORE
         selectedText = location.getSelection().toStdString();
-#else
-        selectedText = location.evaluateJavaScript("document.getSelection().toString();").toString().toStdString();
-#endif
     }
     //return the contents of the selection...
     c->client->sendInstruction(HIPE_OP_CONTENT_RETURN, instruction->requestor,

@@ -30,14 +30,12 @@
 #include <chrono>
 #include "ExpArray.hh"
 #include "common.h"
-
-#ifndef HAVE_HIPECORE
-//Javascript expression for the modifier keys held during an event, appended to key and mouse
-//event details: 1=Shift, 2=Alt, 4=Ctrl, 8=Meta. (hipecore builds the same mask in QWebElement.)
-#define HIPE_JS_MODIFIER_MASK \
-    "((event.shiftKey?1:0)|(event.altKey?2:0)|(event.ctrlKey?4:0)|(event.metaKey?8:0))"
-#endif
 #include "keylist.h"
+
+#ifndef HAVE_HIPECORE //defined by hipecore's qwebelement.h
+#error "hiped needs hipecore, Hipe's display engine: build and install it from ../hipecore. Stock Qt5WebKit is not supported."
+#endif
+
 class Connection;
 
 #define MAX_N_STYLESHEETS 20
@@ -125,7 +123,7 @@ public:
     //The event should be propagated up to the top level so the framing manager
     //can intercept global keyboard shortcuts.
     //It should also trigger a simulated event on the frame to this client,
-    //if this client has bound onkeydown/onkeyup attributes to this frame.
+    //if this client has requested keydown/keyup events on this frame.
 
     virtual Container* getParent()=0; //returns the parent container, or nullptr if it's a top level container.
 
@@ -188,26 +186,11 @@ protected:
     //into a pointer to the corresponding QAction object with methods to trigger that
     //action and check its toggle state.
 
-#ifndef HAVE_HIPECORE  //without hipecore, need to handle events via javascript
-    signals:
-    void receiveGuiEvent(QString location, QString requestor, QString event, QString detail);
-    //signal called from within the QWebView object (via Javascript), each time a user interaction takes place.
-
-    void receiveKeyEventOnBody(bool keyUp, QString keycode);
-    //signal called when a keyup (or else keydown) event happens on the body element.
-protected slots:
-    void _receiveGuiEvent(QString location, QString requestor, QString event, QString detail);
-    //location and requestor are to be passed as hexadecimal strings.
-
-    void _receiveKeyEventOnBody(bool keyUp, QString keycode);
-    void frameCleared();
-#else  //HAVE_HIPECORE
     static void _receiveKeyEventOnBody(const QString& eventName, void* containerPtr, uint64_t isKeyUp,
                                         uint64_t requestor, const QString& eventDetails);
 
     static void _receiveDragStartEvent(const QString&, void*, uint64_t,
                                         uint64_t, const QString&) {};
-#endif //HAVE_HIPECORE
 protected slots:
     void frameDestroyed(); //conneected to the QWebFrame's destroyed() signal.
 

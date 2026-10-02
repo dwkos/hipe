@@ -30,18 +30,6 @@ ContainerFrame::ContainerFrame(Connection* bridge, std::string clientName,
     this->frame = frame;
     this->parent = parent;
 
-    //Disable network access and link navigation:
-#ifndef HAVE_HIPECORE
-    //hipecore has no network backend at all, so there is nothing left for
-    //QNetworkAccessManager to disable; stock QtWebKit still needs this.
-    frame->page()->networkAccessManager()->setNetworkAccessible(QNetworkAccessManager::NotAccessible);
-    //hipecore hardcodes link-click navigation as always ignored (see FrameLoaderClientQt.cpp);
-    //stock QtWebKit still needs the delegation policy set explicitly.
-    frame->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
-
-    //setting up JS bridge to Qt after frame cleared, only needed on stock webkit which uses JavaScript approach
-    connect(frame, SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(frameCleared()));
-#endif
     connect(frame, SIGNAL(destroyed()), this, SLOT(frameDestroyed()));
 }
 
@@ -64,11 +52,6 @@ void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
     if(!parent || !frame) return;
     if(!initYet) {
         frame->setHtml(QString("<html><head><style>") + stylesheet.c_str() + "</style><script>var canvascontext;</script></head><body "
-#ifndef HAVE_HIPECORE
-            "onkeydown=\"c.receiveKeyEventOnBody(false, event.which + ',' + " HIPE_JS_MODIFIER_MASK ");\" "
-            "onkeyup=\"c.receiveKeyEventOnBody(true, event.which + ',' + " HIPE_JS_MODIFIER_MASK ");\" "
-            "ondragstart=\"return false\""
-#endif
             "></body></html>");
         stylesheet = ""; //clear already-applied stylesheet data.
         webElement = frame->documentElement().lastChild();
@@ -86,14 +69,12 @@ void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
         getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_BACKGROUND_CHANGED, frame, bg);
         getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_COLOR_CHANGED, frame, fg);
 
-#ifdef HAVE_HIPECORE //set up keyboard events on the body element.
         //Only once: each requestEvent() adds another listener, and the body element (with its
         //listeners) persists for the life of the frame -- later setBody() calls only replace
         //or append to its children.
         webElement.requestEvent("keyup", (void*)this, 1, 0, _receiveKeyEventOnBody, false);
         webElement.requestEvent("keydown", (void*)this, 0, 0, _receiveKeyEventOnBody, false);
         webElement.requestEvent("dragstart", 0,0,0, _receiveDragStartEvent, true); //catch the event to override default dragging behaviour.
-#endif
     }
     if(overwrite) webElement.setInnerXml(newBodyHtml.c_str());
     else webElement.appendInside(newBodyHtml.c_str()); //c_str() conversion is adequate since any binary data will be in safe base64 encoding.

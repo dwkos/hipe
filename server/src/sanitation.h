@@ -26,7 +26,7 @@
 #include <set>
 #include <map>
 #include <QtWebKitWidgets/QWebPage>
-#include <QtWebKit/QWebElement> //self-defines HAVE_HIPECORE when linked against hipecore
+#include <QtWebKit/QWebElement>
 
 class Sanitation
 {

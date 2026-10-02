@@ -43,9 +43,6 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
     bool focusNextPrevChild(bool next) override;
-#ifndef HAVE_HIPECORE
-    void contextMenuEvent(QContextMenuEvent*) {;} //reimplement to disable the default context menu
-#endif
 };
 
 class WebGraphicsView : public QGraphicsView {
@@ -56,9 +53,6 @@ public:
     QGraphicsScene* scene;
     
 protected:
-#ifndef HAVE_HIPECORE
-    //void contextMenuEvent(QContextMenuEvent*) {;} //reimplement to disable the default context menu
-#endif
     void resizeEvent(QResizeEvent* event);
 };
 

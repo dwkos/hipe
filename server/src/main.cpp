@@ -244,13 +244,6 @@ int main(int argc, char *argv[])
 
     //set some global policies
     QWebSettings::globalSettings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, false);
-#ifndef HAVE_HIPECORE
-    //hipecore has no history/cache/icon-DB to gate and no JS engine, so it dropped
-    //the PrivateBrowsingEnabled and JavascriptEnabled attributes from QWebSettings.
-    QWebSettings::globalSettings()->setAttribute(QWebSettings::PrivateBrowsingEnabled, true);
-    QWebSettings::globalSettings()->setAttribute(QWebSettings::JavascriptEnabled, true);
-#endif
-
 
     //set default icon for corrupt/broken image tags.
     QPixmap brokenImgIcon;
