@@ -96,12 +96,10 @@ void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
         webElement.removeAllChildren();
 
         //obtain the initial colour scheme
-        std::string fg, bg;
-        while(!fg.size())  //the frame might not be rendered straight away; during this time these will return blank strings.
-            fg = webElement.styleProperty("color", QWebElement::ComputedStyle).toStdString();
+        //(computed styles are worked out when asked for, so these are ready straight away.)
+        std::string fg = webElement.styleProperty("color", QWebElement::ComputedStyle).toStdString();
         fgColorChanged(fg);
-        while(!bg.size())
-            bg = webElement.styleProperty("background-color", QWebElement::ComputedStyle).toStdString();
+        std::string bg = webElement.styleProperty("background-color", QWebElement::ComputedStyle).toStdString();
         bgColorChanged(bg);
 
         //Only once: each requestEvent() adds another listener, and the body element (with its

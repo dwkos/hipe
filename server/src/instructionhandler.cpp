@@ -695,12 +695,8 @@ void handle_SET_STYLE(Container* c, hipe_instruction*, bool locationSpecified, Q
         c->webElement.setStyleProperty(arg[0].c_str(), arg[1].c_str());
 
         //check if foreground/background colors for this frame have changed.
-        QString fg, bg;
-        while(!bg.size()) 
-        //poll repeatedly until we get a non-null response, if required (frame might not have rendered yet).
-            bg = c->webElement.styleProperty("background-color", QWebElement::ComputedStyle);
-        while(!fg.size())
-            fg = c->webElement.styleProperty("color", QWebElement::ComputedStyle);
+        QString bg = c->webElement.styleProperty("background-color", QWebElement::ComputedStyle);
+        QString fg = c->webElement.styleProperty("color", QWebElement::ComputedStyle);
 
         //check if foreground or background colours are defined by this client. If so, notify the parent, and the
         //parent will update its own metadata for this frame, to determine whether to send the relevant event.
