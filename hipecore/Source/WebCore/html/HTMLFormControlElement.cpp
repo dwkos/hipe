@@ -4,6 +4,7 @@
  *           (C) 2001 Dirk Mueller (mueller@kde.org)
  * Copyright (C) 2004, 2005, 2006, 2007 Apple Inc. All rights reserved.
  *           (C) 2006 Alexey Proskuryakov (ap@nypop.com)
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -191,33 +192,10 @@ void HTMLFormControlElement::requiredAttributeChanged()
     setNeedsStyleRecalc();
 }
 
-static bool shouldAutofocus(HTMLFormControlElement* element)
+static bool shouldAutofocus(HTMLFormControlElement*)
 {
-    if (!element->renderer())
-        return false;
-    if (!element->fastHasAttribute(autofocusAttr))
-        return false;
-    if (!element->inDocument() || !element->document().renderView())
-        return false;
-    if (element->document().isSandboxed(SandboxAutomaticFeatures)) {
-        // FIXME: This message should be moved off the console once a solution to https://bugs.webkit.org/show_bug.cgi?id=103274 exists.
-        element->document().addConsoleMessage(MessageSource::Security, MessageLevel::Error, ASCIILiteral("Blocked autofocusing on a form control because the form's frame is sandboxed and the 'allow-scripts' permission is not set."));
-        return false;
-    }
-    if (element->hasAutofocused())
-        return false;
-
-    // FIXME: Should this set of hasTagName checks be replaced by a
-    // virtual member function?
-    if (is<HTMLInputElement>(*element))
-        return !downcast<HTMLInputElement>(*element).isInputTypeHidden();
-    if (element->hasTagName(selectTag))
-        return true;
-    if (element->hasTagName(buttonTag))
-        return true;
-    if (is<HTMLTextAreaElement>(*element))
-        return true;
-
+    // hipecore: autofocus is not supported. Focus moves only by user action or by the embedder, so content
+    // inserted into one client's document cannot take the keyboard from another.
     return false;
 }
 

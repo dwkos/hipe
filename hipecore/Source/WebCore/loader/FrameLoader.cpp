@@ -2762,16 +2762,10 @@ bool FrameLoader::shouldTreatURLAsSameAsCurrent(const URL& url) const
     return url == history().currentItem()->url() || url == history().currentItem()->originalURL();
 }
 
-bool FrameLoader::shouldTreatURLAsSrcdocDocument(const URL& url) const
+bool FrameLoader::shouldTreatURLAsSrcdocDocument(const URL&) const
 {
-    if (!equalLettersIgnoringASCIICase(url.string(), "about:srcdoc"))
-        return false;
-    HTMLFrameOwnerElement* ownerElement = m_frame.ownerElement();
-    if (!ownerElement)
-        return false;
-    if (!ownerElement->hasTagName(iframeTag))
-        return false;
-    return ownerElement->fastHasAttribute(srcdocAttr);
+    // hipecore: iframe srcdoc is not supported, so no document is a srcdoc document.
+    return false;
 }
 
 Frame* FrameLoader::findFrameForNavigation(const AtomicString& name, Document* activeDocument)

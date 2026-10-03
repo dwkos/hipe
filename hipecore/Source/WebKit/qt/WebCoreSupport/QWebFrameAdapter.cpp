@@ -91,7 +91,9 @@ void QWebFrameAdapter::load(const QUrl& url)
 {
     WebCore::ResourceRequest request(ensureAbsoluteUrl(url));
 
+    frameLoaderClient->m_navigationAllowed = true; //a load through the Qt API passes the navigation lock.
     frame->loader().load(WebCore::FrameLoadRequest(frame, request, ShouldOpenExternalURLsPolicy::ShouldNotAllow /*FIXME*/));
+    frameLoaderClient->m_navigationAllowed = false;
 }
 
 bool QWebFrameAdapter::hasView() const
@@ -160,7 +162,9 @@ void QWebFrameAdapter::setContent(const QByteArray &data, const QString &mimeTyp
     WebCore::ResourceResponse response(URL(), WTF::String(actualMimeType), buffer->size(), encoding);
     // FIXME: visibility?
     WebCore::SubstituteData substituteData(buffer, URL(), response, SubstituteData::SessionHistoryVisibility::Hidden);
+    frameLoaderClient->m_navigationAllowed = true; //a load through the Qt API passes the navigation lock.
     frame->loader().load(WebCore::FrameLoadRequest(frame, request, ShouldOpenExternalURLsPolicy::ShouldNotAllow /*FIXME*/, substituteData));
+    frameLoaderClient->m_navigationAllowed = false;
 }
 
 void QWebFrameAdapter::setHtml(const QString &html, const QUrl &baseUrl)
@@ -172,7 +176,9 @@ void QWebFrameAdapter::setHtml(const QString &html, const QUrl &baseUrl)
     WebCore::ResourceResponse response(URL(), ASCIILiteral("text/html"), data->size(), ASCIILiteral("utf-8"));
     // FIXME: visibility?
     WebCore::SubstituteData substituteData(data, URL(), response, SubstituteData::SessionHistoryVisibility::Hidden);
+    frameLoaderClient->m_navigationAllowed = true; //a load through the Qt API passes the navigation lock.
     frame->loader().load(WebCore::FrameLoadRequest(frame, request, ShouldOpenExternalURLsPolicy::ShouldNotAllow /*FIXME*/, substituteData));
+    frameLoaderClient->m_navigationAllowed = false;
 }
 
 QMultiMap<QString, QString> QWebFrameAdapter::metaData() const

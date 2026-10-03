@@ -192,6 +192,9 @@ void QWebPageAdapter::initializeWebCorePage()
 
     page->addLayoutMilestones(DidFirstVisuallyNonEmptyLayout);
 
+    // <meta http-equiv> does nothing in a client's document (no refresh, no content security policy...).
+    page->settings().setHttpEquivEnabled(false);
+
     settings = new QWebSettings(page);
 }
 

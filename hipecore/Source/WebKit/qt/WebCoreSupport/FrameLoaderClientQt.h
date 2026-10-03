@@ -217,6 +217,9 @@ private:
 
     Frame *m_frame;
     QWebFrameAdapter *m_webFrame;
+    // Navigation lock: true only while a load this frame may make is starting (one through the Qt API,
+    // or a child frame's first load). Every other navigation is refused.
+    bool m_navigationAllowed { false };
     ResourceResponse m_response;
 
     URL m_lastRequestedUrl;

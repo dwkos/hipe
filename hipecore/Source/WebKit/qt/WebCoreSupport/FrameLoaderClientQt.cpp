@@ -903,39 +903,26 @@ void FrameLoaderClientQt::dispatchDecidePolicyForResponse(const WebCore::Resourc
         callPolicyFunction(function, PolicyDownload);
 }
 
-// Hipe is a presentation system with hyperlink navigation deliberately decoupled from it: a
-// client app that renders hypertext owns clearing the page and populating new content itself,
-// rather than trusting hipe to load a URL on its own initiative. So navigation triggered by a
-// clicked link is always ignored here (matching the QWebPage::DelegateAllLinks policy every
-// hipe container already set); every other navigation type (iframe loads, reload, forms, etc.)
-// is allowed unconditionally, since hipe's own iframe-loading mechanism goes through this same
-// policy path as NavigationType::Other.
-void FrameLoaderClientQt::dispatchDecidePolicyForNewWindowAction(const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState>, const WTF::String&, FramePolicyFunction function)
+// Navigation lock. A client's document belongs to the client: it changes only through instructions, never
+// on the document's own initiative. So a frame navigates only when the embedder asks it to through the Qt
+// API (QWebFrame::load(), setHtml(), setContent(): QWebFrameAdapter sets m_navigationAllowed around those),
+// or for a child frame's first load (createFrame() below). Links, form submissions, <meta> refresh, URLs
+// dropped on a page, later changes to an iframe's src and any other navigation a document starts are
+// refused, as are all requests for a new window.
+void FrameLoaderClientQt::dispatchDecidePolicyForNewWindowAction(const WebCore::NavigationAction&, const WebCore::ResourceRequest&, PassRefPtr<WebCore::FormState>, const WTF::String&, FramePolicyFunction function)
 {
-    Q_ASSERT(m_webFrame);
-
-    if (action.type() == NavigationType::LinkClicked) {
-        if (request.url().hasFragmentIdentifier()) {
-            ResourceRequest emptyRequest;
-            m_frame->loader().activeDocumentLoader()->setLastCheckedRequest(emptyRequest);
-        }
-
-        callPolicyFunction(function, PolicyIgnore);
-        return;
-    }
-    callPolicyFunction(function, PolicyUse);
+    callPolicyFunction(function, PolicyIgnore);
 }
 
 void FrameLoaderClientQt::dispatchDecidePolicyForNavigationAction(const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState>, FramePolicyFunction function)
 {
     Q_ASSERT(m_webFrame);
 
-    if (action.type() == NavigationType::LinkClicked) {
-        if (request.url().hasFragmentIdentifier()) {
+    if (!m_navigationAllowed) {
+        if (action.type() == NavigationType::LinkClicked && request.url().hasFragmentIdentifier()) {
             ResourceRequest emptyRequest;
             m_frame->loader().activeDocumentLoader()->setLastCheckedRequest(emptyRequest);
         }
-
         callPolicyFunction(function, PolicyIgnore);
         return;
     }
@@ -976,7 +963,11 @@ RefPtr<Frame> FrameLoaderClientQt::createFrame(const URL& url, const String& nam
     if (urlToLoad.isEmpty())
         urlToLoad = blankURL();
 
+    // The child frame's first load is allowed through the navigation lock.
+    FrameLoaderClientQt& childClient = static_cast<FrameLoaderClientQt&>(frameData.frame->loader().client());
+    childClient.m_navigationAllowed = true;
     m_frame->loader().loadURLIntoChildFrame(urlToLoad, frameData.referrer, frameData.frame.get());
+    childClient.m_navigationAllowed = false;
 
     // The frame's onload handler may have removed it from the document.
     if (!frameData.frame->tree().parent())

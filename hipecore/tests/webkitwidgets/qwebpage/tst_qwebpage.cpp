@@ -127,6 +127,16 @@ private Q_SLOTS:
     void renderOnRepaintRequestedShouldNotRecurse();
     void installedFontFamilies();
 
+    // A document cannot act on its own initiative: navigation lock, srcdoc, http-equiv, autofocus.
+    void navigationThroughApi();
+    void formSubmissionRefused();
+    void metaRefreshIgnored();
+    void metaHttpEquivIgnored();
+    void newWindowRefused();
+    void iframeSrcChangeRefused();
+    void iframeSrcdocIgnored();
+    void autofocusIgnored();
+
 private:
     QWebView* m_view { nullptr };
     QWebPage* m_page { nullptr };
@@ -1587,6 +1597,162 @@ void tst_QWebPage::installedFontFamilies()
 
     // The font a page falls back to when nothing in its font-family list is installed is listed.
     QVERIFY(families.contains(QFont().defaultFamily()));
+}
+
+// Content that would replace a document if a navigation went through.
+static const char navigatedHtml[] = "data:text/html,<p id=navigated>navigated</p>";
+
+// Gives any load a document started time to happen.
+static void settle()
+{
+    QTest::qWait(500);
+}
+
+static bool hasNavigated(QWebFrame* frame)
+{
+    return !frame->findFirstElement("#navigated").isNull();
+}
+
+class WindowCountingPage : public QWebPage {
+public:
+    int windowsRequested { 0 };
+protected:
+    QWebPage* createWindow(WebWindowType) override
+    {
+        windowsRequested++;
+        return nullptr;
+    }
+};
+
+// Control for the tests below: the embedder's own loads go through.
+void tst_QWebPage::navigationThroughApi()
+{
+    QWebFrame* frame = m_page->mainFrame();
+    frame->load(QUrl(QString::fromLatin1(navigatedHtml)));
+    settle();
+    QVERIFY(hasNavigated(frame));
+}
+
+void tst_QWebPage::formSubmissionRefused()
+{
+    m_view->resize(400, 300);
+    m_view->show();
+    QVERIFY(QTest::qWaitForWindowExposed(m_view));
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml(QString("<form action='%1' method=get>"
+        "<input type=checkbox id=box style='display:block; width:40px; height:40px'>"
+        "<input type=text id=text name=t>"
+        "<input type=submit id=submit style='display:block; width:100px; height:40px'>"
+        "</form>").arg(navigatedHtml));
+
+    // Clicks reach the form (control for the click below).
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, frame->findFirstElement("#box").geometry().center());
+    QVERIFY(!frame->findFirstElement("input:checked").isNull());
+
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, frame->findFirstElement("#submit").geometry().center());
+    settle();
+    QVERIFY(!hasNavigated(frame));
+    QVERIFY(!frame->findFirstElement("#submit").isNull());
+
+    // Implicit submission: Return in a text field.
+    frame->findFirstElement("#text").setFocus();
+    QTest::keyClick(m_view, Qt::Key_Return);
+    settle();
+    QVERIFY(!hasNavigated(frame));
+    QVERIFY(!frame->findFirstElement("#submit").isNull());
+}
+
+void tst_QWebPage::metaRefreshIgnored()
+{
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml(QString("<html><head><meta http-equiv=refresh content='0;url=%1'></head>"
+        "<body><p id=original>original</p></body></html>").arg(navigatedHtml));
+    QTest::qWait(1500);
+    QVERIFY(!hasNavigated(frame));
+    QVERIFY(!frame->findFirstElement("#original").isNull());
+}
+
+// <meta http-equiv> has no effect at all: here a content security policy that would block the stylesheet.
+void tst_QWebPage::metaHttpEquivIgnored()
+{
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml("<html><head><meta http-equiv=Content-Security-Policy content=\"style-src 'none'\">"
+        "<style>p { color: rgb(1, 2, 3); }</style></head><body><p id=p>text</p></body></html>");
+    QCOMPARE(frame->findFirstElement("#p").styleProperty("color", QWebElement::ComputedStyle), QString("rgb(1, 2, 3)"));
+}
+
+void tst_QWebPage::newWindowRefused()
+{
+    WindowCountingPage page;
+    m_view->setPage(&page);
+    m_view->resize(400, 300);
+    m_view->show();
+    QVERIFY(QTest::qWaitForWindowExposed(m_view));
+    QWebFrame* frame = page.mainFrame();
+    frame->setHtml(QString("<a id=link href='%1' target=_blank style='display:block; width:100px; height:40px'>link</a>"
+        "<form action='%1' target=_blank><input type=submit id=submit style='display:block; width:100px; height:40px'></form>")
+        .arg(navigatedHtml));
+
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, frame->findFirstElement("#link").geometry().center());
+    settle();
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, frame->findFirstElement("#submit").geometry().center());
+    settle();
+    QCOMPARE(page.windowsRequested, 0);
+    QVERIFY(!hasNavigated(frame));
+    m_view->setPage(nullptr);
+}
+
+// hipecore loads every iframe as about:blank whatever its src; the embedder fills it. A later change of
+// src or srcdoc would navigate the existing frame.
+void tst_QWebPage::iframeSrcChangeRefused()
+{
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml("<iframe id=f></iframe>");
+    settle();
+    QCOMPARE(frame->childFrames().count(), 1);
+    frame->childFrames().at(0)->setHtml("<p id=filled>filled</p>");
+
+    frame->findFirstElement("#f").setAttribute("src", QString::fromLatin1(navigatedHtml));
+    settle();
+    QCOMPARE(frame->childFrames().count(), 1);
+    QVERIFY(!hasNavigated(frame->childFrames().at(0)));
+    QVERIFY(!frame->childFrames().at(0)->findFirstElement("#filled").isNull());
+}
+
+void tst_QWebPage::iframeSrcdocIgnored()
+{
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml("<iframe id=f srcdoc='<p id=navigated>srcdoc</p>'></iframe>");
+    settle();
+    QCOMPARE(frame->childFrames().count(), 1);
+    QVERIFY(!hasNavigated(frame->childFrames().at(0)));
+
+    frame->childFrames().at(0)->setHtml("<p id=filled>filled</p>");
+    frame->findFirstElement("#f").setAttribute("srcdoc", "<p id=navigated>srcdoc</p>");
+    settle();
+    QCOMPARE(frame->childFrames().count(), 1);
+    QVERIFY(!hasNavigated(frame->childFrames().at(0)));
+    QVERIFY(!frame->childFrames().at(0)->findFirstElement("#filled").isNull());
+}
+
+void tst_QWebPage::autofocusIgnored()
+{
+    m_view->resize(400, 300);
+    m_view->show();
+    QVERIFY(QTest::qWaitForWindowExposed(m_view));
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml("<input id=plain><input id=auto autofocus>");
+    settle();
+    QVERIFY(!frame->findFirstElement("#auto").hasFocus());
+
+    // Inserted after the document has loaded.
+    frame->findFirstElement("body").appendInside("<textarea id=later autofocus></textarea>");
+    settle();
+    QVERIFY(!frame->findFirstElement("#later").hasFocus());
+
+    // Control: the embedder can still focus it.
+    frame->findFirstElement("#auto").setFocus();
+    QVERIFY(frame->findFirstElement("#auto").hasFocus());
 }
 
 QTEST_MAIN(tst_QWebPage)

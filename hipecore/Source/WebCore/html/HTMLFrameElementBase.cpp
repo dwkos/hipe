@@ -88,9 +88,7 @@ void HTMLFrameElementBase::openURL(LockHistory lockHistory, LockBackForwardList 
 
 void HTMLFrameElementBase::parseAttribute(const QualifiedName& name, const AtomicString& value)
 {
-    if (name == srcdocAttr)
-        setLocation("about:srcdoc");
-    else if (name == srcAttr && !fastHasAttribute(srcdocAttr))
+    if (name == srcAttr) //(hipecore does not support srcdoc.)
         setLocation(stripLeadingAndTrailingHTMLSpaces(value));
     else if (name == idAttr) {
         HTMLFrameOwnerElement::parseAttribute(name, value);
@@ -163,8 +161,6 @@ void HTMLFrameElementBase::didAttachRenderers()
 
 URL HTMLFrameElementBase::location() const
 {
-    if (fastHasAttribute(srcdocAttr))
-        return URL(ParsedURLString, "about:srcdoc");
     return document().completeURL(fastGetAttribute(srcAttr));
 }
 
@@ -203,7 +199,7 @@ bool HTMLFrameElementBase::isURLAttribute(const Attribute& attribute) const
 
 bool HTMLFrameElementBase::isHTMLContentAttribute(const Attribute& attribute) const
 {
-    return attribute.name() == srcdocAttr || HTMLFrameOwnerElement::isHTMLContentAttribute(attribute);
+    return HTMLFrameOwnerElement::isHTMLContentAttribute(attribute);
 }
 
 int HTMLFrameElementBase::width()
