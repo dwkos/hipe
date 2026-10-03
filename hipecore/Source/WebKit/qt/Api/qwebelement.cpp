@@ -1772,6 +1772,11 @@ static int modifierMask(const UIEventWithKeyState& event)
 }
 
 void QWebElement::requestEvent(const QString& eventName, void* usrPtr, uint64_t usrVal1, uint64_t usrVal2,
+                                HipeCoreEventCallback callbackFn, bool preventDefault) {
+    requestEvent(eventName, usrPtr, usrVal1, usrVal2, callbackFn, preventDefault, false);
+}
+
+void QWebElement::requestEvent(const QString& eventName, void* usrPtr, uint64_t usrVal1, uint64_t usrVal2,
                                 HipeCoreEventCallback callbackFn, bool preventDefault, bool usrVal1IsHipeLocation) {
     if (!m_element) return;
 

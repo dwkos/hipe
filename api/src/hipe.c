@@ -98,7 +98,7 @@ struct _hipe_session { /*all session-specific state variables go here!*/
 };
 
 static __thread hipe_loc newestLocation = 0; /*the number this thread's last APPEND_TAG or INSERT_TAG allocated*/
-static char openError[256]; /*the server's reason for refusing the last hipe_open_session(), or empty*/
+static __thread char openError[256]; /*the server's reason for refusing this thread's last hipe_open_session(), or empty*/
 
 int read_to_queue(hipe_session session, int blocking);
 /*blocking or nonblocking read from server. Receives the number of characters
@@ -714,7 +714,9 @@ hipe_loc hipe_reserve_locations(hipe_session session, size_t count) {
 int hipe_send_markup(hipe_session session, hipe_loc where, const char* markup, int append,
                      const hipe_loc* reserved, size_t count) {
     /*build arg[2]: the numbers, with consecutive ones merged into ranges ("57,1000-1499").*/
-    char* list = (char*) malloc(count * 42 + 1);
+    if(count > ((size_t)-1 - 1) / 42) return -1; /*more numbers than any list could hold*/
+    char* list = (char*) malloc(count * 42 + 1); /*42: two 20-digit numbers, '-' and ','*/
+    if(!list) return -1;
     size_t length = 0;
     list[0] = '\0';
     for(size_t i = 0; i < count; ) {

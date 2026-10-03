@@ -100,8 +100,11 @@ server rotates it; only one wins and the rest print `Hipe: Container request den
 property (keys can't be replayed), not a bug. Launch clients sequentially, waiting for the keyfile to be
 rewritten, or route additional clients through a framing manager.
 
-The engine has its own test suites (`ctest` in `hipecore/build`, see `hipecore/CLAUDE.md`). The server and
-client library have no automated tests: verify changes with a small client against a private `hiped`.
+The engine has its own test suites (`ctest` in `hipecore/build`, see `hipecore/CLAUDE.md`; the qwebview suite
+needs a window manager such as openbox on the test display). The server and client library are tested by
+`server/tests/run.sh` (location numbering and markup, on a private Xephyr and hiped; needs xdotool; `run.sh memory`
+and `run.sh bench` for memory and timing). Build `api/` and `server/` first. Other changes: verify with a small
+client against a private `hiped`, and add a test to `server/tests/` when the behaviour can be checked from a client.
 
 ## Architecture
 

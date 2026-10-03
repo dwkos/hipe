@@ -53,11 +53,6 @@ Container::Container(Connection* bridge, std::string clientName, int themeIndex)
 
 Container::~Container()
 {
-    //release the elements' numbers (each number keeps its element alive)
-    for(LocationSlot& slot : denseLocations)
-        if(!slot.element.isNull()) slot.element.setHipeLocation(0);
-    for(auto& entry : sparseLocations)
-        if(!entry.second.isNull()) entry.second.setHipeLocation(0);
     delete keyList;
 }
 
@@ -321,46 +316,32 @@ void Container::frameDestroyed()
 std::string Container::checkNewLocation(hipe_loc n, size_t alsoBinding) {
     if(n == 0 || (n >> 63))
         return "location " + std::to_string(n) + " is not a valid number";
-    LocationSlot* slot = denseSlot(n);
-    if(slot ? slot->used : sparseLocations.count(n))
+    if(locations.inUse(n))
         return "location " + std::to_string(n) + " already in use";
-    if(locationsInUse + alsoBinding + 1 > MAX_LOCATIONS)
+    if(locations.count() + alsoBinding + 1 > MAX_LOCATIONS)
+        return "more than " + std::to_string(MAX_LOCATIONS) + " locations in use";
+    return "";
+}
+
+std::string Container::checkNewLocations(const QWebLocationRegistry::Ranges& ranges, size_t total) {
+    if(ranges.size() && (ranges.back().second >> 63))
+        return "location " + std::to_string(ranges.back().second) + " is not a valid number";
+    if(hipe_loc n = locations.firstInUse(ranges))
+        return "location " + std::to_string(n) + " already in use";
+    if(locations.count() + total > MAX_LOCATIONS)
         return "more than " + std::to_string(MAX_LOCATIONS) + " locations in use";
     return "";
 }
 
 void Container::bindLocation(hipe_loc n, const QWebElement& w) {
-    if(n >= denseLocations.size() && n < 4096 + 2*(locationsInUse+1)) //grow the dense table, doubling
-        denseLocations.resize(std::max<size_t>(n+1, std::min<size_t>(2*denseLocations.size(), 4096 + 2*(locationsInUse+1))));
-    if(LocationSlot* slot = denseSlot(n)) {
-        slot->element = w;
-        slot->used = true;
-    } else sparseLocations[n] = w;
-    locationsInUse++;
-    if(!w.isNull()) {
-        QWebElement element = w;
-        element.setHipeLocation(n);
-    }
+    locations.bind(n, w);
 }
 
 void Container::freeLocation(hipe_loc n) {
-    QWebElement element;
-    if(LocationSlot* slot = denseSlot(n)) {
-        if(!slot->used) return;
-        element = slot->element;
-        slot->element = QWebElement();
-        slot->used = false;
-    } else {
-        auto entry = sparseLocations.find(n);
-        if(entry == sparseLocations.end()) return;
-        element = entry->second;
-        sparseLocations.erase(entry);
-    }
-    locationsInUse--;
-    if(!element.isNull()) {
-        if(currentCanvas == element) currentCanvas = QWebElement();
-        element.setHipeLocation(0); //if the element returns to the document (e.g. by undo), it has no number
-    }
+    if(!locations.inUse(n)) return;
+    QWebElement element = locations.element(n);
+    if(!element.isNull() && currentCanvas == element) currentCanvas = QWebElement();
+    locations.free(n); //if the element returns to the document (e.g. by undo), it has no number
     contentSnapshots.erase(n); //a reused location mustn't inherit an old GET_CONTENT mode 4 snapshot
     pendingBinaryUploads.erase(n); //abandon an unfinished chunked upload
 }
@@ -431,9 +412,7 @@ QWebElement Container::getReferenceableElement(hipe_loc n)
 {
     //A location the client was never given, or has freed, refers to no element: instructions sent to it do
     //nothing. (A client can easily hold a stale location, so this isn't treated as a fault.) 0 is no element too.
-    if(LocationSlot* slot = denseSlot(n)) return slot->element;
-    auto entry = sparseLocations.find(n);
-    return entry == sparseLocations.end() ? QWebElement() : entry->second;
+    return locations.element(n);
 }
 
 hipe_loc Container::getIndexOfElement(const QWebElement& element)

@@ -128,16 +128,6 @@ std::string Sanitation::toLower(const char* text, size_t length) {
 }
 
 
-bool Sanitation::isValidTagName(const std::string& input)
-//true if input is a letter followed by letters, digits and hyphens. Any such tag can be created: the engine
-//runs no scripts and loads nothing on a tag's behalf.
-{
-    if(input.empty() || !isalpha((unsigned char)input[0])) return false;
-    for(char ch : input)
-        if(!isalnum((unsigned char)ch) && ch != '-') return false;
-    return true;
-}
-
 bool Sanitation::isAllowedCSS(std::string input)
 //Text added to a <style> element is raw text up to the next "</style", so "</" is the only sequence that could
 //end the stylesheet early and start markup.

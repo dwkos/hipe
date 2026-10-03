@@ -190,7 +190,9 @@ public:
     // safety net here (unlike e.g. GObject's weak-ref-based listeners) -- the caller is
     // responsible for the ordering.
     void requestEvent(const QString& eventName, void* usrPtr, uint64_t usrVal1, uint64_t usrVal2,
-                        HipeCoreEventCallback callback, bool preventDefault=false, bool usrVal1IsHipeLocation=false);
+                        HipeCoreEventCallback callback, bool preventDefault=false);
+    void requestEvent(const QString& eventName, void* usrPtr, uint64_t usrVal1, uint64_t usrVal2,
+                        HipeCoreEventCallback callback, bool preventDefault, bool usrVal1IsHipeLocation);
     // usrVal1IsHipeLocation: pass the element's current hipeLocation() as usrVal1 when the event fires (ignoring the
     // usrVal1 given here), and don't call back at all while the element has no number.
     bool handlesEvent(const QString& eventName); //returns true if a handler has been set.

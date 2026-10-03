@@ -193,20 +193,18 @@ protected slots:
 
 protected:
 private:
-    //The client's location numbers in this container (see doc/design/location-numbering.md): the client allocates
-    //them and shares numbers, never element references. A number bound to no element maps to a null QWebElement.
-    //Each bound element also carries its number in the engine (QWebElement::hipeLocation()), for the reverse way.
-    //Stored densely for numbers up to about twice the count in use (client pools hand out the lowest free numbers,
-    //so this is nearly all of them), and in a hash map otherwise, so memory stays proportional to the count in use.
-    struct LocationSlot { QWebElement element; bool used = false; };
-    std::vector<LocationSlot> denseLocations; //index = number
-    std::unordered_map<hipe_loc, QWebElement> sparseLocations;
-    size_t locationsInUse = 0;
-    LocationSlot* denseSlot(hipe_loc n) { return n < denseLocations.size() ? &denseLocations[n] : nullptr; }
+    //The client's location numbers in this container (see doc/design/location-numbering.md). The engine's registry
+    //maps them both ways; hiped keeps only per-number side state (snapshots, uploads), dropped when a number is freed.
+    QWebLocationRegistry locations;
 public:
     static const size_t MAX_LOCATIONS = 1 << 22; //cap on numbers in use per container
     std::string checkNewLocation(hipe_loc n, size_t alsoBinding = 0);
     //"" if n can be bound now (alongside alsoBinding other new numbers), else the reason it can't.
+    std::string checkNewLocations(const QWebLocationRegistry::Ranges& ranges, size_t total);
+    //the same for every number in ranges (total numbers in all).
+    const QWebLocationRegistry::MarkupResult bindMarkupLocations(const QList<QPair<QWebElement, QString>>& carriers,
+                                                                const QWebLocationRegistry::Ranges& listed)
+        { return locations.bindMarkup(carriers, listed); }
     void bindLocation(hipe_loc n, const QWebElement& w); //binds a number checkNewLocation() accepted; w may be null.
     void freeLocation(hipe_loc n); //frees a number and everything hiped keeps for it. Does nothing if not in use.
     QWebElement getReferenceableElement(hipe_loc n); //the element a number names (null if none).

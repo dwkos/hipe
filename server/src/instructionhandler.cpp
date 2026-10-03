@@ -280,10 +280,11 @@ void handle_DELETE(Container*, hipe_instruction*, bool locationSpecified, QWebEl
 }
 
 //Parses a list of location numbers: comma-separated decimal numbers and ranges "a-b" (a <= b), no spaces, each number
-//once, at most Container::MAX_LOCATIONS in total. Returns false if the list is malformed.
-static bool parseLocationList(const std::string& list, std::vector<hipe_loc>& out) {
-    std::unordered_set<hipe_loc> seen;
+//once. ranges gets them as ascending, non-overlapping ranges (never one entry per number) and total their count, at
+//most Container::MAX_LOCATIONS. Returns false if the list is malformed.
+static bool parseLocationList(const std::string& list, QWebLocationRegistry::Ranges& ranges, size_t& total) {
     size_t i = 0;
+    total = 0;
     auto number = [&](hipe_loc& n) {
         size_t start = i;
         n = 0;
@@ -301,15 +302,15 @@ static bool parseLocationList(const std::string& list, std::vector<hipe_loc>& ou
             i++;
             if(!number(b) || b < a) return false;
         }
-        if(b - a >= Container::MAX_LOCATIONS || out.size() + (b - a) + 1 > Container::MAX_LOCATIONS) return false;
-        for(hipe_loc n = a; ; n++) {
-            if(!seen.insert(n).second) return false;
-            out.push_back(n);
-            if(n == b) break;
-        }
+        if(b - a >= Container::MAX_LOCATIONS || total + (b - a) + 1 > Container::MAX_LOCATIONS) return false;
+        total += (b - a) + 1;
+        ranges.append(qMakePair(a, b));
         if(i < list.size() && list[i++] != ',') return false;
         if(i == list.size() && list.back() == ',') return false;
     }
+    std::sort(ranges.begin(), ranges.end());
+    for(int k = 1; k < ranges.size(); k++)
+        if(ranges[k].first <= ranges[k-1].second) return false; //a number listed twice
     return true;
 }
 
@@ -319,12 +320,17 @@ void handle_FREE_LOCATION(Container* c, hipe_instruction* instruction, bool, QWe
         c->freeLocation(instruction->location);
         return;
     }
-    std::vector<hipe_loc> list;
-    if(!parseLocationList(arg[0], list)) {
+    QWebLocationRegistry::Ranges ranges;
+    size_t total;
+    if(!parseLocationList(arg[0], ranges, total)) {
         c->fatalError("malformed location list in HIPE_OP_FREE_LOCATION");
         return;
     }
-    for(hipe_loc n : list) c->freeLocation(n);
+    for(const auto& range : ranges)
+        for(hipe_loc n = range.first; ; n++) {
+            c->freeLocation(n);
+            if(n == range.second) break;
+        }
 }
 
 void handle_GET_FIRST_CHILD(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
@@ -575,27 +581,6 @@ void handle_GET_AUDIOVIDEO_STATE(Container* c, hipe_instruction* instruction, bo
 
 
 //REQUIRES 3 ARGS
-//Void elements (e.g. <br>, <img>) can't have content or a closing tag.
-static bool isVoidTag(const std::string& tag) {
-    static const std::set<std::string> voidTags = {"area", "base", "br", "col", "embed", "hr", "img",
-                                                   "input", "link", "meta", "param", "source", "track", "wbr"};
-    return voidTags.count(tag) > 0;
-}
-
-//Completes the markup of a tag for APPEND_TAG/INSERT_TAG after its id/src attributes: adds the optional
-//class list (arg[2]) and initial text content (arg[3], handled as text mode 0), both escaped, and closes the tag. Setting them here
-//saves separate TOGGLE_CLASS and SET_TEXT instructions (and a second HTML parse) per element.
-static std::string finishTagMarkup(const std::string& tag, const std::string& classes, const std::string& text) {
-    std::string markup;
-    if(classes.size())
-        markup += " class=\"" + Sanitation::sanitisePlainText(classes) + "\"";
-    markup += ">";
-    if(isVoidTag(tag)) return markup;
-    markup += Sanitation::sanitisePlainText(text, Sanitation::SHOWN_AS_TYPED);
-    markup += "</" + tag + ">";
-    return markup;
-}
-
 //The client allocates the location of each tag it appends or inserts (it arrives as the requestor), whether or not
 //the tag is created. So the location is assigned even when no tag was created, to no element: instructions sent to
 //it do nothing, and the client and server still agree on which numbers are in use. A number already in use is fatal.
@@ -608,112 +593,51 @@ static void assignTagLocation(Container* c, hipe_instruction* instruction, const
     c->bindLocation(instruction->requestor, element);
 }
 
-//Binds the locations of markup just inserted (mode 3). found is what the engine took off the parsed markup: each
-//element that carried hipe-loc, with the attribute's value, in document order. listed holds the numbers the client
-//reserved, already checked by checkMarkupLocations(); those found on no element are bound to none.
-static void bindMarkupLocations(Container* c, const QList<QPair<QWebElement, QString>>& found,
-                                const std::vector<hipe_loc>& listed) {
-    if(listed.empty()) return; //any hipe-loc attributes were removed and mean nothing
-    std::unordered_set<hipe_loc> wanted(listed.begin(), listed.end()), bound;
-    std::vector<hipe_loc> duplicates;
-    for(const auto& carrier : found) {
-        bool ok = false;
-        hipe_loc n = carrier.second.toULongLong(&ok);
-        if(!ok || !wanted.count(n)) continue; //not a number the client listed: ignored
-        if(!bound.insert(n).second) { duplicates.push_back(n); continue; }
-        c->bindLocation(n, carrier.first);
-    }
-    std::vector<hipe_loc> unbound;
-    for(hipe_loc n : listed)
-        if(!bound.count(n)) {
-            c->bindLocation(n, QWebElement());
-            unbound.push_back(n);
-        }
-    auto someOf = [](const std::vector<hipe_loc>& v) {
-        std::string s;
-        for(size_t i = 0; i < v.size() && i < 5; i++) s += (i ? ", " : "") + std::to_string(v[i]);
-        return s + (v.size() > 5 ? ", ..." : "");
-    };
-    if(unbound.size())
-        c->notice(std::to_string(unbound.size()) + " listed location(s) found on no element in the markup: " + someOf(unbound));
-    if(duplicates.size())
-        c->notice("location(s) used on more than one element in the markup (the first was used): " + someOf(duplicates));
-}
-
 //Checks the location list of a mode 3 instruction (arg[2]) before anything is inserted. Returns false, having
 //disconnected the client with the reason, if the list is malformed or a number can't be bound.
-static bool checkMarkupLocations(Container* c, const std::string& list, std::vector<hipe_loc>& listed) {
+static bool checkMarkupLocations(Container* c, const std::string& list, QWebLocationRegistry::Ranges& listed) {
     if(list.empty()) return true;
-    if(!parseLocationList(list, listed)) {
+    size_t total;
+    if(!parseLocationList(list, listed, total)) {
         c->fatalError("malformed location list for markup");
         return false;
     }
-    for(size_t i = 0; i < listed.size(); i++) {
-        std::string problem = c->checkNewLocation(listed[i], i);
-        if(problem.size()) {
-            c->fatalError(problem);
-            return false;
-        }
+    std::string problem = c->checkNewLocations(listed, total);
+    if(problem.size()) {
+        c->fatalError(problem);
+        return false;
     }
     return true;
 }
 
 void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location, std::string arg[]) {
-    arg[1] = Sanitation::sanitisePlainText(arg[1]);
-    if(!Sanitation::isValidTagName(arg[0])) {
-        assignTagLocation(c, instruction, QWebElement());
-        return;
-    }
-
-    std::string newTagString = "<";
-    newTagString += arg[0];
-    if(arg[1].size()) { //apply an ID to the new tag if provided.
-        newTagString += " id=\"" + arg[1] + "\"";
-    }
-
-    newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
-    QWebElement before = (locationSpecified ? location : c->webElement).lastChild();
+    //The engine creates the element directly (no markup): see QWebElement::appendNewElement().
     if(!locationSpecified) {
-        c->setBody(newTagString, false /*append mode*/);
-        location = c->webElement; //webElement may have been redefined in setBody().
+        if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
+        location = c->webElement;
     }
-    else location.appendInside(newTagString.c_str());
-
-    //If the HTML parser dropped the tag (e.g. a <td> outside a table), no new element was added.
-    QWebElement added = location.lastChild();
-    assignTagLocation(c, instruction, added != before ? added : QWebElement());
+    QWebElement added = location.appendNewElement(QString::fromStdString(arg[0]), QString::fromStdString(arg[1]),
+                                                  QString::fromStdString(arg[2]), QString::fromStdString(arg[3]));
+    assignTagLocation(c, instruction, added); //a null element (invalid name) binds none
 }
 
 
 //REQUIRES 3 ARGS
 void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location, std::string arg[]) {
-    arg[1] = Sanitation::sanitisePlainText(arg[1]);
-    if(!Sanitation::isValidTagName(arg[0])
-            || !locationSpecified) { //can't prepend a tag outside the body element!
-        assignTagLocation(c, instruction, QWebElement());
-        return;
-    }
-
-    std::string newTagString = "<";
-    newTagString += arg[0];
-    if(arg[1].size()) { //apply an ID to the new tag if provided.
-        newTagString += " id=\"" + arg[1] + "\"";
-    }
-    newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
-
-    QWebElement before = location.previousSibling();
-    location.prependOutside(newTagString.c_str());
-
-    //If the HTML parser dropped the tag (e.g. a <td> outside a table), no new element was added.
-    QWebElement added = location.previousSibling();
-    assignTagLocation(c, instruction, added != before ? added : QWebElement());
+    //The engine creates the element directly before location (no markup): see QWebElement::insertNewElementBefore().
+    //There is nowhere to put a tag before the body itself.
+    QWebElement added;
+    if(locationSpecified)
+        added = location.insertNewElementBefore(QString::fromStdString(arg[0]), QString::fromStdString(arg[1]),
+                                                QString::fromStdString(arg[2]), QString::fromStdString(arg[3]));
+    assignTagLocation(c, instruction, added); //a null element (invalid name, nowhere to put it) binds none
 }
 
 
 //Mode 3 (markup) for SET_TEXT (append false) and APPEND_TEXT (append true): the engine parses the markup and takes
 //the hipe-loc attributes off it before insertion; hiped binds the listed numbers.
 static void insertMarkup(Container* c, bool locationSpecified, QWebElement location, std::string arg[], bool append) {
-    std::vector<hipe_loc> listed;
+    QWebLocationRegistry::Ranges listed;
     if(!checkMarkupLocations(c, arg[2], listed)) return;
     if(!locationSpecified) {
         if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
@@ -722,7 +646,18 @@ static void insertMarkup(Container* c, bool locationSpecified, QWebElement locat
     QList<QPair<QWebElement, QString>> found;
     if(append) location.appendInside(arg[0].c_str(), &found);
     else location.setInnerXml(arg[0].c_str(), &found);
-    bindMarkupLocations(c, found, listed);
+    QWebLocationRegistry::MarkupResult result = c->bindMarkupLocations(found, listed);
+    auto someOf = [](const QVector<quint64>& v, quint64 count) {
+        std::string s;
+        for(int i = 0; i < v.size(); i++) s += (i ? ", " : "") + std::to_string(v[i]);
+        return s + ((quint64)v.size() < count ? ", ..." : "");
+    };
+    if(result.unboundCount)
+        c->notice(std::to_string(result.unboundCount) + " listed location(s) found on no element in the markup: "
+                  + someOf(result.unbound, result.unboundCount));
+    if(result.duplicates.size())
+        c->notice("location(s) used on more than one element in the markup (the first was used): "
+                  + someOf(result.duplicates, result.duplicates.size()));
 }
 
 //REQUIRES 3 ARGS (arg[2]: the locations listed for markup, mode 3 only)
@@ -851,8 +786,9 @@ void handle_EVENT_REQUEST(Container* c, hipe_instruction* instruction, bool loca
         c->reportKeyupOnBody=true;
         c->keyUpOnBodyRequestor=instruction->requestor;
     } else {
+        //Events report the element's number when they fire (none once freed), not the one it has now.
         location.requestEvent(arg[0].c_str(), c->client, instruction->location, instruction->requestor,
-                                Connection::_receiveUIEvent, false);
+                                Connection::_receiveUIEvent, false, locationSpecified);
     }
 }
 

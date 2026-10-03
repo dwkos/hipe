@@ -125,11 +125,12 @@ hipe_loc hipe_reserve_locations(hipe_session session, size_t count);
 int hipe_send_markup(hipe_session session, hipe_loc where, const char* markup, int append,
                      const hipe_loc* reserved, size_t count);
 /* Sends markup (text mode 3) to replace the contents of where (append == 0, HIPE_OP_SET_TEXT) or to append to them
- * (append != 0, HIPE_OP_APPEND_TEXT), listing the count reserved numbers it uses in hipe-loc attributes. */
+ * (append != 0, HIPE_OP_APPEND_TEXT), listing the count reserved numbers it uses in hipe-loc attributes.
+ * Returns as hipe_send(), or -1 if the list couldn't be built. */
 
 const char* hipe_last_error(hipe_session session);
 /* The server's reason for the last fatal error in session (after which the session is disconnected), or "" if none.
- * With session == 0: the reason the last hipe_open_session() was refused, or "". */
+ * With session == 0: the reason this thread's last hipe_open_session() was refused, or "". */
  
 
 #endif

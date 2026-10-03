@@ -54,7 +54,6 @@ public:
     static std::string toBase64(const std::string& binaryData);
     static std::string toBase64(const char* data, size_t size);
     static std::string toLower(const char* text, size_t size); //convert to lowercase
-    static bool isValidTagName(const std::string& input);
     static bool isAllowedCSS(std::string input);
     //true if input can be added to a <style> element's text as it stands (it contains no "</").
 
