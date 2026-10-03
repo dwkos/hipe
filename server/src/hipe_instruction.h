@@ -38,16 +38,16 @@ extern "C" {
  *or clear body if location==0.*/
 
 #define HIPE_OP_SET_TEXT           2
-/* set a tag's contents to a string of plain text given in arg[0], overwriting
- * previous contents.
+/* set a tag's contents to the text given in arg[0], overwriting previous contents.
  * if location==0 this applies to the entire body tag.
- * arg[1] is the text mode. In every mode < > " ' are shown as typed, never treated as markup.
+ * arg[1] is the text mode. In modes 0-2 < > " ' are shown as typed, never treated as markup.
  * arg[1] == 0 -- (default) '&' is shown as typed and whitespace is not converted: reading the
  *               element's text back returns arg[0] (e.g. source code in a <pre>).
  * arg[1] == 1 -- '&' is shown as typed; newlines, carriage returns and tabs are converted into line
  *               breaks, empty paragraphs and wide spaces, so the layout shows in any element.
  * arg[1] == 2 -- character entities are decoded (e.g. "&times;" shows as a multiplication sign);
  *               whitespace is not converted.
+ * arg[1] == 3 -- arg[0] is HTML markup and is inserted as written. Elements it creates have no location.
  * In modes 0 and 2 a carriage return, with or without a following newline, is stored as one newline.
  */
 

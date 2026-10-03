@@ -58,6 +58,7 @@ void Sanitation::init()
 Sanitation::TextMode Sanitation::textModeFromArg(const std::string& arg) {
     if(arg == "1") return LAYOUT_CONVERTED;
     if(arg == "2") return ENTITIES_DECODED;
+    if(arg == "3") return MARKUP;
     return SHOWN_AS_TYPED;
 }
 
@@ -77,7 +78,11 @@ std::string Sanitation::sanitisePlainText(std::string input, TextMode mode)
 //
 //ENTITIES_DECODED leaves '&' alone, so that clients can use character entities
 //(e.g. "&times;") to insert symbols.
+//
+//MARKUP returns the input unchanged: it is inserted as HTML. The engine makes content inert (no scripts,
+//no navigation, only data: loads), and the parser keeps a fragment inside the element it is inserted into.
 {
+    if(mode == MARKUP) return input;
     std::string output;
     for(size_t i=0; i<input.size(); i++) {
         if(mode == LAYOUT_CONVERTED && input[i] == '\n')

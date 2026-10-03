@@ -40,10 +40,11 @@ public:
     enum TextMode { //values are the text mode numbers clients pass (see HIPE_OP_SET_TEXT).
         SHOWN_AS_TYPED = 0,   //'&' is escaped and nothing is converted: reading the element's text back returns the input.
         LAYOUT_CONVERTED = 1, //'&' is escaped; newlines, carriage returns and tabs are converted to markup.
-        ENTITIES_DECODED = 2  //'&' is left alone, so character entities (e.g. "&times;") become symbols.
+        ENTITIES_DECODED = 2, //'&' is left alone, so character entities (e.g. "&times;") become symbols.
+        MARKUP = 3            //the text is HTML and is inserted as written.
     };
     static TextMode textModeFromArg(const std::string& arg);
-    //the text mode requested by a client in an instruction argument ("1", "2"; anything else is mode 0).
+    //the text mode requested by a client in an instruction argument ("1", "2", "3"; anything else is mode 0).
 
     static std::string sanitisePlainText(std::string input, TextMode mode=ENTITIES_DECODED);
     //mode defaults to ENTITIES_DECODED for the callers that sanitise attribute values, tag names and ids;
