@@ -117,6 +117,12 @@ public:
     void removeClass(const QString& name);
     void toggleClass(const QString& name);
 
+    // The element's Hipe location number (0 if none). It is stored outside the DOM: invisible to the document and to
+    // CSS, and never copied by cloning, editing, copy or undo. While an element has a number, the number keeps the
+    // element alive; setting 0 clears it.
+    void setHipeLocation(quint64 location);
+    quint64 hipeLocation() const;
+
     bool hasFocus() const;
     void setFocus();
 

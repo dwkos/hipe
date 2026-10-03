@@ -1,5 +1,6 @@
 /*
     Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies)
+    Copyright (C) 2025-2026 General Development Systems
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -77,6 +78,7 @@ private Q_SLOTS:
     void addElementToHead();
     void scriptAndNoscriptParsing();
     void xmlParsing();
+    void hipeLocation();
 
 private:
     QWebView* m_view { nullptr };
@@ -1264,6 +1266,47 @@ void tst_QWebElement::xmlParsing()
     QCOMPARE(m_mainFrame->findFirstElement("#cd").toPlainText(), QString("a < b & c"));
     QCOMPARE(m_mainFrame->findFirstElement("#last").toPlainText(), QString("reached"));
     QCOMPARE(m_mainFrame->findAllElements("script").count(), 1);
+}
+
+void tst_QWebElement::hipeLocation()
+{
+    m_mainFrame->setHtml("<div id=ed contenteditable><p id=a>first</p><p id=b>second</p><p id=c>third</p></div>");
+    QWebElement a = m_mainFrame->findFirstElement("#a");
+    QWebElement b = m_mainFrame->findFirstElement("#b");
+    QWebElement ed = m_mainFrame->findFirstElement("#ed");
+
+    // Set, read through another handle to the same element, clear.
+    QCOMPARE(b.hipeLocation(), quint64(0));
+    b.setHipeLocation(42);
+    QCOMPARE(m_mainFrame->findFirstElement("#b").hipeLocation(), quint64(42));
+    QCOMPARE(a.hipeLocation(), quint64(0));
+
+    // Not copied by cloning or by the DOM.
+    QCOMPARE(b.clone().hipeLocation(), quint64(0));
+    QVERIFY(!ed.toOuterXml().contains("42"));
+
+    // An editing deletion removes #b; undo re-inserts the same node, still numbered.
+    ed.setFocus();
+    ed.setSelectionRange(5, 12); // "\nsecond": merges #b away
+    m_page->insertText(QString());
+    QVERIFY(m_mainFrame->findFirstElement("#b").isNull());
+    m_page->triggerAction(QWebPage::Undo);
+    QCOMPARE(m_mainFrame->findFirstElement("#b"), b);
+    QCOMPARE(m_mainFrame->findFirstElement("#b").hipeLocation(), quint64(42));
+
+    // Free, reuse, undo: the client frees 42 after the deletion and gives it to #a. The returning node has no number.
+    ed.setSelectionRange(5, 12);
+    m_page->insertText(QString());
+    QVERIFY(m_mainFrame->findFirstElement("#b").isNull());
+    b.setHipeLocation(0);
+    a.setHipeLocation(42);
+    m_page->triggerAction(QWebPage::Undo);
+    QCOMPARE(m_mainFrame->findFirstElement("#b"), b);
+    QCOMPARE(b.hipeLocation(), quint64(0));
+    QCOMPARE(a.hipeLocation(), quint64(42));
+
+    a.setHipeLocation(0);
+    QCOMPARE(a.hipeLocation(), quint64(0));
 }
 
 QTEST_MAIN(tst_QWebElement)

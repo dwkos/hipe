@@ -89,6 +89,8 @@
 #if PLATFORM(X11)
 #include "X11EmbedWidgetQt.h"
 #endif
+#include <wtf/HashMap.h>
+#include <wtf/NeverDestroyed.h>
 #include <wtf/Ref.h>
 #include <wtf/RefPtr.h> 
 #include <WebCore/Event.h>
@@ -3237,6 +3239,32 @@ void QWebElement::setStyleProperty(const QString &name, const QString &value)
 /*!
     Returns the list of classes of this element.
 */
+// Hipe location numbers, kept outside the DOM (see QWebElement::setHipeLocation()). Each entry holds a reference, so
+// a numbered element can't be destroyed while its number is set. Used on the main thread only.
+static HashMap<Element*, std::pair<RefPtr<Element>, quint64>>& hipeLocations()
+{
+    static NeverDestroyed<HashMap<Element*, std::pair<RefPtr<Element>, quint64>>> locations;
+    return locations;
+}
+
+void QWebElement::setHipeLocation(quint64 location)
+{
+    if (!m_element)
+        return;
+    if (!location)
+        hipeLocations().remove(m_element);
+    else
+        hipeLocations().set(m_element, std::make_pair(RefPtr<Element>(m_element), location));
+}
+
+quint64 QWebElement::hipeLocation() const
+{
+    if (!m_element)
+        return 0;
+    auto entry = hipeLocations().find(m_element);
+    return entry == hipeLocations().end() ? 0 : entry->value.second;
+}
+
 QStringList QWebElement::classes() const
 {
     if (!hasAttribute(QLatin1String("class")))
