@@ -53,6 +53,8 @@ Container::Container(Connection* bridge, std::string clientName, int themeIndex)
 
 Container::~Container()
 {
+    for(auto& entry : locations) //release the elements' numbers (each number keeps its element alive)
+        if(!entry.second.isNull()) entry.second.setHipeLocation(0);
     delete keyList;
 }
 
@@ -139,10 +141,10 @@ void Container::receiveSubFrameEvent(short evtType, QWebFrame* sender, std::stri
             }
 
             if(evtType == HIPE_FRAME_EVENT_CLIENT_CONNECTED) //this event has an extra detail arg: the process ID.
-                client->sendInstruction(HIPE_OP_FRAME_EVENT, sf.requestor, findReferenceableElement(sf.we),
+                client->sendInstruction(HIPE_OP_FRAME_EVENT, sf.requestor, getIndexOfElement(sf.we),
                                     {evtTypeString, detail, std::to_string(sf.pid)});
             else
-                client->sendInstruction(HIPE_OP_FRAME_EVENT, sf.requestor, findReferenceableElement(sf.we),
+                client->sendInstruction(HIPE_OP_FRAME_EVENT, sf.requestor, getIndexOfElement(sf.we),
                                     {evtTypeString, detail});
 
             if(evtType == HIPE_FRAME_EVENT_CLIENT_DISCONNECTED) {
@@ -313,33 +315,45 @@ void Container::frameDestroyed()
 }
 
 
-size_t Container::assignElementIndex(const QWebElement& w, size_t newIndex) {
-//Manually assigns the given index to the element, allowing any index value that is
-//unused and does not exceed the previous maximum index value by 1.
-//returns 0 if unable to assign.
-    if(newIndex < 1) return 0;
+std::string Container::checkNewLocation(hipe_loc n, size_t alsoBinding) {
+    if(n == 0 || (n >> 63))
+        return "location " + std::to_string(n) + " is not a valid number";
+    if(locations.count(n))
+        return "location " + std::to_string(n) + " already in use";
+    if(locations.size() + alsoBinding + 1 > MAX_LOCATIONS)
+        return "more than " + std::to_string(MAX_LOCATIONS) + " locations in use";
+    return "";
+}
 
-    //grow the array if needed and within allowed range
-    size_t oldSize = referenceableElement.size();
-    if(newIndex > oldSize) {
-        if(newIndex > maxElementIndexUsed+1)
-            return 0; //invalid, requested index is too large.
-        referenceableElement.setSize(newIndex);
-        for(size_t i=oldSize+1; i<=newIndex; i++)
-            referenceableElement[i]=nullptr;
-        //fill new elements to nullptr
-        if(maxElementIndexUsed < newIndex) maxElementIndexUsed = newIndex;
+void Container::bindLocation(hipe_loc n, const QWebElement& w) {
+    locations[n] = w;
+    if(!w.isNull()) {
+        QWebElement element = w;
+        element.setHipeLocation(n);
     }
+}
 
-    //check if requested element is free, assign if so.
-    if(referenceableElement[newIndex]) {
-        //not free!
-        return 0;
+void Container::freeLocation(hipe_loc n) {
+    auto entry = locations.find(n);
+    if(entry == locations.end()) return;
+    if(!entry->second.isNull()) {
+        if(currentCanvas == entry->second) currentCanvas = QWebElement();
+        entry->second.setHipeLocation(0); //if the element returns to the document (e.g. by undo), it has no number
     }
-    referenceableElement[newIndex] = new QWebElement(w);
-    
-    return newIndex;
+    locations.erase(entry);
+    contentSnapshots.erase(n); //a reused location mustn't inherit an old GET_CONTENT mode 4 snapshot
+    pendingBinaryUploads.erase(n); //abandon an unfinished chunked upload
+}
 
+void Container::fatalError(const std::string& reason) {
+    std::cerr << "hiped: " << reason << ". Disconnected client.\n";
+    if(!client) return;
+    client->sendInstruction(HIPE_OP_SERVER_DENIED, 0, 0, {reason});
+    client->disconnect(); //Hard disconnection. Will be cleaned up in the next service cycle.
+}
+
+void Container::notice(const std::string& message) {
+    if(client) client->sendInstruction(HIPE_OP_SERVER_NOTICE, 0, 0, {message});
 }
 
 
@@ -393,61 +407,17 @@ bool Container::fgColorChanged(std::string newColor) {
     return true;
 }
 
-void Container::removeReferenceableElement(size_t i)
+QWebElement Container::getReferenceableElement(hipe_loc n)
 {
-    if(i>referenceableElement.size() || i<1) return;
-    delete referenceableElement[i];
-    referenceableElement[i] = nullptr;
-    if(i < firstFreeElementAfter) firstFreeElementAfter = i;
-
-    if(i==referenceableElement.size()) {
-    //might be an opportunity to truncate the array if one or more elements
-    //at the end are now vacant.
-        while(i > 0 && !referenceableElement[i]) //element [0] is unused, so stop there.
-            i--;
-        referenceableElement.setSize(i);
-        //shrink the array if the last element was removed. (The underlying
-        //class then optimises this to avoid too much actual resizing.)
-    }
-
+    //A location the client was never given, or has freed, refers to no element: instructions sent to it do
+    //nothing. (A client can easily hold a stale location, so this isn't treated as a fault.) 0 is no element too.
+    auto entry = locations.find(n);
+    return entry == locations.end() ? QWebElement() : entry->second;
 }
 
-QWebElement Container::getReferenceableElement(size_t i)
+hipe_loc Container::getIndexOfElement(const QWebElement& element)
 {
-    if(i>referenceableElement.size() || !referenceableElement[i]) {
-        return QWebElement();
-        //A location the client was never given, or has freed, refers to no element: instructions sent
-        //to it do nothing. (A client can easily hold a stale location, so this isn't treated as a fault.)
-    } else if(i <= 0) {
-        return QWebElement();
-        //there is no zeroth element. Reserve it to mean 'not applicable'.
-    } else if(referenceableElement[i]) {
-        return *referenceableElement[i];
-    }
-    else return QWebElement();
-}
-
-size_t Container::findReferenceableElement(const QWebElement& we) {
-    if(we.isNull()) return 0;
-    for(size_t i=referenceableElement.size(); i>=1; i--) {
-    //count down so that the last-added reference is more likely to be checked first.
-        if(referenceableElement[i] && *(referenceableElement[i])==we)
-            return i;
-    }
-    return 0;
-}
-
-size_t Container::getIndexOfElement(const QWebElement& location)
-{
-    size_t locElement = 0;
-    if(!location.isNull()) {
-        locElement = findReferenceableElement(location);
-        //check if the element is already on the list
-
-        if(!locElement) return 0;
-        //return 0 if the element doesn't have an assigned index/location ID
-    }
-    return locElement;
+    return element.hipeLocation();
 }
 
 

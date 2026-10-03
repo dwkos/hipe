@@ -111,6 +111,25 @@ int hipe_send(hipe_session session, char opcode, uint64_t requestor, hipe_loc lo
  */
 
 hipe_loc hipe_newest_location();
+/* The location number this thread's last HIPE_OP_APPEND_TAG or HIPE_OP_INSERT_TAG allocated (in whichever session).
+ * Reservations don't change it. */
+
+hipe_loc hipe_reserve_location(hipe_session session);
+/* Reserves a location number for an element the client will create with markup (HIPE_OP_SET_TEXT or
+ * HIPE_OP_APPEND_TEXT mode 3, hipe-loc="N" attribute). Nothing is sent. A reserved number that is never used must be
+ * freed with HIPE_OP_FREE_LOCATION, like any other. */
+
+hipe_loc hipe_reserve_locations(hipe_session session, size_t count);
+/* Reserves count consecutive location numbers and returns the first. */
+
+int hipe_send_markup(hipe_session session, hipe_loc where, const char* markup, int append,
+                     const hipe_loc* reserved, size_t count);
+/* Sends markup (text mode 3) to replace the contents of where (append == 0, HIPE_OP_SET_TEXT) or to append to them
+ * (append != 0, HIPE_OP_APPEND_TEXT), listing the count reserved numbers it uses in hipe-loc attributes. */
+
+const char* hipe_last_error(hipe_session session);
+/* The server's reason for the last fatal error in session (after which the session is disconnected), or "" if none.
+ * With session == 0: the reason the last hipe_open_session() was refused, or "". */
  
 
 #endif

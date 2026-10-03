@@ -150,6 +150,17 @@ void Connection::runInstruction(hipe_instruction* instruction)
         }
 
 
+        //Refuse a client built against an older libhipe before its key is used, telling it why.
+        std::string version(instruction->arg[3], instruction->arg_length[3]);
+        if(std::atoi(version.c_str()) < std::atoi(HIPE_PROTOCOL_VERSION)) {
+            std::string reason = "client built against an older libhipe (protocol " + (version.size() ? version : "2")
+                + ", server " + HIPE_PROTOCOL_VERSION + "); rebuild it";
+            std::cerr << "hiped: Refused a client: " << reason << ".\n";
+            sendInstruction(HIPE_OP_SERVER_DENIED, 0, 0, {reason});
+            sendInstruction(HIPE_OP_CONTAINER_GRANT, 0, 0, {"0", "0"});
+            return;
+        }
+
         container = requestContainerFromKey(std::string(instruction->arg[0],
                     instruction->arg_length[0]), std::string(instruction->arg[1],
                     instruction->arg_length[1]), this->clientPID, themeIndex, this);

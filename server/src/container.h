@@ -26,6 +26,7 @@
 #include <stack>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <chrono>
 #include "ExpArray.hh"
@@ -191,24 +192,23 @@ protected slots:
 
 protected:
 private:
-    ///This block of variables/functions provides pointer protection of web
-    ///element references so a handle (array element number) can safely be given
-    ///to external processes, and invalid references can be detected.
-    AutoExpArray<QWebElement*> referenceableElement;
-    size_t firstFreeElementAfter=1;
-    //store the location of the first free element, or a smaller element number, to speed insertions.
-    size_t maxElementIndexUsed=0;
-    //store the maximum location index used so far in this container to disallow
-    //growing the index too quickly.
+    //The client's location numbers in this container (see doc/design/location-numbering.md): the client allocates
+    //them and shares numbers, never element references. A number bound to no element maps to a null QWebElement.
+    //Each bound element also carries its number in the engine (QWebElement::hipeLocation()), for the reverse way.
+    std::unordered_map<hipe_loc, QWebElement> locations;
 public:
-    //when an element is created, we store its location as an element number here, then share the element number
-    //(not a QWebElement--dangerous!) with the client.
-    size_t assignElementIndex(const QWebElement& w, size_t newIndex);
-    void removeReferenceableElement(size_t);
-    QWebElement getReferenceableElement(size_t); //resolve a reference integer.
-    size_t findReferenceableElement(const QWebElement&);
-    size_t getIndexOfElement(const QWebElement&);
+    static const size_t MAX_LOCATIONS = 1 << 22; //cap on numbers in use per container
+    std::string checkNewLocation(hipe_loc n, size_t alsoBinding = 0);
+    //"" if n can be bound now (alongside alsoBinding other new numbers), else the reason it can't.
+    void bindLocation(hipe_loc n, const QWebElement& w); //binds a number checkNewLocation() accepted; w may be null.
+    void freeLocation(hipe_loc n); //frees a number and everything hiped keeps for it. Does nothing if not in use.
+    QWebElement getReferenceableElement(hipe_loc n); //the element a number names (null if none).
+    hipe_loc getIndexOfElement(const QWebElement&);
     //the location assigned to the element, or 0 if it has none (lookups never assign one).
+
+    void fatalError(const std::string& reason);
+    //a protocol violation: tells the client why (HIPE_OP_SERVER_DENIED) and disconnects it.
+    void notice(const std::string& message); //a non-fatal client bug: HIPE_OP_SERVER_NOTICE.
 
     //flags to handle keyup/down events on body as a special case (since this event needs to propagate to the framing manager for special window manipulation keys)
     bool reportKeydownOnBody=false; //has the client requested keydown events on the body element?

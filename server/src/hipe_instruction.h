@@ -47,7 +47,9 @@ extern "C" {
  *               breaks, empty paragraphs and wide spaces, so the layout shows in any element.
  * arg[1] == 2 -- character entities are decoded (e.g. "&times;" shows as a multiplication sign);
  *               whitespace is not converted.
- * arg[1] == 3 -- arg[0] is HTML markup and is inserted as written. Elements it creates have no location.
+ * arg[1] == 3 -- arg[0] is HTML markup and is inserted as written. Elements with a hipe-loc="N" attribute get
+ *               location N if N is listed in arg[2]: comma-separated numbers and ranges the client reserved for
+ *               this markup, e.g. "57,1000-1499". The attribute is always removed. Other elements have no location.
  * In modes 0 and 2 a carriage return, with or without a following newline, is stored as one newline.
  */
 
@@ -55,6 +57,7 @@ extern "C" {
 /* append plain text inside the tag given by location, or inside body if location==0.
  * arg[0] is the text content to append.
  * arg[1] is the text mode, as for HIPE_OP_SET_TEXT.
+ * arg[2] is the list of locations for markup (mode 3), as for HIPE_OP_SET_TEXT.
  */
 
 #define HIPE_OP_APPEND_TAG         4
@@ -101,7 +104,9 @@ extern "C" {
  * */
 
 #define HIPE_OP_FREE_LOCATION      10
-/* Sent by the client to the server to de-allocate a location index that is no longer required.*/
+/* Sent by the client to the server to de-allocate a location index that is no longer required.
+ * If arg[0] is not empty, it is a list of locations to free instead of the location field: comma-separated numbers
+ * and ranges, e.g. "57,1000-1499" (see HIPE_OP_SET_TEXT mode 3).*/
 
 #define HIPE_OP_GET_ATTRIBUTE      11
 /* arg[0] is the name of the attribute*/
@@ -128,13 +133,15 @@ extern "C" {
  * arg[2] is the width and arg[3] is the height of the element itself. */
 
 #define HIPE_OP_REQUEST_CONTAINER  20
-/* this must be the first instruction received. arg[0] is the key and arg[1] is a short client name.*/
+/* this must be the first instruction received. arg[0] is the key, arg[1] is a short client name, arg[2] is the
+ * theme index and arg[3] is the protocol version (HIPE_PROTOCOL_VERSION).*/
 
 #define HIPE_OP_SERVER_DENIED      21
 /*Sent by the server when a request is received but cannot be acted on due to
  *some critical violation. Usually this means that the client has not followed
  *protocol, e.g. is trying to send instructions even though a container request
  *was previously denied. Or, the session has been terminated at the server end.
+ *arg[0] is the reason, if any. The server sends it just before disconnecting a client for a protocol violation.
  */
 
 #define HIPE_OP_SET_ATTRIBUTE      22
@@ -701,6 +708,15 @@ extern "C" {
  * match among them (from 1; 0 if there are none), arg[2] == "1" if the search wrapped round to find it,
  * otherwise "0", arg[3] == "+" if the search stopped at its limit of 1000 matches (so there may be more),
  * otherwise empty.
+ */
+
+#define HIPE_OP_SERVER_NOTICE 86
+/* Sent by the server to report a client bug that isn't fatal, e.g. a location number listed for markup but used on
+ * no element in it. arg[0] is the message.
+ */
+
+#define HIPE_PROTOCOL_VERSION "3"
+/* Sent by the client library in arg[3] of HIPE_OP_REQUEST_CONTAINER. The server refuses a missing or older version.
  */
 
 

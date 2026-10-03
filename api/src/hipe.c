@@ -92,7 +92,13 @@ struct _hipe_session { /*all session-specific state variables go here!*/
     /*linked list queue of incoming instructions:*/
     hipe_instruction* oldestInstruction;
     hipe_instruction* newestInstruction;
+
+    hipe_loc_pool locations; /*this session's location numbers. Guarded by send_lock.*/
+    char lastError[256]; /*the server's reason for the last fatal error, or empty.*/
 };
+
+static __thread hipe_loc newestLocation = 0; /*the number this thread's last APPEND_TAG or INSERT_TAG allocated*/
+static char openError[256]; /*the server's reason for refusing the last hipe_open_session(), or empty*/
 
 int read_to_queue(hipe_session session, int blocking);
 /*blocking or nonblocking read from server. Receives the number of characters
@@ -109,6 +115,8 @@ void hipe_session_init(struct _hipe_session* obj) {
     obj->sendLength = obj->sendCapacity = 0;
     obj->oldestInstruction = 0;
     obj->newestInstruction = 0;
+    hipe_loc_pool_init(&obj->locations);
+    obj->lastError[0] = '\0';
 }
 
 void hipe_session_clear(struct _hipe_session* obj) {
@@ -118,6 +126,7 @@ void hipe_session_clear(struct _hipe_session* obj) {
     free(obj->sendBuffer);
     obj->sendBuffer = 0;
     obj->sendLength = obj->sendCapacity = 0;
+    hipe_loc_pool_clear(&obj->locations);
     pthread_mutex_destroy(&obj->send_lock);
 }
 
@@ -218,6 +227,7 @@ static void hipe_wait_for_keyfile_update(const char* keyPath, int timeoutMs) {
 }
 
 hipe_session hipe_open_session(const char* host_key, const char* socket_path, const char* key_path, const char* clientName) {
+    openError[0] = '\0';
 /*connect to the host socket. A custom socket file path may be specified.
   The parameters may be null pointers in which case default values are used instead.
 */
@@ -316,6 +326,8 @@ hipe_session hipe_open_session(const char* host_key, const char* socket_path, co
         rq.arg_length[1] = strlen(clientName);
         rq.arg[2] = themeIndex;
         rq.arg_length[2] = strlen(themeIndex);
+        rq.arg[3] = HIPE_PROTOCOL_VERSION;
+        rq.arg_length[3] = strlen(HIPE_PROTOCOL_VERSION);
         hipe_send_instruction(session, rq);
 
         /*Await response from server. If the container request is rejected then close the
@@ -399,26 +411,43 @@ void hipe_set_buffered(hipe_session session, int buffered) {
     pthread_mutex_unlock(&session->send_lock);
 }
 
+/*Frees, in the pool, each number in a list such as "57,1000-1499" (FREE_LOCATION's list form).*/
+static void free_location_list(hipe_loc_pool* pool, const char* list, size_t length) {
+    size_t i = 0;
+    while(i < length) {
+        hipe_loc a = 0, b;
+        while(i < length && list[i] >= '0' && list[i] <= '9') a = a*10 + (hipe_loc)(list[i++] - '0');
+        b = a;
+        if(i < length && list[i] == '-') {
+            b = 0;
+            i++;
+            while(i < length && list[i] >= '0' && list[i] <= '9') b = b*10 + (hipe_loc)(list[i++] - '0');
+        }
+        for(hipe_loc n = a; n && n <= b; n++) hipe_loc_pool_free(pool, n);
+        while(i < length && list[i] != ',') i++; /*the server rejects a malformed list; just skip to the next item*/
+        i++;
+    }
+}
+
 int hipe_send_instruction(hipe_session session, hipe_instruction instruction) {
 /*encode and transmit an instruction (or, when buffered, queue it to be transmitted).*/
     int err = 0;
     if(session->connection_fd == -1) return -1; //not connected.
-
-    //special case for HIPE_OP_APPEND_TAG -- assign and transmit a new location
-    //value from the client rather than from the server, place in requestor element.
-    //All tags added through HIPE_OP_APPEND_TAG receive an ID location. Line
-    //breaks that don't require this can be applied via HIPE_OP_APPEND_TEXT instead.
-    if(instruction.opcode == HIPE_OP_APPEND_TAG || instruction.opcode == HIPE_OP_INSERT_TAG) {
-        instruction.requestor = allocateNewID();
-    } else if(instruction.opcode == HIPE_OP_FREE_LOCATION) {
-        freeID(instruction.location);
-    }
 
     pthread_mutex_lock(&session->send_lock);
     //enforce atomicity so that two threads can send instructions without
     //messing up the encoding. Note that receiving instructions is NOT
     //thread safe, so only one thread should require and be checking for
     //replies.
+
+    //The client allocates the location of each tag it appends or inserts, and sends it in the requestor field.
+    //Freed locations become reusable.
+    if(instruction.opcode == HIPE_OP_APPEND_TAG || instruction.opcode == HIPE_OP_INSERT_TAG) {
+        instruction.requestor = newestLocation = hipe_loc_pool_allocate(&session->locations);
+    } else if(instruction.opcode == HIPE_OP_FREE_LOCATION) {
+        if(instruction.arg_length[0]) free_location_list(&session->locations, instruction.arg[0], instruction.arg_length[0]);
+        else hipe_loc_pool_free(&session->locations, instruction.location);
+    }
 
     instruction_encoder_encodeinstruction(&session->outgoingInstruction, instruction);
     const char* encoded = (const char*) session->outgoingInstruction.encoded_output;
@@ -539,8 +568,21 @@ int read_to_queue(hipe_session session, int blocking)
                                           session->readBuffer + p, bufferedChars-p);
             if(instruction_decoder_iscomplete(&session->incomingInstruction)) {
 
+                if(session->incomingInstruction.output.opcode == HIPE_OP_SERVER_NOTICE) {
+                /*A non-fatal client bug reported by the server: tell the developer, don't queue it.*/
+                    fprintf(stderr, "Hipe: Server notice: %.*s\n", (int) session->incomingInstruction.output.arg_length[0],
+                            session->incomingInstruction.output.arg[0]);
+                    instruction_decoder_clear(&session->incomingInstruction);
+                    continue;
+                }
                 if(session->incomingInstruction.output.opcode == HIPE_OP_SERVER_DENIED) {
-                /*Access to the server has been denied. Critical. Disconnect*/
+                /*Access to the server has been denied. Critical. Disconnect, keeping the server's reason.*/
+                    hipe_instruction* denial = &session->incomingInstruction.output;
+                    if(denial->arg_length[0]) {
+                        snprintf(session->lastError, sizeof session->lastError, "%.*s", (int) denial->arg_length[0], denial->arg[0]);
+                        snprintf(openError, sizeof openError, "%s", session->lastError);
+                        fprintf(stderr, "Hipe: Disconnected by the server: %s\n", session->lastError);
+                    }
                     hipe_disconnect(session);
                     if(completedInstructions) return completedInstructions;
                     else return -1; /*disconnected*/
@@ -652,7 +694,44 @@ int hipe_send(hipe_session session, char opcode, uint64_t requestor, hipe_loc lo
 
 
 hipe_loc hipe_newest_location() {
-    return lastAllocatedID();
+    return newestLocation;
+}
+
+hipe_loc hipe_reserve_location(hipe_session session) {
+    pthread_mutex_lock(&session->send_lock);
+    hipe_loc n = hipe_loc_pool_allocate(&session->locations);
+    pthread_mutex_unlock(&session->send_lock);
+    return n;
+}
+
+hipe_loc hipe_reserve_locations(hipe_session session, size_t count) {
+    pthread_mutex_lock(&session->send_lock);
+    hipe_loc n = hipe_loc_pool_allocate_run(&session->locations, count);
+    pthread_mutex_unlock(&session->send_lock);
+    return n;
+}
+
+int hipe_send_markup(hipe_session session, hipe_loc where, const char* markup, int append,
+                     const hipe_loc* reserved, size_t count) {
+    /*build arg[2]: the numbers, with consecutive ones merged into ranges ("57,1000-1499").*/
+    char* list = (char*) malloc(count * 42 + 1);
+    size_t length = 0;
+    list[0] = '\0';
+    for(size_t i = 0; i < count; ) {
+        size_t j = i;
+        while(j+1 < count && reserved[j+1] == reserved[j] + 1) j++;
+        if(j > i) length += sprintf(list + length, "%s%llu-%llu", length ? "," : "",
+                                    (unsigned long long) reserved[i], (unsigned long long) reserved[j]);
+        else length += sprintf(list + length, "%s%llu", length ? "," : "", (unsigned long long) reserved[i]);
+        i = j + 1;
+    }
+    int result = hipe_send(session, append ? HIPE_OP_APPEND_TEXT : HIPE_OP_SET_TEXT, 0, where, 3, markup, "3", list);
+    free(list);
+    return result;
+}
+
+const char* hipe_last_error(hipe_session session) {
+    return session ? session->lastError : openError;
 }
 
 

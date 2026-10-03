@@ -1,4 +1,4 @@
-/*  Copyright (c) 2015-2023 Daniel Kos, General Development Systems
+/*  Copyright (c) 2015-2026 Daniel Kos, General Development Systems
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -142,27 +142,25 @@ void instruction_encoder_encodeinstruction(instruction_encoder*, hipe_instructio
 
 
 /**
- * location ID allocations
- * - location IDs are allocated by the client. This code is not used on the server
- *   side but must follow rules expected by the server.
- * - IDs are allocated densely for memory efficiency. An object's ID is constant
- *   once allocated until that object no longer requires referencing.
- * - Rules for efficient allocation of location IDs:
- *   * 0 is the body element
- *   * IDs are allocated sequentially.
- *   * IDs can be freed when no longer used.
- *   * An ID is invalid to be allocated if it exceeds the previous highest-numbered
- *     ID (over the history of this client instance) by more than 1.
- *   * In practice the lowest numbered ID that has been freed should be reused first
+ * location number allocation (client side; see doc/design/location-numbering.md)
+ * - Location numbers are allocated by the client library, per session. The server never makes one up.
+ * - 0 is the body element. Numbers never have the top bit set (reserved).
+ * - The server accepts any free number; the lowest free numbers are used first to keep its table compact.
  **/
 
-extern hipe_loc last_id_alloc;
+typedef struct {
+    unsigned char* bits; //bit n-1 is set when location number n is in use
+    size_t size;         //bytes in bits
+    size_t firstVacantByte; //no byte before this one has a free bit
+} hipe_loc_pool;
+//A client session's pool of location numbers. Numbers count from 1 (0 is the body), and the lowest free ones are
+//used first. Freeing a number here only makes it reusable on the client side: the server must be told too.
 
-hipe_loc allocateNewID();   //assigns a new ID from the available pool and returns it
-inline hipe_loc lastAllocatedID() {return last_id_alloc;} //returns the most recently allocated ID
-void freeID(hipe_loc); //frees an ID allocation for re-use on the client side only.
-//NOTE: must also be freed in the server via message otherwise the freed ID is
-//not valid for reuse and the client may be forcibly disconnected.
+void hipe_loc_pool_init(hipe_loc_pool* pool);
+void hipe_loc_pool_clear(hipe_loc_pool* pool); //releases the pool's memory
+hipe_loc hipe_loc_pool_allocate(hipe_loc_pool* pool); //the lowest free number
+hipe_loc hipe_loc_pool_allocate_run(hipe_loc_pool* pool, size_t count); //the first of the lowest run of count free numbers
+void hipe_loc_pool_free(hipe_loc_pool* pool, hipe_loc n);
 
 
 

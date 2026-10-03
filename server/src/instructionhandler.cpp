@@ -20,6 +20,8 @@
 
 #include "instructionhandler.h"
 #include <set>
+#include <unordered_set>
+#include <vector>
 #include <cstring>
 #include "connection.h"
 #include "keylist.h"
@@ -72,7 +74,8 @@ void initInstructionMap() {
 
     handlerInfo[HIPE_OP_DELETE].ptrtype.noargs = handle_DELETE;
 
-    handlerInfo[HIPE_OP_FREE_LOCATION].ptrtype.noargs = handle_FREE_LOCATION;
+    handlerInfo[HIPE_OP_FREE_LOCATION].ptrtype.withargs = handle_FREE_LOCATION;
+    handlerInfo[HIPE_OP_FREE_LOCATION].numargs = 1;
 
     handlerInfo[HIPE_OP_GET_FIRST_CHILD].ptrtype.noargs = handle_GET_FIRST_CHILD;
 
@@ -111,10 +114,10 @@ void initInstructionMap() {
     handlerInfo[HIPE_OP_INSERT_TAG].numargs = 4;
 
     handlerInfo[HIPE_OP_SET_TEXT].ptrtype.withargs = handle_SET_TEXT;
-    handlerInfo[HIPE_OP_SET_TEXT].numargs = 2;
+    handlerInfo[HIPE_OP_SET_TEXT].numargs = 3;
 
     handlerInfo[HIPE_OP_APPEND_TEXT].ptrtype.withargs = handle_APPEND_TEXT;
-    handlerInfo[HIPE_OP_APPEND_TEXT].numargs = 2;
+    handlerInfo[HIPE_OP_APPEND_TEXT].numargs = 3;
 
     handlerInfo[HIPE_OP_GET_BY_ID].ptrtype.withargs = handle_GET_BY_ID;
     handlerInfo[HIPE_OP_GET_BY_ID].numargs = 1;
@@ -276,12 +279,52 @@ void handle_DELETE(Container*, hipe_instruction*, bool locationSpecified, QWebEl
         location.removeFromDocument(); //Qt doc says this also makes location a 'null element'
 }
 
-void handle_FREE_LOCATION(Container* c, hipe_instruction* instruction, bool, QWebElement) {
-    c->removeReferenceableElement(instruction->location);
-    c->contentSnapshots.erase(instruction->location); //a reused location mustn't inherit an old GET_CONTENT mode 4 snapshot
-    // Abandon any chunked upload still in progress toward this location -- it no longer means
-    // anything to the client, so there's no point finishing it later.
-    c->pendingBinaryUploads.erase(instruction->location);
+//Parses a list of location numbers: comma-separated decimal numbers and ranges "a-b" (a <= b), no spaces, each number
+//once, at most Container::MAX_LOCATIONS in total. Returns false if the list is malformed.
+static bool parseLocationList(const std::string& list, std::vector<hipe_loc>& out) {
+    std::unordered_set<hipe_loc> seen;
+    size_t i = 0;
+    auto number = [&](hipe_loc& n) {
+        size_t start = i;
+        n = 0;
+        while(i < list.size() && list[i] >= '0' && list[i] <= '9') {
+            if(n > (UINT64_MAX - 9) / 10) return false; //too large
+            n = n * 10 + (list[i++] - '0');
+        }
+        return i > start;
+    };
+    while(i < list.size()) {
+        hipe_loc a, b;
+        if(!number(a)) return false;
+        b = a;
+        if(i < list.size() && list[i] == '-') {
+            i++;
+            if(!number(b) || b < a) return false;
+        }
+        if(b - a >= Container::MAX_LOCATIONS || out.size() + (b - a) + 1 > Container::MAX_LOCATIONS) return false;
+        for(hipe_loc n = a; ; n++) {
+            if(!seen.insert(n).second) return false;
+            out.push_back(n);
+            if(n == b) break;
+        }
+        if(i < list.size() && list[i++] != ',') return false;
+        if(i == list.size() && list.back() == ',') return false;
+    }
+    return true;
+}
+
+//REQUIRES 1 ARG: a list of locations to free instead of instruction->location, if not empty.
+void handle_FREE_LOCATION(Container* c, hipe_instruction* instruction, bool, QWebElement, std::string arg[]) {
+    if(arg[0].empty()) {
+        c->freeLocation(instruction->location);
+        return;
+    }
+    std::vector<hipe_loc> list;
+    if(!parseLocationList(arg[0], list)) {
+        c->fatalError("malformed location list in HIPE_OP_FREE_LOCATION");
+        return;
+    }
+    for(hipe_loc n : list) c->freeLocation(n);
 }
 
 void handle_GET_FIRST_CHILD(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
@@ -395,15 +438,13 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
         if (pendingIt->second.banned) {
             // The client already broke this upload (or was refused a slot for it) and kept
             // sending regardless -- that's no longer an honest mistake worth tolerating quietly.
-            std::cerr << "hiped: Client kept sending data to a banned SET_SRC location. Disconnected client.\n";
-            if (c->client) c->client->disconnect();
+            c->fatalError("kept sending data to a refused SET_SRC upload");
             return;
         }
 
         size_t newTotal = pendingIt->second.bytesSoFar + instruction->arg_length[0];
         if (newTotal > SET_SRC_ABSURD_BYTES) {
-            std::cerr << "hiped: Client's SET_SRC upload exceeded the absurd size ceiling. Disconnected client.\n";
-            if (c->client) c->client->disconnect();
+            c->fatalError("SET_SRC upload exceeded the size limit");
             return;
         }
         if (newTotal > SET_SRC_MODEST_BYTES) {
@@ -442,8 +483,7 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
         if (!entry.second.banned) nonBannedCount++;
     }
     if (nonBannedCount >= SET_SRC_ABSURD_CONCURRENT_UPLOADS) {
-        std::cerr << "hiped: Client opened an absurd number of concurrent SET_SRC uploads. Disconnected client.\n";
-        if (c->client) c->client->disconnect();
+        c->fatalError("too many SET_SRC uploads at once");
         return;
     }
     if (nonBannedCount >= SET_SRC_MODEST_CONCURRENT_UPLOADS) {
@@ -556,15 +596,70 @@ static std::string finishTagMarkup(const std::string& tag, const std::string& cl
     return markup;
 }
 
-//The client allocates the location of each tag it appends or inserts (it arrives as the requestor), and
-//counts on from it for the next one, whether or not the tag is created. So the location is assigned even when no
-//tag was created, to no element: instructions sent to it do nothing. Otherwise the client's next tag would ask for
-//a location two past the last one assigned. The client is disconnected if the location is in use or skips ahead.
+//The client allocates the location of each tag it appends or inserts (it arrives as the requestor), whether or not
+//the tag is created. So the location is assigned even when no tag was created, to no element: instructions sent to
+//it do nothing, and the client and server still agree on which numbers are in use. A number already in use is fatal.
 static void assignTagLocation(Container* c, hipe_instruction* instruction, const QWebElement& element) {
-    if(c->assignElementIndex(element, instruction->requestor) == 0) {
-        if(c->client) c->client->disconnect(); //Hard disconnection. Will be cleaned up in the next service cycle.
-        std::cerr << "hiped: Client tried to assign invalid location value. Disconnected client.\n";
+    std::string problem = c->checkNewLocation(instruction->requestor);
+    if(problem.size()) {
+        c->fatalError(problem);
+        return;
     }
+    c->bindLocation(instruction->requestor, element);
+}
+
+//Binds the hipe-loc="N" attributes in newly inserted markup (mode 3): the elements from firstNew to the end of its
+//siblings, and their descendants. listed holds the numbers the client reserved, already checked by
+//checkMarkupLocations(). Every hipe-loc attribute is removed; listed numbers on no element are bound to none.
+static void bindMarkupLocations(Container* c, QWebElement firstNew, const std::vector<hipe_loc>& listed) {
+    std::unordered_set<hipe_loc> wanted(listed.begin(), listed.end()), bound;
+    std::vector<hipe_loc> duplicates;
+    auto bind = [&](QWebElement element) {
+        QString value = element.attribute("hipe-loc");
+        element.removeAttribute("hipe-loc");
+        bool ok = false;
+        hipe_loc n = value.toULongLong(&ok);
+        if(!ok || !wanted.count(n)) return; //not a number the client listed: ignored
+        if(!bound.insert(n).second) { duplicates.push_back(n); return; }
+        c->bindLocation(n, element);
+    };
+    for(QWebElement e = firstNew; !e.isNull(); e = e.nextSibling()) {
+        if(e.hasAttribute("hipe-loc")) bind(e);
+        for(QWebElement d : e.findAll("[hipe-loc]")) bind(d);
+    }
+    std::vector<hipe_loc> unbound;
+    for(hipe_loc n : listed)
+        if(!bound.count(n)) {
+            c->bindLocation(n, QWebElement());
+            unbound.push_back(n);
+        }
+    auto someOf = [](const std::vector<hipe_loc>& v) {
+        std::string s;
+        for(size_t i = 0; i < v.size() && i < 5; i++) s += (i ? ", " : "") + std::to_string(v[i]);
+        return s + (v.size() > 5 ? ", ..." : "");
+    };
+    if(unbound.size())
+        c->notice(std::to_string(unbound.size()) + " listed location(s) found on no element in the markup: " + someOf(unbound));
+    if(duplicates.size())
+        c->notice("location(s) used on more than one element in the markup (the first was used): " + someOf(duplicates));
+}
+
+//Checks the location list of a mode 3 instruction (arg[2]) before anything is inserted. Returns false, having
+//disconnected the client with the reason, if the list is malformed or a number can't be bound.
+static bool checkMarkupLocations(Container* c, const std::string& list, std::vector<hipe_loc>& listed) {
+    if(list.empty()) return true;
+    if(!parseLocationList(list, listed)) {
+        c->fatalError("malformed location list for markup");
+        return false;
+    }
+    for(size_t i = 0; i < listed.size(); i++) {
+        std::string problem = c->checkNewLocation(listed[i], i);
+        if(problem.size()) {
+            c->fatalError(problem);
+            return false;
+        }
+    }
+    return true;
 }
 
 void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location, std::string arg[]) {
@@ -619,19 +714,35 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
 }
 
 
-//REQUIRES 2 ARGS
+//REQUIRES 3 ARGS (arg[2]: the locations listed for markup, mode 3 only)
 void handle_SET_TEXT(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
-    arg[0] = Sanitation::sanitisePlainText(arg[0], Sanitation::textModeFromArg(arg[1]));
-    if(!locationSpecified) c->setBody(arg[0]);
+    Sanitation::TextMode mode = Sanitation::textModeFromArg(arg[1]);
+    std::vector<hipe_loc> listed;
+    if(mode == Sanitation::MARKUP && !checkMarkupLocations(c, arg[2], listed)) return;
+    arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
+    if(!locationSpecified) {
+        c->setBody(arg[0]);
+        location = c->webElement; //webElement may have been redefined in setBody().
+    }
     else location.setInnerXml(arg[0].c_str());
+    if(mode == Sanitation::MARKUP) bindMarkupLocations(c, location.firstChild(), listed);
 }
 
 
-//REQUIRES 2 ARGS
+//REQUIRES 3 ARGS (arg[2]: the locations listed for markup, mode 3 only)
 void handle_APPEND_TEXT(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
-    arg[0] = Sanitation::sanitisePlainText(arg[0], Sanitation::textModeFromArg(arg[1]));
-    if(!locationSpecified) c->setBody(arg[0], false);
+    Sanitation::TextMode mode = Sanitation::textModeFromArg(arg[1]);
+    std::vector<hipe_loc> listed;
+    if(mode == Sanitation::MARKUP && !checkMarkupLocations(c, arg[2], listed)) return;
+    arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
+    QWebElement before = (locationSpecified ? location : c->webElement).lastChild();
+    if(!locationSpecified) {
+        c->setBody(arg[0], false);
+        location = c->webElement; //webElement may have been redefined in setBody().
+    }
     else location.appendInside(arg[0].c_str());
+    if(mode == Sanitation::MARKUP)
+        bindMarkupLocations(c, before.isNull() ? location.firstChild() : before.nextSibling(), listed);
 }
 
 
@@ -671,6 +782,7 @@ void handle_SET_TITLE(Container* c, hipe_instruction*, bool, QWebElement, std::s
 
 //REQUIRES 2 ARGS
 void handle_SET_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
+    if(QString(arg[0].c_str()).compare("hipe-loc", Qt::CaseInsensitive) == 0) return; //only meaningful in markup
     location.setAttribute(QString(arg[0].c_str()), QString(arg[1].c_str()));
 }
 

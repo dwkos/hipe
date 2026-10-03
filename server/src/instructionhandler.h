@@ -51,7 +51,7 @@ void invoke_handler(Container* c, hipe_instruction* instruction, bool locationSp
 
 void handle_CLEAR           (Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 void handle_DELETE          (Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
-void handle_FREE_LOCATION   (Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
+void handle_FREE_LOCATION   (Container*, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]);
 void handle_GET_FIRST_CHILD (Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 void handle_GET_LAST_CHILD  (Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 void handle_GET_NEXT_SIBLING(Container*, hipe_instruction*, bool locationSpecified, QWebElement location);

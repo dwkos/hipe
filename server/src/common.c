@@ -242,107 +242,62 @@ void instruction_encoder_encodeinstruction(instruction_encoder* obj, hipe_instru
 
 
 
-//ID allocation code...
+//Location number pools (one per client session). Bit n-1 of bits is set when number n is in use.
 
-hipe_loc last_id_alloc=0;
-//the most recently allocated ID which the user can retrieve thru the hipe API
-
-
-unsigned char* loc_id_aloc_bits = 0;
-//byte array to represent which location IDs have been allocated.
-//Each element represents 8 ID numbers -- each bit within the byte
-//can be 0 (id not allocated) or 1 (id is in use.)
-size_t loc_id_array_size=0; //size in bytes (multiply by 8 for bits)
-
-size_t first_byte_with_vacant_id = 0;
-//first array element with a possible vacancy for new ID allocation.
-
-size_t last_byte_with_occupied_id = 0;
-//last array element with a nonzero bit.
-
-
-hipe_loc allocateNewID() {
-//assigns a new ID from the available pool and returns it
-
-    //find vacancy within current array size
-    for(size_t i=first_byte_with_vacant_id; i<loc_id_array_size; i++) {
-        if(loc_id_aloc_bits[i] == 255) {
-        //all bits are set, no free position here.
-            first_byte_with_vacant_id++;
-            continue;
-        }
-
-        //there's a vacant bit here.
-        for(size_t j=0; j<8; j++) {
-            if((1<<j) & loc_id_aloc_bits[i]) //this bit is 1 (occupied)
-                continue; 
-
-            //found a 0 bit. -- vacancy here. Set the bit to 1 to indicate occupied now.
-            loc_id_aloc_bits[i] |= 1<<j;
-
-            if(i>last_byte_with_occupied_id) last_byte_with_occupied_id = i;
-
-            //return the newly allocated value. Add 1 to the bit value since we
-            //begin counting from 1 (0 is reserved.)
-            last_id_alloc = ((i<<3) | j) +1;
-            return last_id_alloc;
-        }
-    }
-
-
-    //grow array as no vacancy within current array size... Double array size.
-    //if not allocated yet then allocate an array for the first time.
-    size_t newArraySize = (loc_id_array_size==0) ? 16 : loc_id_array_size*2;
-
-    loc_id_aloc_bits = realloc(loc_id_aloc_bits, newArraySize);
-    for(size_t i=loc_id_array_size; i<newArraySize; i++) {
-        loc_id_aloc_bits[i] = 0;
-    }
-    loc_id_array_size = newArraySize;
-
-    //recurse to allocate the new ID now that there is more space in the array.
-    return allocateNewID();
+void hipe_loc_pool_init(hipe_loc_pool* pool) {
+    pool->bits = 0;
+    pool->size = 0;
+    pool->firstVacantByte = 0;
 }
 
+void hipe_loc_pool_clear(hipe_loc_pool* pool) {
+    free(pool->bits);
+    hipe_loc_pool_init(pool);
+}
 
+static int poolInUse(const hipe_loc_pool* pool, hipe_loc n) { //n counts from 1
+    size_t i = (size_t)((n-1) >> 3);
+    return i < pool->size && (pool->bits[i] & (1 << ((n-1) & 7)));
+}
 
-void freeID(hipe_loc l) {
-    if(l<1) return; //not allowed to free location 0.
- 
-    l-=1; //subtract 1 since bit positions are counted from 0 but locations are
-    //allocated from 1.
-
-    size_t i = l>>3; //byte element.
-
-    if(i>=loc_id_array_size) return; //out of bounds.
-
-    if(i < first_byte_with_vacant_id)
-        first_byte_with_vacant_id = i;
-
-    //set the relevant bit to 0.
-    int bitPosition = l & 7; //filter-in only the last 3 bits == bit position
-    loc_id_aloc_bits[i] &= ~(1<<bitPosition); //set the relevant bit to 0.
-
-
-
-    //see if position of the last occupied element has changed.
-    //This is the case if the current byte is the last occupied and now has
-    //all bits 0.
-    if(last_byte_with_occupied_id == i && !loc_id_aloc_bits[i]) {
-        //count down last occupied block until we find one with occupancy.
-        //note size_t's are unsigned so loop condition has to be nonzero rather
-        //than nonnegative.
-        while(last_byte_with_occupied_id > 0  
-                                && !loc_id_aloc_bits[last_byte_with_occupied_id])
-            last_byte_with_occupied_id--;
+static void poolMark(hipe_loc_pool* pool, hipe_loc n) {
+    size_t i = (size_t)((n-1) >> 3);
+    if(i >= pool->size) { //grow, at least doubling
+        size_t newSize = pool->size ? pool->size*2 : 16;
+        while(newSize <= i) newSize *= 2;
+        pool->bits = realloc(pool->bits, newSize);
+        memset(pool->bits + pool->size, 0, newSize - pool->size);
+        pool->size = newSize;
     }
+    pool->bits[i] |= 1 << ((n-1) & 7);
+}
 
-    //shrink array if less than half occupied.
-    if(last_byte_with_occupied_id <16) return; //no point shrinking an array
-    //too small/messing with edge conditions around zero!
-    if(last_byte_with_occupied_id < loc_id_array_size/2) { //only if every occupied byte fits in the smaller array
-        loc_id_array_size/=2;
-        loc_id_aloc_bits = realloc(loc_id_aloc_bits, loc_id_array_size);
+hipe_loc hipe_loc_pool_allocate(hipe_loc_pool* pool) {
+    while(pool->firstVacantByte < pool->size && pool->bits[pool->firstVacantByte] == 255)
+        pool->firstVacantByte++;
+    hipe_loc n = ((hipe_loc)pool->firstVacantByte << 3) + 1;
+    while(poolInUse(pool, n)) n++;
+    poolMark(pool, n);
+    return n;
+}
+
+hipe_loc hipe_loc_pool_allocate_run(hipe_loc_pool* pool, size_t count) {
+    if(count == 0) return 0;
+    if(count == 1) return hipe_loc_pool_allocate(pool);
+    //first fit: the lowest run of count free numbers.
+    hipe_loc start = ((hipe_loc)pool->firstVacantByte << 3) + 1;
+    size_t found = 0;
+    for(hipe_loc n = start; found < count; n++) {
+        if(poolInUse(pool, n)) { found = 0; start = n+1; }
+        else found++;
     }
+    for(size_t k = 0; k < count; k++) poolMark(pool, start + k);
+    return start;
+}
 
+void hipe_loc_pool_free(hipe_loc_pool* pool, hipe_loc n) {
+    if(n < 1 || !poolInUse(pool, n)) return;
+    size_t i = (size_t)((n-1) >> 3);
+    pool->bits[i] &= ~(1 << ((n-1) & 7));
+    if(i < pool->firstVacantByte) pool->firstVacantByte = i;
 }
