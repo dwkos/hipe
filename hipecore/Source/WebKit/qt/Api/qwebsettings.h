@@ -23,6 +23,7 @@
 #include "qwebkitglobal.h"
 
 #include <QtCore/qstring.h>
+#include <QtCore/qstringlist.h>
 #include <QtGui/qpixmap.h>
 #include <QtGui/qicon.h>
 #include <QtCore/qshareddata.h>
@@ -98,6 +99,7 @@ public:
     void setFontFamily(FontFamily which, const QString &family);
     QString fontFamily(FontFamily which) const;
     void resetFontFamily(FontFamily which);
+    static QStringList installedFontFamilies();
 
     void setFontSize(FontSize type, int size);
     int fontSize(FontSize type) const;

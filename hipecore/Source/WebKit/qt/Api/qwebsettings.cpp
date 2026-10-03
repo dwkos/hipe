@@ -704,6 +704,20 @@ void QWebSettings::resetFontFamily(FontFamily which)
 }
 
 /*!
+    Returns the font families installed on the system, sorted, each named once, for example to
+    offer a choice of fonts. Each name can be used in a CSS font-family property.
+
+    Fonts that a document adds itself with @font-face are not included.
+*/
+QStringList QWebSettings::installedFontFamilies()
+{
+    QStringList families;
+    for (const String& family : WebCore::FontCache::singleton().systemFontFamilies())
+        families.append(family);
+    return families;
+}
+
+/*!
     \fn void QWebSettings::setAttribute(WebAttribute attribute, bool on)
 
     Enables or disables the specified \a attribute feature depending on the

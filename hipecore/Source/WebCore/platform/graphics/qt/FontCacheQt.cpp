@@ -3,6 +3,7 @@
     Copyright (C) 2008 Holger Hans Peter Freyther
     Copyright (C) 2006, 2008 Apple Inc. All rights reserved.
     Copyright (C) 2007 Nicholas Shanks <webkit@nickshanks.com>
+    Copyright (C) 2025-2026 General Development Systems
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -74,11 +75,23 @@ RefPtr<Font> FontCache::systemFallbackForCharacters(const FontDescription&, cons
 
 Vector<String> FontCache::systemFontFamilies()
 {
-    Vector<String> families;
+    // When several foundries supply a family, Qt lists it once per foundry as "Family [Foundry]".
+    // Such a family is listed once here, under the name a font-family property uses.
+    QStringList families;
     QFontDatabase db;
-    for (const QString& family : db.families())
+    for (QString family : db.families()) {
+        int foundry = family.indexOf(QLatin1String(" ["));
+        if (foundry > 0 && family.endsWith(QLatin1Char(']')))
+            family.truncate(foundry);
         families.append(family);
-    return families;
+    }
+    families.removeDuplicates();
+    families.sort(Qt::CaseInsensitive);
+
+    Vector<String> result;
+    for (const QString& family : families)
+        result.append(family);
+    return result;
 }
 
 Ref<Font> FontCache::lastResortFallbackFont(const FontDescription& fontDescription)

@@ -2,6 +2,7 @@
     Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies)
     Copyright (C) 2009 Girish Ramakrishnan <girish@forwardbias.in>
     Copyright (C) 2010 Holger Hans Peter Freyther
+    Copyright (C) 2025-2026 General Development Systems
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -124,6 +125,7 @@ private Q_SLOTS:
     void findText();
     void deleteQWebViewTwice();
     void renderOnRepaintRequestedShouldNotRecurse();
+    void installedFontFamilies();
 
 private:
     QWebView* m_view { nullptr };
@@ -1568,6 +1570,24 @@ void tst_QWebPage::renderOnRepaintRequestedShouldNotRecurse()
     QVERIFY(::waitForSignal(&r, SIGNAL(finished())));
 }
 
+
+void tst_QWebPage::installedFontFamilies()
+{
+    const QStringList families = QWebSettings::installedFontFamilies();
+    QVERIFY(!families.isEmpty());
+
+    // Each family is named once, without Qt's " [Foundry]" suffix, and the list is sorted.
+    QStringList unique = families;
+    QCOMPARE(unique.removeDuplicates(), 0);
+    for (const QString& family : families)
+        QVERIFY2(!family.contains(QLatin1String(" [")), qPrintable(family));
+    QStringList sorted = families;
+    sorted.sort(Qt::CaseInsensitive);
+    QCOMPARE(families, sorted);
+
+    // The font a page falls back to when nothing in its font-family list is installed is listed.
+    QVERIFY(families.contains(QFont().defaultFamily()));
+}
 
 QTEST_MAIN(tst_QWebPage)
 #include "tst_qwebpage.moc"
