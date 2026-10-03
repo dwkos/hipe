@@ -576,12 +576,6 @@ void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locatio
 
     std::string newTagString = "<";
     newTagString += arg[0];
-
-    //canvases don't function correctly without an ID. Generate one if not provided.
-    if(!arg[1].size() && arg[0]=="canvas") {
-        arg[1] = c->keyList->generateContainerKey();
-        c->keyList->claimKey(arg[1]); //burn through a container key to get a random string out of it.
-    }
     if(arg[1].size()) { //apply an ID to the new tag if provided.
         newTagString += " id=\"" + arg[1] + "\"";
     }
@@ -611,11 +605,6 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
 
     std::string newTagString = "<";
     newTagString += arg[0];
-    //canvases don't function correctly without an ID. Generate one if not provided.
-    if(!arg[1].size() && arg[0]=="canvas") {
-        arg[1] = c->keyList->generateContainerKey();
-        c->keyList->claimKey(arg[1]); //burn through a container key to get a random string out of it.
-    }
     if(arg[1].size()) { //apply an ID to the new tag if provided.
         newTagString += " id=\"" + arg[1] + "\"";
     }
