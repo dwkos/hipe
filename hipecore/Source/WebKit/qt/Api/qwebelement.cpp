@@ -49,6 +49,8 @@
 #include "HTMLImageElement.h"
 #include "HTMLCanvasElement.h"
 #include "HTMLTemplateElement.h"
+#include "MathMLNames.h"
+#include "SVGNames.h"
 #include "TypedElementDescendantIterator.h"
 #include "CanvasRenderingContext2D.h"
 #include "CanvasGradient.h"
@@ -92,6 +94,7 @@
 #include "X11EmbedWidgetQt.h"
 #endif
 #include <wtf/HashMap.h>
+#include <map>
 #include <wtf/NeverDestroyed.h>
 #include <wtf/Ref.h>
 #include <wtf/RefPtr.h> 
@@ -109,6 +112,8 @@
 #include <QPageSize>
 
 using namespace WebCore;
+
+static HashMap<Element*, quint64>& hipeNumbers(); // element -> Hipe location number; see QWebLocationRegistry
 
 class QWebElementPrivate {
 public:
@@ -1767,15 +1772,26 @@ static int modifierMask(const UIEventWithKeyState& event)
 }
 
 void QWebElement::requestEvent(const QString& eventName, void* usrPtr, uint64_t usrVal1, uint64_t usrVal2,
-                                HipeCoreEventCallback callbackFn, bool preventDefault) {
+                                HipeCoreEventCallback callbackFn, bool preventDefault, bool usrVal1IsHipeLocation) {
     if (!m_element) return;
 
     // Create a callback that bridges between WebCore::Event and our API
-    auto callback = [callbackFn, eventName, usrPtr, usrVal1, usrVal2, preventDefault]
+    auto callback = [callbackFn, eventName, usrPtr, usrVal1, usrVal2, preventDefault, usrVal1IsHipeLocation]
                                             (WebCore::Event* event) {
 
         if(preventDefault) event->preventDefault();
         //override default webkit behaviour if requested.
+
+        uint64_t location = usrVal1;
+        if (usrVal1IsHipeLocation) {
+            // The listener's element's number now, not when the event was requested: a freed number reports nothing,
+            // and a reused one only its own element's events.
+            Node* node = event->currentTarget() ? event->currentTarget()->toNode() : nullptr;
+            auto entry = (node && is<Element>(*node)) ? hipeNumbers().find(&downcast<Element>(*node)) : hipeNumbers().end();
+            if (entry == hipeNumbers().end())
+                return;
+            location = entry->value;
+        }
 
         QString details;
 
@@ -1826,7 +1842,7 @@ void QWebElement::requestEvent(const QString& eventName, void* usrPtr, uint64_t 
         }
 
         // Convert WebCore event data to our API format
-        callbackFn(eventName, usrPtr, usrVal1, usrVal2, details);
+        callbackFn(eventName, usrPtr, location, usrVal2, details);
     };
 
     // For resize events, add listener to document rather than element
@@ -3273,30 +3289,297 @@ void QWebElement::setStyleProperty(const QString &name, const QString &value)
 /*!
     Returns the list of classes of this element.
 */
-// Hipe location numbers, kept outside the DOM (see QWebElement::setHipeLocation()). Each entry holds a reference, so
-// a numbered element can't be destroyed while its number is set. Used on the main thread only.
-static HashMap<Element*, std::pair<RefPtr<Element>, quint64>>& hipeLocations()
+// Element -> Hipe location number, for every element a QWebLocationRegistry has bound (see QWebElement::hipeLocation()).
+// Holds no reference: the registry that bound the element holds it, and removes the entry when it lets go.
+static HashMap<Element*, quint64>& hipeNumbers()
 {
-    static NeverDestroyed<HashMap<Element*, std::pair<RefPtr<Element>, quint64>>> locations;
-    return locations;
-}
-
-void QWebElement::setHipeLocation(quint64 location)
-{
-    if (!m_element)
-        return;
-    if (!location)
-        hipeLocations().remove(m_element);
-    else
-        hipeLocations().set(m_element, std::make_pair(RefPtr<Element>(m_element), location));
+    static NeverDestroyed<HashMap<Element*, quint64>> numbers;
+    return numbers;
 }
 
 quint64 QWebElement::hipeLocation() const
 {
     if (!m_element)
         return 0;
-    auto entry = hipeLocations().find(m_element);
-    return entry == hipeLocations().end() ? 0 : entry->value.second;
+    auto entry = hipeNumbers().find(m_element);
+    return entry == hipeNumbers().end() ? 0 : entry->value;
+}
+
+struct QWebLocationRegistry::Private {
+    struct Slot {
+        RefPtr<Element> element; // null: bound to none, or released
+        bool used = false;
+    };
+    // Dense for numbers up to about twice the count in use (client pools hand out the lowest free numbers), sparse
+    // beyond, so memory follows the count in use.
+    Vector<Slot> dense;
+    std::map<quint64, RefPtr<Element>> sparse;
+    size_t count = 0;
+    size_t bindsSinceSweep = 0;
+
+    Slot* denseSlot(quint64 n) { return n < dense.size() ? &dense[n] : nullptr; }
+    void release(RefPtr<Element>& element)
+    {
+        if (element) {
+            hipeNumbers().remove(element.get());
+            element = nullptr;
+        }
+    }
+};
+
+QWebLocationRegistry::QWebLocationRegistry()
+    : d(new Private)
+{
+}
+
+QWebLocationRegistry::~QWebLocationRegistry()
+{
+    for (auto& slot : d->dense)
+        d->release(slot.element);
+    for (auto& entry : d->sparse)
+        d->release(entry.second);
+    delete d;
+}
+
+size_t QWebLocationRegistry::count() const
+{
+    return d->count;
+}
+
+bool QWebLocationRegistry::inUse(quint64 n) const
+{
+    if (Private::Slot* slot = d->denseSlot(n))
+        return slot->used;
+    return d->sparse.count(n);
+}
+
+quint64 QWebLocationRegistry::firstInUse(const Ranges& ranges) const
+{
+    for (auto& range : ranges) {
+        for (quint64 n = range.first; n <= range.second && n < d->dense.size(); n++) {
+            if (d->dense[n].used)
+                return n;
+        }
+        auto entry = d->sparse.lower_bound(range.first);
+        if (entry != d->sparse.end() && entry->first <= range.second)
+            return entry->first;
+    }
+    return 0;
+}
+
+void QWebLocationRegistry::bind(quint64 n, const QWebElement& w)
+{
+    RefPtr<Element> element = w.m_element;
+    if (element && hipeNumbers().contains(element.get()))
+        element = nullptr; // an element has at most one number
+    if (n >= d->dense.size() && n < 4096 + 2 * (d->count + 1)) // grow the dense table, at least doubling
+        d->dense.resize(std::max<size_t>(n + 1, std::min<size_t>(2 * d->dense.size(), 4096 + 2 * (d->count + 1))));
+    if (Private::Slot* slot = d->denseSlot(n)) {
+        slot->element = element;
+        slot->used = true;
+    } else
+        d->sparse[n] = element;
+    if (element)
+        hipeNumbers().set(element.get(), n);
+    d->count++;
+    if (++d->bindsSinceSweep > std::max<size_t>(1024, d->count / 2)) // amortised: a sweep costs O(count)
+        sweep();
+}
+
+void QWebLocationRegistry::free(quint64 n)
+{
+    if (Private::Slot* slot = d->denseSlot(n)) {
+        if (!slot->used)
+            return;
+        d->release(slot->element);
+        slot->used = false;
+    } else {
+        auto entry = d->sparse.find(n);
+        if (entry == d->sparse.end())
+            return;
+        d->release(entry->second);
+        d->sparse.erase(entry);
+    }
+    d->count--;
+}
+
+QWebElement QWebLocationRegistry::element(quint64 n) const
+{
+    if (Private::Slot* slot = d->denseSlot(n))
+        return QWebElement(slot->element.get());
+    auto entry = d->sparse.find(n);
+    return entry == d->sparse.end() ? QWebElement() : QWebElement(entry->second.get());
+}
+
+// Releases the elements only this registry still references: out of any tree (a node in a tree is kept alive by its
+// parent), with no reference but ours. Releasing one can free its children for the next pass. Run every so often from
+// bind(), so its cost is spread over the binds.
+void QWebLocationRegistry::sweep()
+{
+    d->bindsSinceSweep = 0;
+    auto unreferenced = [](const RefPtr<Element>& element) {
+        return element && !element->parentNode() && element->refCount() == 1;
+    };
+    bool released;
+    do {
+        released = false;
+        for (auto& slot : d->dense) {
+            if (unreferenced(slot.element)) {
+                d->release(slot.element);
+                released = true;
+            }
+        }
+        for (auto& entry : d->sparse) {
+            if (unreferenced(entry.second)) {
+                d->release(entry.second);
+                released = true;
+            }
+        }
+    } while (released);
+}
+
+static bool listedIn(const QWebLocationRegistry::Ranges& ranges, quint64 n)
+{
+    auto range = std::upper_bound(ranges.begin(), ranges.end(), n,
+        [](quint64 value, const QPair<quint64, quint64>& r) { return value < r.first; });
+    return range != ranges.begin() && n <= (range - 1)->second;
+}
+
+QWebLocationRegistry::MarkupResult QWebLocationRegistry::bindMarkup(const QList<QPair<QWebElement, QString>>& carriers,
+    const Ranges& listed)
+{
+    MarkupResult result;
+    if (listed.isEmpty())
+        return result;
+    for (auto& carrier : carriers) {
+        const QString& value = carrier.second;
+        bool digits = !value.isEmpty() && value.size() <= 20;
+        for (QChar c : value)
+            digits = digits && c >= QLatin1Char('0') && c <= QLatin1Char('9');
+        bool ok = false;
+        quint64 n = digits ? value.toULongLong(&ok) : 0;
+        if (!ok || !listedIn(listed, n))
+            continue; // not a number the client listed: ignored
+        if (inUse(n)) { // listed numbers were all free, so another carrier took it
+            if (result.duplicates.size() < 5)
+                result.duplicates.append(n);
+            continue;
+        }
+        bind(n, carrier.first);
+    }
+    for (auto& range : listed) {
+        for (quint64 n = range.first; ; n++) {
+            if (!inUse(n)) {
+                bind(n, QWebElement());
+                if (result.unbound.size() < 5)
+                    result.unbound.append(n);
+                result.unboundCount++;
+            }
+            if (n == range.second)
+                break;
+        }
+    }
+    return result;
+}
+
+// The namespace and qualified name the HTML parser would give a tag created inside parent.
+static void parserNameFor(Element& parent, const QString& tag, AtomicString& namespaceURI, String& name)
+{
+    String lowered = String(tag).convertToASCIILowercase();
+    const AtomicString& parentNamespace = parent.namespaceURI();
+    bool htmlIntegrationPoint = (parentNamespace == SVGNames::svgNamespaceURI
+            && (parent.hasLocalName(SVGNames::foreignObjectTag.localName()) || parent.hasLocalName(SVGNames::descTag.localName())
+                || parent.hasLocalName(SVGNames::titleTag.localName())))
+        || (parentNamespace == MathMLNames::mathmlNamespaceURI
+            && (parent.hasLocalName(MathMLNames::miTag.localName()) || parent.hasLocalName(MathMLNames::moTag.localName())
+                || parent.hasLocalName(MathMLNames::mnTag.localName()) || parent.hasLocalName(MathMLNames::msTag.localName())
+                || parent.hasLocalName(MathMLNames::mtextTag.localName()) || parent.hasLocalName(MathMLNames::annotation_xmlTag.localName())));
+    if (lowered == "svg")
+        namespaceURI = SVGNames::svgNamespaceURI;
+    else if (lowered == "math")
+        namespaceURI = MathMLNames::mathmlNamespaceURI;
+    else if (!htmlIntegrationPoint && (parentNamespace == SVGNames::svgNamespaceURI || parentNamespace == MathMLNames::mathmlNamespaceURI))
+        namespaceURI = parentNamespace;
+    else
+        namespaceURI = HTMLNames::xhtmlNamespaceURI;
+
+    name = lowered;
+    if (namespaceURI == SVGNames::svgNamespaceURI) {
+        static NeverDestroyed<HashMap<AtomicString, AtomicString>> svgCase = [] {
+            HashMap<AtomicString, AtomicString> map;
+            const SVGQualifiedName* const* tags = SVGNames::getSVGTags();
+            for (unsigned i = 0; i < SVGNames::SVGTagsCount; ++i) {
+                const AtomicString& localName = tags[i]->localName();
+                AtomicString lowerName = localName.convertToASCIILowercase();
+                if (lowerName != localName)
+                    map.add(lowerName, localName);
+            }
+            return map;
+        }();
+        AtomicString cased = svgCase.get().get(AtomicString(lowered));
+        if (!cased.isNull())
+            name = cased;
+    }
+}
+
+static bool isVoidHTMLElement(const Element& element)
+{
+    static const char* const voidTags[] = { "area", "base", "br", "col", "embed", "hr", "img", "input", "keygen", "link",
+        "meta", "param", "source", "track", "wbr" };
+    if (!element.isHTMLElement())
+        return false;
+    for (const char* tag : voidTags) {
+        if (element.localName() == tag)
+            return true;
+    }
+    return false;
+}
+
+static RefPtr<Element> createDirectly(Element& parent, const QString& tag, const QString& id, const QString& classes,
+    const QString& text)
+{
+    AtomicString namespaceURI;
+    String name;
+    parserNameFor(parent, tag, namespaceURI, name);
+    ExceptionCode exception = 0;
+    RefPtr<Element> element = parent.document().createElementNS(namespaceURI, name, exception);
+    if (exception || !element)
+        return nullptr;
+    if (!id.isEmpty())
+        element->setAttribute(HTMLNames::idAttr, id);
+    if (!classes.isEmpty())
+        element->setAttribute(HTMLNames::classAttr, classes);
+    if (!text.isEmpty() && !isVoidHTMLElement(*element)) {
+        QString normalised = text;
+        normalised.replace(QLatin1String("\r\n"), QLatin1String("\n")).replace(QLatin1Char('\r'), QLatin1Char('\n'));
+        element->setTextContent(normalised, exception);
+    }
+    return element;
+}
+
+QWebElement QWebElement::appendNewElement(const QString& tag, const QString& id, const QString& classes, const QString& text)
+{
+    if (!m_element)
+        return QWebElement();
+    RefPtr<Element> element = createDirectly(*m_element, tag, id, classes, text);
+    if (!element)
+        return QWebElement();
+    ExceptionCode exception = 0;
+    m_element->appendChild(*element, exception);
+    return exception ? QWebElement() : QWebElement(element.get());
+}
+
+QWebElement QWebElement::insertNewElementBefore(const QString& tag, const QString& id, const QString& classes, const QString& text)
+{
+    if (!m_element || !m_element->parentElement())
+        return QWebElement();
+    Element& parent = *m_element->parentElement();
+    RefPtr<Element> element = createDirectly(parent, tag, id, classes, text);
+    if (!element)
+        return QWebElement();
+    ExceptionCode exception = 0;
+    parent.insertBefore(*element, m_element, exception);
+    return exception ? QWebElement() : QWebElement(element.get());
 }
 
 QStringList QWebElement::classes() const

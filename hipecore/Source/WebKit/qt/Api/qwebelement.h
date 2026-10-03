@@ -122,11 +122,22 @@ public:
     void removeClass(const QString& name);
     void toggleClass(const QString& name);
 
-    // The element's Hipe location number (0 if none). It is stored outside the DOM: invisible to the document and to
-    // CSS, and never copied by cloning, editing, copy or undo. While an element has a number, the number keeps the
-    // element alive; setting 0 clears it.
-    void setHipeLocation(quint64 location);
+    // The element's Hipe location number (0 if none), given by a QWebLocationRegistry. It is kept outside the DOM:
+    // invisible to the document and to CSS, and never copied by cloning, editing, copy or undo.
     quint64 hipeLocation() const;
+
+    // Create an element directly through the DOM (no markup is parsed), as this element's last child
+    // (appendNewElement) or immediately before this element (insertNewElementBefore). Its namespace follows the
+    // parent's, as the HTML parser would choose it: an element inside SVG or MathML is an SVG or MathML element (with
+    // the parser's exceptions for HTML integration points), "svg" and "math" start those namespaces, and SVG tag
+    // names get the parser's letter case ("lineargradient" becomes "linearGradient"). id and classes are set if not
+    // empty. text becomes the element's text content (void HTML elements ignore it), with "\r\n" and "\r" turned
+    // into "\n". Unlike markup, nothing is wrapped or dropped. Returns the new element, or a null element if tag isn't
+    // a valid element name or there's nowhere to put it.
+    QWebElement appendNewElement(const QString& tag, const QString& id = QString(), const QString& classes = QString(),
+                                 const QString& text = QString());
+    QWebElement insertNewElementBefore(const QString& tag, const QString& id = QString(),
+                                       const QString& classes = QString(), const QString& text = QString());
 
     bool hasFocus() const;
     void setFocus();
@@ -179,7 +190,9 @@ public:
     // safety net here (unlike e.g. GObject's weak-ref-based listeners) -- the caller is
     // responsible for the ordering.
     void requestEvent(const QString& eventName, void* usrPtr, uint64_t usrVal1, uint64_t usrVal2,
-                        HipeCoreEventCallback callback, bool preventDefault=false);
+                        HipeCoreEventCallback callback, bool preventDefault=false, bool usrVal1IsHipeLocation=false);
+    // usrVal1IsHipeLocation: pass the element's current hipeLocation() as usrVal1 when the event fires (ignoring the
+    // usrVal1 given here), and don't call back at all while the element has no number.
     bool handlesEvent(const QString& eventName); //returns true if a handler has been set.
     void cancelEvent(const QString& eventName); //removes ALL listeners of eventName on this element, not just one.
     void setDefaultPrevention(const QString& eventName, const QString& rules); //cancels matching events' default actions.
@@ -326,9 +339,46 @@ private:
     friend class QWebPage;
     friend class QWebPageAdapter;
     friend class QWebPagePrivate;
+    friend class QWebLocationRegistry;
 
     QWebElementPrivate* d;
     WebCore::Element* m_element;
+};
+
+// Hipe location numbers for one container: number -> element, and (through QWebElement::hipeLocation()) element ->
+// number. Each number names at most one element and each element has at most one number. A number stays in use until
+// free(); it may name no element (bind() with a null element). Elements are held weakly: an element that has left
+// the document and that nothing else references (not the document, not the undo history) is released, and its
+// number then names no element. Main thread only.
+class QWEBKIT_EXPORT QWebLocationRegistry {
+public:
+    typedef QVector<QPair<quint64, quint64>> Ranges; // inclusive ranges, ascending and not overlapping
+
+    QWebLocationRegistry();
+    ~QWebLocationRegistry(); // releases every number
+
+    size_t count() const; // numbers in use
+    bool inUse(quint64 location) const;
+    quint64 firstInUse(const Ranges&) const; // the first number in the ranges that is in use, or 0
+    void bind(quint64 location, const QWebElement&); // location must be free; a null or already numbered element binds none
+    void free(quint64 location); // does nothing if not in use
+    QWebElement element(quint64 location) const; // null if not in use, bound to none, or released
+
+    // Binds the listed numbers to the elements that carried them in markup (QWebElement::setInnerXml()/appendInside()
+    // with a hipeLocations list). Values must be decimal digits; listed numbers must all be free. The first carrier of a
+    // number gets it; listed numbers found on no element are bound to none.
+    struct MarkupResult {
+        quint64 unboundCount = 0;
+        QVector<quint64> unbound;    // the first few listed numbers found on no element
+        QVector<quint64> duplicates; // the first few numbers carried by more than one element
+    };
+    MarkupResult bindMarkup(const QList<QPair<QWebElement, QString>>& carriers, const Ranges& listed);
+
+private:
+    Q_DISABLE_COPY(QWebLocationRegistry)
+    void sweep();
+    struct Private;
+    Private* d;
 };
 
 class QWebElementCollectionPrivate;

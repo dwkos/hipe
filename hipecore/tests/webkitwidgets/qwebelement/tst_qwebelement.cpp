@@ -80,6 +80,10 @@ private Q_SLOTS:
     void xmlParsing();
     void hipeLocation();
     void hipeLocationMarkup();
+    void hipeLocationWeak();
+    void hipeLocationBindMarkup();
+    void appendNewElement();
+    void eventReportsCurrentLocation();
 
 private:
     QWebView* m_view { nullptr };
@@ -1275,14 +1279,26 @@ void tst_QWebElement::hipeLocation()
     QWebElement a = m_mainFrame->findFirstElement("#a");
     QWebElement b = m_mainFrame->findFirstElement("#b");
     QWebElement ed = m_mainFrame->findFirstElement("#ed");
+    QWebLocationRegistry registry;
 
-    // Set, read through another handle to the same element, clear.
+    // Bind, look up both ways, through another handle; one number per element.
     QCOMPARE(b.hipeLocation(), quint64(0));
-    b.setHipeLocation(42);
+    registry.bind(42, b);
+    QCOMPARE(registry.count(), size_t(1));
+    QVERIFY(registry.inUse(42));
+    QCOMPARE(registry.element(42), b);
     QCOMPARE(m_mainFrame->findFirstElement("#b").hipeLocation(), quint64(42));
-    QCOMPARE(a.hipeLocation(), quint64(0));
+    registry.bind(43, b); // already numbered: 43 binds none
+    QVERIFY(registry.inUse(43));
+    QVERIFY(registry.element(43).isNull());
+    QCOMPARE(b.hipeLocation(), quint64(42));
+    QWebLocationRegistry::Ranges ranges;
+    ranges << qMakePair(quint64(40), quint64(41)) << qMakePair(quint64(43), quint64(50));
+    QCOMPARE(registry.firstInUse(ranges), quint64(43));
+    registry.free(43);
+    QCOMPARE(registry.firstInUse(ranges), quint64(0));
 
-    // Not copied by cloning or by the DOM.
+    // Not copied by cloning, not in the DOM.
     QCOMPARE(b.clone().hipeLocation(), quint64(0));
     QVERIFY(!ed.toOuterXml().contains("42"));
 
@@ -1299,15 +1315,143 @@ void tst_QWebElement::hipeLocation()
     ed.setSelectionRange(5, 12);
     m_page->insertText(QString());
     QVERIFY(m_mainFrame->findFirstElement("#b").isNull());
-    b.setHipeLocation(0);
-    a.setHipeLocation(42);
+    registry.free(42);
+    registry.bind(42, a);
     m_page->triggerAction(QWebPage::Undo);
     QCOMPARE(m_mainFrame->findFirstElement("#b"), b);
     QCOMPARE(b.hipeLocation(), quint64(0));
     QCOMPARE(a.hipeLocation(), quint64(42));
-
-    a.setHipeLocation(0);
+    registry.free(42);
     QCOMPARE(a.hipeLocation(), quint64(0));
+    QCOMPARE(registry.count(), size_t(0));
+}
+
+void tst_QWebElement::hipeLocationWeak()
+{
+    m_mainFrame->setHtml("<div id=box><p id=gone>gone</p><p id=kept>kept</p></div>");
+    QWebLocationRegistry registry;
+    {
+        QWebElement gone = m_mainFrame->findFirstElement("#gone");
+        registry.bind(1, gone);
+        registry.bind(2, m_mainFrame->findFirstElement("#kept"));
+        gone.removeFromDocument();
+    }
+    // Nothing but the registry holds #gone now. Binds trigger a sweep every so often.
+    for (quint64 n = 10; n < 3000; n++)
+        registry.bind(n, QWebElement());
+    QVERIFY(registry.inUse(1)); // still reserved
+    QVERIFY(registry.element(1).isNull()); // but its element was released
+    QCOMPARE(registry.element(2), m_mainFrame->findFirstElement("#kept")); // in the document: kept
+
+    // Removed by editing: the undo history keeps it alive, so a sweep keeps its number, and undo brings it back.
+    m_mainFrame->setHtml("<div id=ed contenteditable><p id=a>first</p><p id=b>second</p></div>");
+    QWebLocationRegistry edits;
+    edits.bind(1, m_mainFrame->findFirstElement("#b"));
+    QWebElement ed = m_mainFrame->findFirstElement("#ed");
+    ed.setFocus();
+    ed.setSelectionRange(5, 12);
+    m_page->insertText(QString());
+    QVERIFY(m_mainFrame->findFirstElement("#b").isNull());
+    for (quint64 n = 10; n < 3000; n++)
+        edits.bind(n, QWebElement());
+    QVERIFY(!edits.element(1).isNull());
+    m_page->triggerAction(QWebPage::Undo);
+    QCOMPARE(m_mainFrame->findFirstElement("#b").hipeLocation(), quint64(1));
+}
+
+void tst_QWebElement::hipeLocationBindMarkup()
+{
+    m_mainFrame->setHtml("<div id=box></div>");
+    QWebElement box = m_mainFrame->findFirstElement("#box");
+    QWebLocationRegistry registry;
+    QList<QPair<QWebElement, QString>> found;
+    box.setInnerXml("<p hipe-loc=5>a</p><p hipe-loc=6>b</p><p hipe-loc=6>c</p><p hipe-loc=\" 7\">d</p>"
+                    "<p hipe-loc=+8>e</p><p hipe-loc=99>f</p>", &found);
+    QWebLocationRegistry::Ranges listed;
+    listed << qMakePair(quint64(5), quint64(8));
+    QWebLocationRegistry::MarkupResult result = registry.bindMarkup(found, listed);
+    QCOMPARE(registry.element(5).toPlainText(), QString("a"));
+    QCOMPARE(registry.element(6).toPlainText(), QString("b")); // first carrier wins
+    QCOMPARE(result.duplicates, QVector<quint64>() << 6);
+    QVERIFY(registry.inUse(7) && registry.element(7).isNull()); // " 7" isn't digits only: 7 found on no element
+    QVERIFY(registry.inUse(8) && registry.element(8).isNull()); // nor is "+8"
+    QCOMPARE(result.unboundCount, quint64(2));
+    QVERIFY(!registry.inUse(99)); // not listed
+    QCOMPARE(registry.count(), size_t(4));
+}
+
+void tst_QWebElement::appendNewElement()
+{
+    m_mainFrame->setHtml("<table id=t></table><div id=d></div><svg id=s></svg><math id=m></math>"
+                         "<svg><foreignObject id=fo></foreignObject></svg>");
+    QWebElement table = m_mainFrame->findFirstElement("#t");
+    QWebElement div = m_mainFrame->findFirstElement("#d");
+
+    // No wrappers, nothing dropped: the element asked for, where asked.
+    QWebElement tr = table.appendNewElement("tr");
+    QCOMPARE(tr.parent(), table);
+    QCOMPARE(tr.tagName(), QString("TR"));
+    QWebElement td = div.appendNewElement("TD", "cell", "x y", "text");
+    QCOMPARE(td.parent(), div);
+    QCOMPARE(td.attribute("id"), QString("cell"));
+    QCOMPARE(td.attribute("class"), QString("x y"));
+    QCOMPARE(td.toPlainText(), QString("text"));
+
+    // Namespaces and SVG letter case, as the parser chooses them.
+    QWebElement grad = m_mainFrame->findFirstElement("#s").appendNewElement("lineargradient");
+    QCOMPARE(grad.namespaceUri(), QString("http://www.w3.org/2000/svg"));
+    QCOMPARE(grad.localName(), QString("linearGradient"));
+    QCOMPARE(m_mainFrame->findFirstElement("#m").appendNewElement("mi").namespaceUri(), QString("http://www.w3.org/1998/Math/MathML"));
+    QCOMPARE(div.appendNewElement("svg").namespaceUri(), QString("http://www.w3.org/2000/svg"));
+    QCOMPARE(m_mainFrame->findFirstElement("#fo").appendNewElement("div").namespaceUri(), QString("http://www.w3.org/1999/xhtml"));
+
+    // Text is data: a leading newline in a pre is kept; \r\n and \r become \n; void elements ignore text.
+    QWebElement pre = div.appendNewElement("pre", QString(), QString(), "\n\nabc\r\ndef\rg");
+    QCOMPARE(pre.toPlainText(), QString("\n\nabc\ndef\ng"));
+    QWebElement br = div.appendNewElement("br", QString(), QString(), "ignored");
+    QCOMPARE(br.toInnerXml(), QString());
+
+    // Invalid names are refused; insertNewElementBefore puts the element before this one.
+    QVERIFY(div.appendNewElement("not valid").isNull());
+    QVERIFY(div.appendNewElement("a<b").isNull());
+    QWebElement first = pre.insertNewElementBefore("span", "before");
+    QCOMPARE(first.nextSibling(), pre);
+    QCOMPARE(first.parent(), div);
+}
+
+static quint64 s_eventLocation = 0;
+static int s_eventCount = 0;
+static void recordLocationEvent(const QString&, void*, uint64_t location, uint64_t, const QString&)
+{
+    s_eventLocation = location;
+    s_eventCount++;
+}
+
+void tst_QWebElement::eventReportsCurrentLocation()
+{
+    m_view->resize(400, 300);
+    m_view->show();
+    QVERIFY(QTest::qWaitForWindowExposed(m_view));
+    m_mainFrame->setHtml("<div id=b style='width:200px;height:100px'>button</div>");
+    QWebElement b = m_mainFrame->findFirstElement("#b");
+    QWebLocationRegistry registry;
+    registry.bind(7, b);
+    b.requestEvent("click", nullptr, 7, 0, recordLocationEvent, false, true);
+
+    s_eventCount = 0;
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, b.geometry().center());
+    QCOMPARE(s_eventCount, 1);
+    QCOMPARE(s_eventLocation, quint64(7));
+
+    registry.free(7); // freed: its own events stop
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, b.geometry().center());
+    QCOMPARE(s_eventCount, 1);
+
+    registry.bind(9, b); // renumbered: reported with the current number
+    QTest::mouseClick(m_view, Qt::LeftButton, Qt::NoModifier, b.geometry().center());
+    QCOMPARE(s_eventCount, 2);
+    QCOMPARE(s_eventLocation, quint64(9));
+    m_view->hide();
 }
 
 void tst_QWebElement::hipeLocationMarkup()
