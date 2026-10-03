@@ -248,9 +248,13 @@ public:
     void cleanUpSubFrames();
     //clean up subframes that no longer exist in the document.
 
-    void addNewSubFrame(const QWebElement& we);
-    //To be called when a new iframe is added to the document.
-    //Allows metadata to be associated with the iframe, such as its host key and event requestors
+    void addNewSubFrame(QWebFrame* wf);
+    //Called when the engine creates the frame of an <iframe> in this container's document (see
+    //registerNewFrame()). Allows metadata to be associated with the iframe, such as its host key and
+    //event requestors.
+    static void registerNewFrame(QWebFrame* wf);
+    //Connected to the page's frameCreated() signal: adds the new frame to the subframe table of the
+    //container whose document holds its <iframe>. Every iframe is registered however it was inserted.
     FrameData* lookupSubFrame(const QWebElement& we);
     FrameData* lookupSubFrame(QWebFrame* wf);
 };

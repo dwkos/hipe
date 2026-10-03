@@ -483,33 +483,22 @@ void Container::cleanUpSubFrames() {
 }
 
 
-void Container::addNewSubFrame(const QWebElement& we) {
-//To be called when a new iframe is added to the document.
-//Adds a new FrameData object to the subFrames list
+void Container::registerNewFrame(QWebFrame* wf) {
+    Connection* conn = identifyFromFrame(wf->parentFrame());
+    if(conn && conn->container)
+        conn->container->addNewSubFrame(wf);
+}
 
+void Container::addNewSubFrame(QWebFrame* wf) {
     //do preliminary cleanup of any subframes that no longer exist.
     cleanUpSubFrames();
-
-    //Rely on the fact that the unique id that was assigned to the <iframe> element
-    //is also accessbile as the frame name.
-    QString frameID = we.attribute("id"); 
-
-    //traverse child frames in the document to find the one with the same ID.
-    QWebFrame* foundFrame = nullptr;
-    auto frames = webElement.webFrame()->childFrames();
-    for(QWebFrame* frame : frames) {
-        if(frame->frameName() == frameID) {
-            foundFrame = frame; //found the frame with the same ID.
-            break;
-        }
-    }
-
-    if(!foundFrame) return; //no frame found with the same ID, so we can't add a subframe.
+    //wf is a new frame, so an entry that already has its address belongs to a deleted frame.
+    subFrames.remove_if([wf](const FrameData& fd) { return fd.wf == wf; });
 
     //Create a new FrameData object for this subframe.
     FrameData fd;
-    fd.we = we; //store the web element reference.
-    fd.wf = foundFrame; //store the QWebFrame reference.
+    fd.we = wf->ownerElement(); //the <iframe> element.
+    fd.wf = wf;
     fd.claimed = false; //not connected yet.
     fd.hostKey = ""; //hostkey will be generated on request.
     fd.requestor = 0; //no requestor yet,

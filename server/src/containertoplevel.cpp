@@ -65,6 +65,9 @@ ContainerTopLevel::ContainerTopLevel(Connection* bridge, std::string clientName,
     //set up context menu events. These are always handled by the top level frame on behalf of all child frames.
     //This is partly because frame->page() points to a common object for all child frames of a tl frame in webkit anyway.
     frame->page()->setContextMenuCallback(contextMenuTriggered, (void*) this);
+
+    //register every iframe's frame with the container whose document it's in, whichever frame of this page that is.
+    connect(frame->page(), &QWebPage::frameCreated, &Container::registerNewFrame);
 }
 
 ContainerTopLevel::~ContainerTopLevel() {

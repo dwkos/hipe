@@ -576,26 +576,16 @@ void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locatio
         return;
     }
 
-    bool isIframe = false;
-
     std::string newTagString = "<";
     newTagString += arg[0];
 
-    //iframes and canvases don't function correctly without an ID. Generate one if not provided.
-    if(!arg[1].size() && (arg[0]=="iframe" || arg[0]=="canvas")) {
+    //canvases don't function correctly without an ID. Generate one if not provided.
+    if(!arg[1].size() && arg[0]=="canvas") {
         arg[1] = c->keyList->generateContainerKey();
         c->keyList->claimKey(arg[1]); //burn through a container key to get a random string out of it.
     }
     if(arg[1].size()) { //apply an ID to the new tag if provided.
         newTagString += " id=\"" + arg[1] + "\"";
-    }
-    if(arg[0] == "iframe") { //will need to add the new iframe to the subFrames table.
-        isIframe = true;
-
-        //hipecore's Frame::isURLAllowed() no longer does same-URL self-reference/redirect-loop
-        //detection (see hipecore commit removing the ancestor-URL walk), so every nested frame
-        //can safely share a plain about:blank URL.
-        newTagString += " src=\"about:blank\"";
     }
 
     newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
@@ -624,10 +614,6 @@ void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locatio
         }
         std::cerr << "hiped: Client tried to assign invalid location value. Disconnected client.\n";
     }
-    if(isIframe) {
-        //add the new iframe to the subFrames table.
-        c->addNewSubFrame(location.lastChild());
-    }
 }
 
 
@@ -641,25 +627,15 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
         return;
     }
 
-    bool isIframe = false;
-
     std::string newTagString = "<";
     newTagString += arg[0];
-    //iframes and canvases don't function correctly without an ID. Generate one if not provided.
-    if(!arg[1].size() && (arg[0]=="iframe" || arg[0]=="canvas")) {
+    //canvases don't function correctly without an ID. Generate one if not provided.
+    if(!arg[1].size() && arg[0]=="canvas") {
         arg[1] = c->keyList->generateContainerKey();
         c->keyList->claimKey(arg[1]); //burn through a container key to get a random string out of it.
     }
     if(arg[1].size()) { //apply an ID to the new tag if provided.
         newTagString += " id=\"" + arg[1] + "\"";
-    }
-    if(arg[0] == "iframe") { //will need to add the new iframe to the subFrames table.
-        isIframe = true;
-
-        //hipecore's Frame::isURLAllowed() no longer does same-URL self-reference/redirect-loop
-        //detection (see hipecore commit removing the ancestor-URL walk), so every nested frame
-        //can safely share a plain about:blank URL.
-        newTagString += " src=\"about:blank\"";
     }
     newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
 
@@ -681,10 +657,6 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
             c->client->disconnect(); //Hard disconnection. Will be cleaned up in the next service cycle.
         }
         std::cerr << "hiped: Client tried to assign invalid location value. Disconnected client.\n";
-    }
-    if(isIframe) {
-        //add the new iframe to the subFrames table.
-        c->addNewSubFrame(location.previousSibling());
     }
 }
 
