@@ -79,6 +79,7 @@ private Q_SLOTS:
     void scriptAndNoscriptParsing();
     void xmlParsing();
     void hipeLocation();
+    void hipeLocationMarkup();
 
 private:
     QWebView* m_view { nullptr };
@@ -1307,6 +1308,36 @@ void tst_QWebElement::hipeLocation()
 
     a.setHipeLocation(0);
     QCOMPARE(a.hipeLocation(), quint64(0));
+}
+
+void tst_QWebElement::hipeLocationMarkup()
+{
+    m_mainFrame->setHtml("<div id=box><p id=old>old</p></div><div id=other><b id=o1>o</b></div>");
+    QWebElement box = m_mainFrame->findFirstElement("#box");
+    QList<QPair<QWebElement, QString>> found;
+
+    // setInnerXml: every carrier listed in document order, with its value; the attribute never reaches the document.
+    box.setInnerXml("<p id=a hipe-loc=\"57\">a<span id=b HIPE-LOC=x>b</span></p><svg><rect id=c hipe-loc=\"58\"/></svg>", &found);
+    QCOMPARE(found.size(), 3);
+    QCOMPARE(found[0].first, m_mainFrame->findFirstElement("#a"));
+    QCOMPARE(found[0].second, QString("57"));
+    QCOMPARE(found[1].first, m_mainFrame->findFirstElement("#b"));
+    QCOMPARE(found[1].second, QString("x"));
+    QCOMPARE(found[2].second, QString("58"));
+    QVERIFY(!box.toOuterXml().contains("hipe-loc", Qt::CaseInsensitive));
+
+    // appendInside: only the appended elements are listed.
+    found.clear();
+    box.appendInside("<i id=d hipe-loc=\"59\">d</i>", &found);
+    QCOMPARE(found.size(), 1);
+    QCOMPARE(found[0].first, m_mainFrame->findFirstElement("#d"));
+    QVERIFY(!box.toOuterXml().contains("hipe-loc"));
+
+    // The plain overloads and prependOutside remove it too.
+    box.appendInside("<i hipe-loc=\"60\">e</i>");
+    box.setInnerXml(box.toInnerXml() + "<i hipe-loc=\"61\">f</i>");
+    m_mainFrame->findFirstElement("#d").prependOutside("<i hipe-loc=\"62\">g</i>");
+    QVERIFY(!m_mainFrame->documentElement().toOuterXml().contains("hipe-loc"));
 }
 
 QTEST_MAIN(tst_QWebElement)

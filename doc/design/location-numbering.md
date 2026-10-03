@@ -71,7 +71,10 @@ arg[2] examples: "57"   "57,58,93"   "1000-1499"   "57,1000-1499,1502"
 | `arg[2]` empty | No numbers are bound; every `hipe-loc` is removed. |
 
 - Listed numbers are processed in the order given (ranges ascending).
-- Only the newly inserted nodes are scanned, not the whole target element.
+- The engine does the attribute work while inserting: `QWebElement::setInnerXml()` / `appendInside()` take
+  `hipe-loc` off the parsed fragment before it is inserted (so the attribute never reaches the document) and return
+  each element that carried it with its value; `prependOutside()` removes it too. hiped only applies the rules
+  above to that list; it never scans the document or the markup text.
 - `HIPE_OP_SET_ATTRIBUTE` refuses the name `hipe-loc`. (Stripping it from pasted and dropped HTML belongs to
   phase 2, where read-back would otherwise show it.)
 - **Replaced and cleared content:** numbers on elements that SET_TEXT replaces or CLEAR removes stay allocated

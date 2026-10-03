@@ -608,38 +608,20 @@ static void assignTagLocation(Container* c, hipe_instruction* instruction, const
     c->bindLocation(instruction->requestor, element);
 }
 
-//True if markup could contain a hipe-loc attribute (attribute names are case-insensitive in HTML). The attribute can
-//only come from the markup string, so when this is false there is nothing in the new nodes to find.
-static bool mayHaveHipeLoc(const std::string& markup) {
-    for(size_t i = markup.find_first_of("hH"); i != std::string::npos; i = markup.find_first_of("hH", i+1))
-        if(markup.size() - i >= 8 && strncasecmp(markup.c_str() + i, "hipe-loc", 8) == 0) return true;
-    return false;
-}
-
-//Binds the hipe-loc="N" attributes in newly inserted markup (mode 3). The new nodes are either all of target's
-//contents (firstNew null), or the elements from firstNew to the end of its siblings; both with their descendants.
-//listed holds the numbers the client reserved, already checked by checkMarkupLocations(). Every hipe-loc attribute
-//is removed; listed numbers on no element are bound to none.
-static void bindMarkupLocations(Container* c, const std::string& markup, QWebElement target, QWebElement firstNew,
-                                bool allNew, const std::vector<hipe_loc>& listed) {
-    if(listed.empty() && !mayHaveHipeLoc(markup)) return; //nothing to bind or remove: the common case
+//Binds the locations of markup just inserted (mode 3). found is what the engine took off the parsed markup: each
+//element that carried hipe-loc, with the attribute's value, in document order. listed holds the numbers the client
+//reserved, already checked by checkMarkupLocations(); those found on no element are bound to none.
+static void bindMarkupLocations(Container* c, const QList<QPair<QWebElement, QString>>& found,
+                                const std::vector<hipe_loc>& listed) {
+    if(listed.empty()) return; //any hipe-loc attributes were removed and mean nothing
     std::unordered_set<hipe_loc> wanted(listed.begin(), listed.end()), bound;
     std::vector<hipe_loc> duplicates;
-    auto bind = [&](QWebElement element) {
-        QString value = element.attribute("hipe-loc");
-        element.removeAttribute("hipe-loc");
+    for(const auto& carrier : found) {
         bool ok = false;
-        hipe_loc n = value.toULongLong(&ok);
-        if(!ok || !wanted.count(n)) return; //not a number the client listed: ignored
-        if(!bound.insert(n).second) { duplicates.push_back(n); return; }
-        c->bindLocation(n, element);
-    };
-    if(!mayHaveHipeLoc(markup)) {} //only listed numbers to bind to none, below
-    else if(allNew) {
-        for(QWebElement d : target.findAll("[hipe-loc]")) bind(d);
-    } else for(QWebElement e = firstNew; !e.isNull(); e = e.nextSibling()) {
-        if(e.hasAttribute("hipe-loc")) bind(e);
-        for(QWebElement d : e.findAll("[hipe-loc]")) bind(d);
+        hipe_loc n = carrier.second.toULongLong(&ok);
+        if(!ok || !wanted.count(n)) continue; //not a number the client listed: ignored
+        if(!bound.insert(n).second) { duplicates.push_back(n); continue; }
+        c->bindLocation(n, carrier.first);
     }
     std::vector<hipe_loc> unbound;
     for(hipe_loc n : listed)
@@ -728,35 +710,44 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
 }
 
 
+//Mode 3 (markup) for SET_TEXT (append false) and APPEND_TEXT (append true): the engine parses the markup and takes
+//the hipe-loc attributes off it before insertion; hiped binds the listed numbers.
+static void insertMarkup(Container* c, bool locationSpecified, QWebElement location, std::string arg[], bool append) {
+    std::vector<hipe_loc> listed;
+    if(!checkMarkupLocations(c, arg[2], listed)) return;
+    if(!locationSpecified) {
+        if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
+        location = c->webElement;
+    }
+    QList<QPair<QWebElement, QString>> found;
+    if(append) location.appendInside(arg[0].c_str(), &found);
+    else location.setInnerXml(arg[0].c_str(), &found);
+    bindMarkupLocations(c, found, listed);
+}
+
 //REQUIRES 3 ARGS (arg[2]: the locations listed for markup, mode 3 only)
 void handle_SET_TEXT(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
     Sanitation::TextMode mode = Sanitation::textModeFromArg(arg[1]);
-    std::vector<hipe_loc> listed;
-    if(mode == Sanitation::MARKUP && !checkMarkupLocations(c, arg[2], listed)) return;
-    arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
-    if(!locationSpecified) {
-        c->setBody(arg[0]);
-        location = c->webElement; //webElement may have been redefined in setBody().
+    if(mode == Sanitation::MARKUP) {
+        insertMarkup(c, locationSpecified, location, arg, false);
+        return;
     }
+    arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
+    if(!locationSpecified) c->setBody(arg[0]);
     else location.setInnerXml(arg[0].c_str());
-    if(mode == Sanitation::MARKUP) bindMarkupLocations(c, arg[0], location, QWebElement(), true, listed);
 }
 
 
 //REQUIRES 3 ARGS (arg[2]: the locations listed for markup, mode 3 only)
 void handle_APPEND_TEXT(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
     Sanitation::TextMode mode = Sanitation::textModeFromArg(arg[1]);
-    std::vector<hipe_loc> listed;
-    if(mode == Sanitation::MARKUP && !checkMarkupLocations(c, arg[2], listed)) return;
-    arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
-    QWebElement before = (locationSpecified ? location : c->webElement).lastChild();
-    if(!locationSpecified) {
-        c->setBody(arg[0], false);
-        location = c->webElement; //webElement may have been redefined in setBody().
+    if(mode == Sanitation::MARKUP) {
+        insertMarkup(c, locationSpecified, location, arg, true);
+        return;
     }
+    arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
+    if(!locationSpecified) c->setBody(arg[0], false);
     else location.appendInside(arg[0].c_str());
-    if(mode == Sanitation::MARKUP)
-        bindMarkupLocations(c, arg[0], location, before.isNull() ? location.firstChild() : before.nextSibling(), false, listed);
 }
 
 

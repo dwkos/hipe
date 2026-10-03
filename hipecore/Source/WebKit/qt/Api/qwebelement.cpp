@@ -48,6 +48,8 @@
 #include "HTMLMediaElement.h"
 #include "HTMLImageElement.h"
 #include "HTMLCanvasElement.h"
+#include "HTMLTemplateElement.h"
+#include "TypedElementDescendantIterator.h"
 #include "CanvasRenderingContext2D.h"
 #include "CanvasGradient.h"
 #include "CanvasPattern.h"
@@ -424,17 +426,49 @@ QString QWebElement::toOuterXml() const
 
     \sa toInnerXml(), toOuterXml(), setOuterXml()
 */
+// Removes the hipe-loc attribute from every element in a parsed fragment, returning each element that had it with the
+// attribute's value. Done before the fragment is inserted, so the attribute never reaches the document.
+static Vector<std::pair<Ref<Element>, String>> takeHipeLocations(DocumentFragment& fragment)
+{
+    static NeverDestroyed<AtomicString> hipeLoc("hipe-loc", AtomicString::ConstructFromLiteral);
+    Vector<std::pair<Ref<Element>, String>> carriers;
+    for (auto& element : descendantsOfType<Element>(fragment)) {
+        if (element.hasAttributes() && element.hasAttribute(hipeLoc))
+            carriers.append(std::make_pair(Ref<Element>(element), element.getAttribute(hipeLoc).string()));
+    }
+    for (auto& carrier : carriers)
+        carrier.first->removeAttribute(hipeLoc);
+    return carriers;
+}
+
 void QWebElement::setInnerXml(const QString &markup)
+{
+    setInnerXml(markup, nullptr);
+}
+
+void QWebElement::setInnerXml(const QString &markup, QList<QPair<QWebElement, QString>>* hipeLocations)
 {
     if (!m_element)
         return;
 
+    // As Element::setInnerHTML(), which is generic and namespace-aware (see appendInside()'s comment): unlike
+    // setOuterHTML() it has no HTMLElement-parent requirement, so this works uniformly for HTML and SVG (and any
+    // other Element-derived) targets. The fragment is handled here so hipe-loc can be taken off before insertion.
     ExceptionCode exception = 0;
+    RefPtr<DocumentFragment> fragment = createFragmentForInnerOuterHTML(markup, m_element, AllowScriptingContent, exception);
+    if (!fragment)
+        return;
+    for (auto& carrier : takeHipeLocations(*fragment)) {
+        if (hipeLocations)
+            hipeLocations->append(qMakePair(QWebElement(carrier.first.ptr()), QString(carrier.second)));
+    }
 
-    //Element::setInnerHTML() is generic and namespace-aware (see appendInside()'s comment);
-    //unlike setOuterHTML() it has no HTMLElement-parent requirement, so this now works
-    //uniformly for HTML and SVG (and any other Element-derived) targets.
-    m_element->setInnerHTML(markup, exception);
+    ContainerNode* container = m_element;
+#if ENABLE(TEMPLATE_ELEMENT)
+    if (is<HTMLTemplateElement>(*m_element))
+        container = downcast<HTMLTemplateElement>(*m_element).content();
+#endif
+    replaceChildrenWithFragment(*container, fragment.releaseNonNull(), exception);
 }
 
 /*!
@@ -3360,6 +3394,11 @@ void QWebElement::appendInside(const QWebElement &element)
 */
 void QWebElement::appendInside(const QString &markup)
 {
+    appendInside(markup, nullptr);
+}
+
+void QWebElement::appendInside(const QString &markup, QList<QPair<QWebElement, QString>>* hipeLocations)
+{
     if (!m_element)
         return;
 
@@ -3376,6 +3415,10 @@ void QWebElement::appendInside(const QString &markup)
     RefPtr<DocumentFragment> fragment = createFragmentForInnerOuterHTML(markup, m_element, AllowScriptingContent, exception);
     if (!fragment)
         return;
+    for (auto& carrier : takeHipeLocations(*fragment)) {
+        if (hipeLocations)
+            hipeLocations->append(qMakePair(QWebElement(carrier.first.ptr()), QString(carrier.second)));
+    }
 
     // Plain text appended after a text node is added to that node rather than inserted as a new one.
     // Every inserted node makes WebCore look back for the nearest preceding element sibling
@@ -3487,6 +3530,9 @@ void QWebElement::prependOutside(const QString &markup)
 
     ExceptionCode exception = 0;
     RefPtr<DocumentFragment> fragment = createFragmentForInnerOuterHTML(markup, &downcast<Element>(*parent), AllowScriptingContent, exception);
+    if (!fragment)
+        return;
+    takeHipeLocations(*fragment);
 
     parent->insertBefore(fragment, m_element, exception);
 }

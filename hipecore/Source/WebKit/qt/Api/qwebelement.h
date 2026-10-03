@@ -78,6 +78,11 @@ public:
     QString toOuterXml() const;
 
     void setInnerXml(const QString& markup);
+    // Markup insertion and Hipe location attributes: setInnerXml(), appendInside() and prependOutside() remove the
+    // hipe-loc attribute from every element the markup creates, before inserting it. These overloads also list each
+    // element that carried it, with the attribute's value, in hipeLocations (in document order).
+    void setInnerXml(const QString& markup, QList<QPair<QWebElement, QString>>* hipeLocations);
+    void appendInside(const QString& markup, QList<QPair<QWebElement, QString>>* hipeLocations);
     QString toInnerXml() const;
 
     void setAttribute(const QString& name, const QString& value);
