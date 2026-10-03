@@ -608,10 +608,21 @@ static void assignTagLocation(Container* c, hipe_instruction* instruction, const
     c->bindLocation(instruction->requestor, element);
 }
 
-//Binds the hipe-loc="N" attributes in newly inserted markup (mode 3): the elements from firstNew to the end of its
-//siblings, and their descendants. listed holds the numbers the client reserved, already checked by
-//checkMarkupLocations(). Every hipe-loc attribute is removed; listed numbers on no element are bound to none.
-static void bindMarkupLocations(Container* c, QWebElement firstNew, const std::vector<hipe_loc>& listed) {
+//True if markup could contain a hipe-loc attribute (attribute names are case-insensitive in HTML). The attribute can
+//only come from the markup string, so when this is false there is nothing in the new nodes to find.
+static bool mayHaveHipeLoc(const std::string& markup) {
+    for(size_t i = markup.find_first_of("hH"); i != std::string::npos; i = markup.find_first_of("hH", i+1))
+        if(markup.size() - i >= 8 && strncasecmp(markup.c_str() + i, "hipe-loc", 8) == 0) return true;
+    return false;
+}
+
+//Binds the hipe-loc="N" attributes in newly inserted markup (mode 3). The new nodes are either all of target's
+//contents (firstNew null), or the elements from firstNew to the end of its siblings; both with their descendants.
+//listed holds the numbers the client reserved, already checked by checkMarkupLocations(). Every hipe-loc attribute
+//is removed; listed numbers on no element are bound to none.
+static void bindMarkupLocations(Container* c, const std::string& markup, QWebElement target, QWebElement firstNew,
+                                bool allNew, const std::vector<hipe_loc>& listed) {
+    if(listed.empty() && !mayHaveHipeLoc(markup)) return; //nothing to bind or remove: the common case
     std::unordered_set<hipe_loc> wanted(listed.begin(), listed.end()), bound;
     std::vector<hipe_loc> duplicates;
     auto bind = [&](QWebElement element) {
@@ -623,7 +634,10 @@ static void bindMarkupLocations(Container* c, QWebElement firstNew, const std::v
         if(!bound.insert(n).second) { duplicates.push_back(n); return; }
         c->bindLocation(n, element);
     };
-    for(QWebElement e = firstNew; !e.isNull(); e = e.nextSibling()) {
+    if(!mayHaveHipeLoc(markup)) {} //only listed numbers to bind to none, below
+    else if(allNew) {
+        for(QWebElement d : target.findAll("[hipe-loc]")) bind(d);
+    } else for(QWebElement e = firstNew; !e.isNull(); e = e.nextSibling()) {
         if(e.hasAttribute("hipe-loc")) bind(e);
         for(QWebElement d : e.findAll("[hipe-loc]")) bind(d);
     }
@@ -725,7 +739,7 @@ void handle_SET_TEXT(Container* c, hipe_instruction*, bool locationSpecified, QW
         location = c->webElement; //webElement may have been redefined in setBody().
     }
     else location.setInnerXml(arg[0].c_str());
-    if(mode == Sanitation::MARKUP) bindMarkupLocations(c, location.firstChild(), listed);
+    if(mode == Sanitation::MARKUP) bindMarkupLocations(c, arg[0], location, QWebElement(), true, listed);
 }
 
 
@@ -742,7 +756,7 @@ void handle_APPEND_TEXT(Container* c, hipe_instruction*, bool locationSpecified,
     }
     else location.appendInside(arg[0].c_str());
     if(mode == Sanitation::MARKUP)
-        bindMarkupLocations(c, before.isNull() ? location.firstChild() : before.nextSibling(), listed);
+        bindMarkupLocations(c, arg[0], location, before.isNull() ? location.firstChild() : before.nextSibling(), false, listed);
 }
 
 
