@@ -1,6 +1,6 @@
 # Location numbering (design D, v2)
 
-Status: v2, 2026-10-04 (with the Appscape session's review). Supersedes the v1 phase plan. Phase 1 of v1 is built (hipecore 94ab5ac, hipe 0e4d831,
+Status: v2, 2026-10-04 (with the Appscape session's review). Step 1 built: hipecore a26aa39, hipe 9e1286d. Supersedes the v1 phase plan. Phase 1 of v1 is built (hipecore 94ab5ac, hipe 0e4d831,
 f3d664b, facae70); v2 reworks its internals around what building it taught us. The protocol clients see is
 unchanged apart from the behaviour change in section 5.
 
