@@ -359,7 +359,7 @@ bool Container::bgColorChanged(std::string newColor) {
 
     if(cursorSymbol.size()) {
         webElement.setStyleProperty("cursor", "none"); //cursor has to be reset before changing it.
-        webElement.setStyleProperty("cursor", Sanitation::mouseCursorFromUnicode(cursorSymbol, fg.name().toStdString(), bg.name().toStdString()).c_str());
+        webElement.setStyleProperty("cursor", Sanitation::mouseCursorFromUnicode(cursorSymbol, fg.name().toStdString(), bg.name().toStdString(), cursorHotspot).c_str());
     }
     
     c.setAlpha(127);
@@ -383,7 +383,7 @@ bool Container::fgColorChanged(std::string newColor) {
 
     if(cursorSymbol.size()) {
         webElement.setStyleProperty("cursor", "none"); //cursor has to be reset before changing it.
-        webElement.setStyleProperty("cursor", Sanitation::mouseCursorFromUnicode(cursorSymbol, fg.name().toStdString(), bg.name().toStdString()).c_str());
+        webElement.setStyleProperty("cursor", Sanitation::mouseCursorFromUnicode(cursorSymbol, fg.name().toStdString(), bg.name().toStdString(), cursorHotspot).c_str());
     }
     
     cursorColor3=c;

@@ -65,10 +65,13 @@ public:
     static QWebPage::WebAction editCodeLookup(char code);
 
 
-    static std::string mouseCursorFromUnicode(const std::string& symbol, const std::string& fgColor, const std::string& bgColor);
+    static std::string mouseCursorFromUnicode(const std::string& symbol, const std::string& fgColor, const std::string& bgColor,
+                                              const std::string& hotspot = "");
     //Generates a CSS value for a mouse cursor image based on the unicode character
     //symbol and the foreground and background colours.
     //The returned string can be used as the value of the "cursor" CSS property.
+    //hotspot is HIPE_OP_SET_CURSOR's optional "x,y" (fractions of the cursor's square). Without a
+    //valid hotspot the cursor is drawn and placed exactly as before hotspots existed.
 
 };
 

@@ -18,6 +18,7 @@
 
 #include "sanitation.h"
 #include <ctype.h>
+#include <cstdio>
 #include <QByteArray>
 
 std::set<std::string> Sanitation::tagWhitelist;
@@ -411,32 +412,46 @@ QWebPage::WebAction Sanitation::editCodeLookup(char code) {
 }
 
 
-std::string Sanitation::mouseCursorFromUnicode(const std::string& symbol, const std::string& fgColor, const std::string& bgColor) {
+std::string Sanitation::mouseCursorFromUnicode(const std::string& symbol, const std::string& fgColor, const std::string& bgColor,
+                                               const std::string& hotspot) {
     //Creates SVG graphic data for a mouse cursor based on the unicode character symbol
     //and the foreground and background colors specified.
     //The returned string can be used as the value of the "cursor" CSS property
 
-    /*std::string svgData = 
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-        "height='40' width='40' style='font-size:36px;'>"
-        "<text y='30' "
-        "style='fill:";
-    svgData += fgColor;
-    svgData += ";stroke:";
-    svgData += bgColor;
-    svgData += ";stroke-width:2; '>"; // stroke-linejoin:round;'>";
-    svgData += symbol;
-    svgData += "</text></svg>";*/
+    //The symbol goes into SVG markup, so markup characters in it are escaped. '&' is left alone,
+    //so a numeric character reference (e.g. "&#x2194;") still works as before.
+    std::string text = sanitisePlainText(symbol, ENTITIES_DECODED);
 
+    //hotspot: "x,y", each a fraction of the cursor's square from 0 (top/left) to 1 (bottom/right).
+    double hotspotX, hotspotY;
+    int consumed = 0;
+    bool hasHotspot = sscanf(hotspot.c_str(), " %lf , %lf %n", &hotspotX, &hotspotY, &consumed) == 2
+                      && consumed == (int) hotspot.size()
+                      && hotspotX == hotspotX && hotspotY == hotspotY; //(not NaN)
 
-    std::string svgData = 
+    const int size = 40; //the cursor image is size x size pixels.
+    std::string svgData =
         "<svg xmlns=\"http://www.w3.org/2000/svg\" "
         "height='40' width='40' style='font-size:35px;'>";
-    svgData += "<text y='30' stroke='" + bgColor + "' stroke-width='5'>" + symbol + "</text>";
-    svgData += "<text y='30' fill='" + fgColor + "'>" + symbol + "</text>";
+    std::string origin; //cursor hotspot position in pixels, relative to the top-left corner of the cursor image.
+    if(hasHotspot) {
+        //the symbol is centred in the square, so that "0.5,0.5" is the middle of a symmetrical symbol.
+        //The image is drawn by Qt's SVG image plugin, which ignores dominant-baseline and dy, so the
+        //baseline is placed where it centres symbols of this font size vertically (measured: y=20 put
+        //their middle 11-12 pixels too high; at y=32, six symbols tested were within 2.5 pixels).
+        std::string placement = "x='20' y='32' text-anchor='middle'";
+        svgData += "<text " + placement + " stroke='" + bgColor + "' stroke-width='5'>" + text + "</text>";
+        svgData += "<text " + placement + " fill='" + fgColor + "'>" + text + "</text>";
+        hotspotX = hotspotX < 0 ? 0 : hotspotX > 1 ? 1 : hotspotX;
+        hotspotY = hotspotY < 0 ? 0 : hotspotY > 1 ? 1 : hotspotY;
+        origin = std::to_string((int) (hotspotX * (size - 1) + 0.5)) + " " + std::to_string((int) (hotspotY * (size - 1) + 0.5));
+    } else {
+        svgData += "<text y='30' stroke='" + bgColor + "' stroke-width='5'>" + text + "</text>";
+        svgData += "<text y='30' fill='" + fgColor + "'>" + text + "</text>";
+        origin = "0 7";
+    }
     svgData += "</svg>";
 
-    std::string origin = "0 7"; //cursor hotspot position, relative to the top-left corner of the cursor image.
     std::string cssValue = "url(\"data:image/svg;base64,";
     cssValue += Sanitation::toBase64(svgData);
     cssValue += "\") ";

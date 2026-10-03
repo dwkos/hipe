@@ -236,7 +236,7 @@ void initInstructionMap() {
     handlerInfo[HIPE_OP_TOGGLE_CLASS].numargs = 1;
 
     handlerInfo[HIPE_OP_SET_CURSOR].ptrtype.withargs = handle_SET_CURSOR;
-    handlerInfo[HIPE_OP_SET_CURSOR].numargs = 1;
+    handlerInfo[HIPE_OP_SET_CURSOR].numargs = 2;
 
 }
 
@@ -1522,10 +1522,12 @@ void handle_SET_CURSOR(Container* c, hipe_instruction*, bool locationSpecified, 
     
     location.setStyleProperty("cursor", "default"); //reset cursor first. Otherwise webkit fails to set the cursor correctly.
     location.setStyleProperty("cursor", 
-        Sanitation::mouseCursorFromUnicode(arg[0], c->fg.name().toStdString(), c->bg.name().toStdString()).c_str());
+        Sanitation::mouseCursorFromUnicode(arg[0], c->fg.name().toStdString(), c->bg.name().toStdString(), arg[1]).c_str());
 
-    //for the body element, store the cursor character so it can be regenerated if the fg/bg colors change.
-    if(!locationSpecified)
-        c->cursorSymbol = arg[0]; //store the cursor symbol for the body element.
+    //for the body element, store the cursor character and hotspot so it can be regenerated if the fg/bg colors change.
+    if(!locationSpecified) {
+        c->cursorSymbol = arg[0];
+        c->cursorHotspot = arg[1];
+    }
     
 }

@@ -217,6 +217,7 @@ public:
     uint64_t keyUpOnBodyRequestor=0;
     
     std::string cursorSymbol; //the unicode character used for the mouse cursor. Only set if HIPE_OP_SET_CURSOR has been used.
+    std::string cursorHotspot; //the cursor's hotspot argument (arg[1] of HIPE_OP_SET_CURSOR), if any.
 
     // Tracks a chunked HIPE_OP_SET_SRC upload in progress for a given location (see
     // handle_SET_SRC() in instructionhandler.cpp for the two-threshold sanity policy that reads

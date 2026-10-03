@@ -560,6 +560,10 @@ extern "C" {
 /* Sets the mouse cursor to a unicode character. The cursor is coloured to match the
    current foreground and background colours of the body element.
  * arg[0] is the unicode character to use as the cursor.
+ * arg[1] is optional: the cursor's hotspot (the point that sits at the pointer position) as "x,y",
+ * each a fraction of the cursor's square from 0 (left/top) to 1 (right/bottom), e.g. "0.5,0.5" for
+ * the centre. With a hotspot the symbol is drawn centred in the square. Without one (or if arg[1] is
+ * not two numbers) the symbol is drawn from the left edge and the hotspot is near its top-left.
  */
 
 #define HIPE_OP_EDIT_CONTEXT_REQUEST 72
