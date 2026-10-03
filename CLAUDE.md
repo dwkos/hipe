@@ -141,7 +141,7 @@ against unrelated events. The client allocates the location of each tag it creat
   tags or attributes: the engine itself makes content inert (no scripts, no navigation, only `data:`
   loads), so new safety rules belong in hipecore, not in a hiped whitelist. Dedicated instructions
   (`TOGGLE_CLASS`, `SET_STYLE`, `SET_SRC`...) add to what plain attributes do; they don't gatekeep them.
-  What hiped accepts is described for users on the manual's "Allowed tags, attributes and styles" page;
+  What hiped accepts is described for users on the manual's "Tags, attributes and styles" page;
   keep the two in step.
 - `MouseCursor` draws cursors (including Unicode-symbol cursors, `HIPE_OP_SET_CURSOR`) where a regular OS
   cursor isn't available.
