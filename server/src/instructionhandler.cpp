@@ -1441,7 +1441,10 @@ void handle_TOGGLE_CLASS(Container*, hipe_instruction*, bool, QWebElement locati
 void handle_SET_CURSOR(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
     //set the cursor to a unicode character, using foreground and background colors of the container.
     
-    location.setStyleProperty("cursor", "default"); //reset cursor first. Otherwise webkit fails to set the cursor correctly.
+    //Reset the cursor first. Without this, once an image cursor is showing, setting another one has no
+    //effect: the old image comes back on the next mouse move. The engine cause is not yet known.
+    //(Separately, the first image cursor set shows only once the mouse moves.)
+    location.setStyleProperty("cursor", "default");
     location.setStyleProperty("cursor", 
         Sanitation::mouseCursorFromUnicode(arg[0], c->fg.name().toStdString(), c->bg.name().toStdString(), arg[1]).c_str());
 
