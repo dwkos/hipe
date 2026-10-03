@@ -136,8 +136,8 @@ against unrelated events. The client allocates the location of each tag it creat
   number of arguments to pre-convert to strings.
 - `KeyList` generates and consumes the single-use keys; `mKeyList` / `mActiveConnections` make it and the
   connection table thread-safe.
-- `Sanitation` is the security boundary between client-supplied strings and the DOM: the tag and
-  attribute whitelists, the CSS filter, and the text modes that escape markup. New handlers that accept
+- `Sanitation` is the security boundary between client-supplied strings and the DOM: the tag-name
+  check, the attribute whitelist, the stylesheet-text check (no `</`), and the text modes that escape markup. New handlers that accept
   client-controlled strings go through it, not around it. What it allows is listed for users on the
   manual's "Allowed tags, attributes and styles" page; keep the two in step.
 - `MouseCursor` draws cursors (including Unicode-symbol cursors, `HIPE_OP_SET_CURSOR`) where a regular OS

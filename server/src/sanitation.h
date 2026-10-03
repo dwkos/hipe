@@ -31,8 +31,7 @@
 class Sanitation
 {
 private:
-    //sets to store whitelists of allowed HTML tags and attributes.
-    static std::set<std::string> tagWhitelist;
+    //whitelist of allowed attributes.
     static std::set<std::string> attrWhitelist;
 
     //converts edit action code characters into Qt WebAction constants.
@@ -59,7 +58,7 @@ public:
     static std::string toBase64(const char* data, size_t size);
     static std::string toLower(const char* text, size_t size); //convert to lowercase
     static bool isAllowedAttribute(std::string input);
-    static bool isAllowedTag(std::string input);
+    static bool isValidTagName(const std::string& input);
     static bool isAllowedCSS(std::string input);
     //true if input can be added to a <style> element's text as it stands (it contains no "</").
 

@@ -557,21 +557,20 @@ static std::string finishTagMarkup(const std::string& tag, const std::string& cl
 }
 
 //The client allocates the location of each tag it appends or inserts (it arrives as the requestor), and
-//counts on from it for the next one, whether or not the tag is created. So when a tag is refused, its
-//location is still taken: it is assigned to no element, and instructions sent to it do nothing. Otherwise
-//the client's next tag would ask for a location two past the last one assigned and be disconnected for it.
-static void assignLocationOfRefusedTag(Container* c, hipe_instruction* instruction) {
-    if(c->assignElementIndex(QWebElement(), instruction->requestor) == 0) {
+//counts on from it for the next one, whether or not the tag is created. So the location is assigned even when no
+//tag was created, to no element: instructions sent to it do nothing. Otherwise the client's next tag would ask for
+//a location two past the last one assigned. The client is disconnected if the location is in use or skips ahead.
+static void assignTagLocation(Container* c, hipe_instruction* instruction, const QWebElement& element) {
+    if(c->assignElementIndex(element, instruction->requestor) == 0) {
         if(c->client) c->client->disconnect(); //Hard disconnection. Will be cleaned up in the next service cycle.
         std::cerr << "hiped: Client tried to assign invalid location value. Disconnected client.\n";
     }
 }
 
 void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location, std::string arg[]) {
-    arg[0] = Sanitation::sanitisePlainText(arg[0]);
     arg[1] = Sanitation::sanitisePlainText(arg[1]);
-    if(!Sanitation::isAllowedTag(arg[0])) { //eliminate forbidden tags.
-        assignLocationOfRefusedTag(c, instruction);
+    if(!Sanitation::isValidTagName(arg[0])) {
+        assignTagLocation(c, instruction, QWebElement());
         return;
     }
 
@@ -588,41 +587,25 @@ void handle_APPEND_TAG(Container* c, hipe_instruction* instruction, bool locatio
     }
 
     newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
+    QWebElement before = (locationSpecified ? location : c->webElement).lastChild();
     if(!locationSpecified) {
         c->setBody(newTagString, false /*append mode*/);
         location = c->webElement; //webElement may have been redefined in setBody().
     }
     else location.appendInside(newTagString.c_str());
 
-
-    //The client supplies the location ID via the requestor value. This will become the
-    //default behaviour in the API as it is FAR more efficient to allocate IDs clientside.
-    // The client will be terminated/disconnected if the desired location
-    //value is either unavailable or too large compared to already assigned values.
-    //(Allowing a very large value means allocating a very large array, allow
-    //only values which exceed the previous maximum by 1 at most.)
-    
-    //use requestor value as the index. Assign the index and check if valid.
-    size_t val = c->assignElementIndex(location.lastChild(), instruction->requestor);
-    if(val==0) {
-        //HARD DISCONNECT THE CLIENT IF THE LOCATION COULD NOT BE ASSIGNED
-        //BECAUSE IT WAS NOT UNUSED OR VALID
-        //Find the client frame and disconnect.
-        if(c->client) {
-            c->client->disconnect(); //Hard disconnection. Will be cleaned up in the next service cycle.
-        }
-        std::cerr << "hiped: Client tried to assign invalid location value. Disconnected client.\n";
-    }
+    //If the HTML parser dropped the tag (e.g. a <td> outside a table), no new element was added.
+    QWebElement added = location.lastChild();
+    assignTagLocation(c, instruction, added != before ? added : QWebElement());
 }
 
 
 //REQUIRES 3 ARGS
 void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location, std::string arg[]) {
-    arg[0] = Sanitation::sanitisePlainText(arg[0]);
     arg[1] = Sanitation::sanitisePlainText(arg[1]);
-    if(!Sanitation::isAllowedTag(arg[0]) //eliminate forbidden tags.
+    if(!Sanitation::isValidTagName(arg[0])
             || !locationSpecified) { //can't prepend a tag outside the body element!
-        assignLocationOfRefusedTag(c, instruction);
+        assignTagLocation(c, instruction, QWebElement());
         return;
     }
 
@@ -638,25 +621,12 @@ void handle_INSERT_TAG(Container* c, hipe_instruction* instruction, bool locatio
     }
     newTagString += finishTagMarkup(arg[0], arg[2], arg[3]);
 
+    QWebElement before = location.previousSibling();
     location.prependOutside(newTagString.c_str());
 
-
-    //The client supplies the location ID via the requestor value.
-    // The client will be terminated/disconnected if the desired location
-    //value is either unavailable or too large compared to already assigned values.
-    //(Allowing a very large value means allocating a very large array, allow
-    //only values which exceed the previous maximum by 1 at most.)
-    
-    //use requestor value as the index. Assign the index and check if valid.
-    size_t val = c->assignElementIndex(location.previousSibling(), instruction->requestor);
-    if(val==0) {
-        //HARD DISCONNECT THE CLIENT IF THE LOCATION COULD NOT BE ASSIGNED
-        //BECAUSE IT WAS NOT UNUSED OR VALID
-        if(c->client) {
-            c->client->disconnect(); //Hard disconnection. Will be cleaned up in the next service cycle.
-        }
-        std::cerr << "hiped: Client tried to assign invalid location value. Disconnected client.\n";
-    }
+    //If the HTML parser dropped the tag (e.g. a <td> outside a table), no new element was added.
+    QWebElement added = location.previousSibling();
+    assignTagLocation(c, instruction, added != before ? added : QWebElement());
 }
 
 

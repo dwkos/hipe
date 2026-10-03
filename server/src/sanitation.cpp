@@ -21,122 +21,15 @@
 #include <cstdio>
 #include <QByteArray>
 
-std::set<std::string> Sanitation::tagWhitelist;
 std::set<std::string> Sanitation::attrWhitelist;
 std::map<char, QWebPage::WebAction> Sanitation::editCodeMap;
 
 void Sanitation::init()
 {
-    //Populate the whitelist of allowed HTML elements.
-    //List taken from https://www.w3.org/community/webed/wiki/HTML/Elements, with forbidden/nonapplicable tags deleted.
-    tagWhitelist = {    "section",
-                        "nav",
-                        "article",
-                        "aside",
-                        "h1",
-                        "h2",
-                        "h3",
-                        "h4",
-                        "h5",
-                        "h6",
-                        "hgroup",
-                        "header",
-                        "footer",
-                        "address",
-                        "p",
-                        "hr",
-                        "pre",
-                        "blockquote",
-                        "ol",
-                        "ul",
-                        "li",
-                        "dl",
-                        "dt",
-                        "dd",
-                        "figure",
-                        "figcaption",
-                        "div",
-                        "center",
-                        "a",
-                        "abbr",
-                        "b",
-                        "bdo",
-                        "big",
-                        "br",
-                        "cite",
-                        "code",
-                        "dfn",
-                        "em",
-                        "i",
-                        "kbd",
-                        "mark",
-                        "q",
-                        "rp",
-                        "rt",
-                        "ruby",
-                        "s",
-                        "samp",
-                        "small",
-                        "spacer",
-                        "span",
-                        "strong",
-                        "sub",
-                        "sup",
-                        "time",
-                        "tt",
-                        "u",
-                        "var",
-                        "wbr",
-                        "ins",
-                        "del",
-                        "img",
-                        "iframe",
-                        "video",
-                        "audio",
-                        "source",
-                        "track",
-                        "canvas", //will need to make an instruction for manipulating canvas.
-                        "object", //used as hipexwm's X11 embed-target element, see HIPE_OP_GET_X11_XID.
-                        "map",
-                        "area",
-                        "svg",
-                        "frame",
-                        "frameset",
-                        "table",
-                        "caption",
-                        "colgroup",
-                        "col",
-                        "tbody",
-                        "thead",
-                        "tfoot",
-                        "tr",
-                        "td",
-                        "th",
-                        "form",
-                        "fieldset",
-                        "legend",
-                        "label",
-                        "input",
-                        "button",
-                        "select",
-                        "datalist",
-                        "optgroup",
-                        "option",
-                        "textarea",
-                        "output",
-                        "progress",
-                        "meter",
-                        "details",
-                        "summary",
-                        "command",
-                        "menu"
-                   };
-
     //List of attributes obtained from https://www.w3.org/TR/html4/index/attributes.html
     //This is a whitelist of safe attributes that the user can use freely without special instructions.
-    //Assigned before the SVG attributes below (mirroring tagWhitelist's own order just above):
-    //that block's .insert() calls add to this list, so a plain assignment after them would
-    //discard every SVG-specific attribute.
+    //Assigned before the SVG attributes below: that block's .insert() call adds to this list, so a plain
+    //assignment after it would discard every SVG-specific attribute.
     //
     //Deliberately no "class" entry: HIPE_OP_TOGGLE_CLASS (a dedicated, whitelist-free opcode with
     //add/remove/toggle semantics) predates this whitelist entirely (present since hipe's very first
@@ -204,31 +97,7 @@ void Sanitation::init()
                         "step"
                     };
 
-    //DOM-level SVG drawing primitives, added to the lists above. The engine has no JS engine
-    //and no URL navigation (its loader blocks every request that isn't data:/about:), so
-    //SVG's shapes are safe to allow.
-    //
-    //Deliberately NOT whitelisted: "script" (SVG
-    //has its own, inert or not), "foreignObject" (can embed arbitrary HTML), "a"/"use"/"image"
-    //and their href/xlink:href attributes (external-resource references - not needed for
-    //drawing shapes; add later as its own scoped decision if wanted).
-    tagWhitelist.insert({    "g",
-                             "path",
-                             "rect",
-                             "circle",
-                             "ellipse",
-                             "line",
-                             "polyline",
-                             "polygon",
-                             "defs",
-                             "linearGradient",
-                             "radialGradient",
-                             "stop",
-                             "text",
-                             "tspan",
-                             "clipPath",
-                             "symbol"
-                        });
+    //SVG drawing attributes, added to the list above.
     attrWhitelist.insert({   "d",
                              "cx",
                              "cy",
@@ -372,12 +241,14 @@ bool Sanitation::isAllowedAttribute(std::string input)
     return false;
 }
 
-bool Sanitation::isAllowedTag(std::string input)
-//returns true if the specified HTML tag is an allowed type. (e.g. "button" tags are allowed, "script" tags are not).
+bool Sanitation::isValidTagName(const std::string& input)
+//true if input is a letter followed by letters, digits and hyphens. Any such tag can be created: the engine
+//runs no scripts and loads nothing on a tag's behalf.
 {
-    if(tagWhitelist.find(input) != tagWhitelist.end())
-        return true;
-    return false;
+    if(input.empty() || !isalpha((unsigned char)input[0])) return false;
+    for(char ch : input)
+        if(!isalnum((unsigned char)ch) && ch != '-') return false;
+    return true;
 }
 
 bool Sanitation::isAllowedCSS(std::string input)
