@@ -682,8 +682,7 @@ void handle_SET_TITLE(Container* c, hipe_instruction*, bool, QWebElement, std::s
 
 //REQUIRES 2 ARGS
 void handle_SET_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
-    if(Sanitation::isAllowedAttribute(arg[0]))
-        location.setAttribute(QString(arg[0].c_str()), QString(arg[1].c_str()));
+    location.setAttribute(QString(arg[0].c_str()), QString(arg[1].c_str()));
 }
 
 
@@ -1031,8 +1030,7 @@ void handle_CANVAS_SET_PROPERTY(Container* c, hipe_instruction*, bool, QWebEleme
 
 //REQUIRES 1 ARG
 void handle_REMOVE_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
-    if(Sanitation::isAllowedAttribute(arg[0]))
-        location.removeAttribute(arg[0].c_str());
+    location.removeAttribute(arg[0].c_str());
 }
 
 

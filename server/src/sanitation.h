@@ -23,7 +23,6 @@
 #define SANITATION_H
 
 #include <string>
-#include <set>
 #include <map>
 #include <HipeCore/QWebPage>
 #include <HipeCore/QWebElement>
@@ -31,14 +30,11 @@
 class Sanitation
 {
 private:
-    //whitelist of allowed attributes.
-    static std::set<std::string> attrWhitelist;
-
     //converts edit action code characters into Qt WebAction constants.
     static std::map<char, QWebPage::WebAction> editCodeMap;
 public:
     static void init();
-    //initialises whitelists and related sanitation data.
+    //initialises the edit-code table used by editCodeLookup().
     //Call this before using any of the sanitisation functions in this class.
 
     enum TextMode { //values are the text mode numbers clients pass (see HIPE_OP_SET_TEXT).
@@ -57,7 +53,6 @@ public:
     static std::string toBase64(const std::string& binaryData);
     static std::string toBase64(const char* data, size_t size);
     static std::string toLower(const char* text, size_t size); //convert to lowercase
-    static bool isAllowedAttribute(std::string input);
     static bool isValidTagName(const std::string& input);
     static bool isAllowedCSS(std::string input);
     //true if input can be added to a <style> element's text as it stands (it contains no "</").

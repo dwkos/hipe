@@ -21,118 +21,10 @@
 #include <cstdio>
 #include <QByteArray>
 
-std::set<std::string> Sanitation::attrWhitelist;
 std::map<char, QWebPage::WebAction> Sanitation::editCodeMap;
 
 void Sanitation::init()
 {
-    //List of attributes obtained from https://www.w3.org/TR/html4/index/attributes.html
-    //This is a whitelist of safe attributes that the user can use freely without special instructions.
-    //Assigned before the SVG attributes below: that block's .insert() call adds to this list, so a plain
-    //assignment after it would discard every SVG-specific attribute.
-    //
-    //Deliberately no "class" entry: HIPE_OP_TOGGLE_CLASS (a dedicated, whitelist-free opcode with
-    //add/remove/toggle semantics) predates this whitelist entirely (present since hipe's very first
-    //commit, well before attrWhitelist existed) and is the intended path for class manipulation --
-    //confirmed absent even from the original pre-whitelist if-chain this list replaced, not just an
-    //oversight. Whitelisting "class" here too would open a second, worse-fitting path (whole-string
-    //overwrite) that could clobber classes TOGGLE_CLASS had already applied elsewhere.
-    attrWhitelist = {   "abbr",
-                        "accept-charset",
-                        "accesskey",
-                        "align",
-                        "alt",
-                        "autoplay",
-                        "border",
-                        "cellpadding",
-                        "cellspacing",
-                        "char",
-                        "charoff",
-                        "checked",
-                        "cols",
-                        "colspan",
-                        "contenteditable",
-                        "controls",
-                        "coords",
-                        "dir",
-                        "disabled",
-                        "for",
-                        "frame",
-                        "frameborder",
-                        "headers",
-                        "height",
-                        "id",
-                        "label",
-                        "loop",
-                        "maxlength",
-                        "multiple",
-                        "muted",
-                        "name",
-                        "noresize",
-			"preload",
-                        "readonly",
-                        "rows",
-                        "rowspan",
-                        "rules",
-                        "scope",
-                        "scrolling",
-                        "selected",
-                        "shape",
-                        "size",
-                        "span",
-                        "summary",
-                        "tabindex",
-                        "title",
-                        "type",
-                        "usemap",
-                        "valign",
-                        "value",
-                        "width",
-
-                        //HTML5 additions that take effect without scripting or form submission.
-                        "hidden",
-                        "max",          //range and number inputs
-                        "min",
-                        "placeholder",
-                        "step"
-                    };
-
-    //SVG drawing attributes, added to the list above.
-    attrWhitelist.insert({   "d",
-                             "cx",
-                             "cy",
-                             "r",
-                             "rx",
-                             "ry",
-                             "x1",
-                             "y1",
-                             "x2",
-                             "y2",
-                             "points",
-                             "viewBox",
-                             "preserveAspectRatio",
-                             "fill",
-                             "fill-opacity",
-                             "fill-rule",
-                             "stroke",
-                             "stroke-width",
-                             "stroke-opacity",
-                             "stroke-linecap",
-                             "stroke-linejoin",
-                             "stroke-dasharray",
-                             "opacity",
-                             "transform",
-                             "gradientUnits",
-                             "gradientTransform",
-                             "offset",
-                             "stop-color",
-                             "stop-opacity",
-                             "text-anchor",
-                             "dx",
-                             "dy",
-                             "clip-path"
-                        });
-
     //hipe's EDIT instructions (HIPE_OP_EDIT_ACTION and HIPE_OP_EDIT_STATUS)
     //use character codes such as 'x' (cut), 'z' (undo), etc. to specify
     //the actions required. These need to be converted into Qt's enumerated
@@ -230,16 +122,6 @@ std::string Sanitation::toLower(const char* text, size_t length) {
     return result;
 }
 
-
-bool Sanitation::isAllowedAttribute(std::string input)
-//returns true iff use of the tag attribute is permitted by Hipe.
-//List of attributes adapted from https://www.w3.org/TR/html4/index/attributes.html
-//This is a whitelist of safe attributes that the user can use freely without special instructions.
-{
-    if(attrWhitelist.find(input) != attrWhitelist.end())
-        return true;
-    return false;
-}
 
 bool Sanitation::isValidTagName(const std::string& input)
 //true if input is a letter followed by letters, digits and hyphens. Any such tag can be created: the engine
