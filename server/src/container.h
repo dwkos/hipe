@@ -208,7 +208,7 @@ public:
     QWebElement getReferenceableElement(size_t); //resolve a reference integer.
     size_t findReferenceableElement(const QWebElement&);
     size_t getIndexOfElement(const QWebElement&);
-    //finds corresponding index, or adds it if it has not been allocated an index yet.
+    //the location assigned to the element, or 0 if it has none (lookups never assign one).
 
     //flags to handle keyup/down events on body as a special case (since this event needs to propagate to the framing manager for special window manipulation keys)
     bool reportKeydownOnBody=false; //has the client requested keydown events on the body element?
