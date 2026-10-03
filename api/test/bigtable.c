@@ -136,8 +136,6 @@ int main(int argc, char **argv) {
               "td", "border:1px solid; padding:2px 6px; font-family:monospace;");
     hipe_send(session, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "#controls",
               "display:flex; gap:24px; padding:12px;");
-    /* descendant selector (space), not child combinator (">") -- Sanitation::isAllowedCSS()
-     * rejects any '>' in either the selector or the value, silently dropping the whole rule */
     hipe_send(session, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "#controls div",
               "display:flex; flex-direction:column; align-items:flex-start; gap:6px;");
     hipe_send(session, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "#controls div div",

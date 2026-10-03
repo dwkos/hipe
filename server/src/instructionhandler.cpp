@@ -482,8 +482,7 @@ void handle_SET_STYLE_SRC(Container*, hipe_instruction* instruction, bool, QWebE
     arg[3] = std::string(instruction->arg[3], instruction->arg_length[3]); //supplementary value as suffix.
 
     std::string dataURI = std::string("data:") + arg[2] + ";base64," + Sanitation::toBase64(instruction->arg[1], instruction->arg_length[1]);
-    if(Sanitation::isAllowedCSS(arg[0]))
-        location.setStyleProperty(arg[0].c_str(), QString("url(\"") + dataURI.c_str() + "\") " + arg[3].c_str());
+    location.setStyleProperty(arg[0].c_str(), QString("url(\"") + dataURI.c_str() + "\") " + arg[3].c_str());
 }
 
 void handle_ADD_STYLE_RULE_SRC(Container* c, hipe_instruction* instruction, bool, QWebElement) {
@@ -720,37 +719,34 @@ void handle_SET_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement locat
 
 //REQUIRES 2 ARGS
 void handle_SET_STYLE(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
-    if(Sanitation::isAllowedCSS(arg[0]) && Sanitation::isAllowedCSS(arg[1])) {
-        if(!locationSpecified) {  //styling the body element (location 0)
-            //we need to be sure the body has been initialised first.
-            if(c->webElement.isNull())
-                c->setBody("");
-            c->webElement.setStyleProperty(arg[0].c_str(), arg[1].c_str());
+    if(!locationSpecified) {  //styling the body element (location 0)
+        //we need to be sure the body has been initialised first.
+        if(c->webElement.isNull())
+            c->setBody("");
+        c->webElement.setStyleProperty(arg[0].c_str(), arg[1].c_str());
 
-            //check if foreground/background colors for this frame have changed.
-            QString fg, bg;
-            while(!bg.size()) 
-            //poll repeatedly until we get a non-null response, if required (frame might not have rendered yet).
-                bg = c->webElement.styleProperty("background-color", QWebElement::ComputedStyle);
-            while(!fg.size())
-                fg = c->webElement.styleProperty("color", QWebElement::ComputedStyle);
+        //check if foreground/background colors for this frame have changed.
+        QString fg, bg;
+        while(!bg.size()) 
+        //poll repeatedly until we get a non-null response, if required (frame might not have rendered yet).
+            bg = c->webElement.styleProperty("background-color", QWebElement::ComputedStyle);
+        while(!fg.size())
+            fg = c->webElement.styleProperty("color", QWebElement::ComputedStyle);
 
-            //check if foreground or background colours are defined by this client. If so, notify the parent, and the
-            //parent will update its own metadata for this frame, to determine whether to send the relevant event.
-            QColor tmpBg; tmpBg.setNamedColor(bg);
-            if(c->bgColorChanged(bg.toStdString())) {
-                if(c->getParent())  //notify parent frame of new background color
-                    c->getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_BACKGROUND_CHANGED, 
-                            c->webElement.webFrame(), bg.toStdString());
-            }
-            if(c->fgColorChanged(fg.toStdString())) {
-                if(c->getParent())  //notify parent frame of new foreground color
-                    c->getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_COLOR_CHANGED, 
-                            c->webElement.webFrame(), fg.toStdString());
-            }
-        } else {  //styling another element
-            location.setStyleProperty(arg[0].c_str(), arg[1].c_str());
+        //check if foreground or background colours are defined by this client. If so, notify the parent, and the
+        //parent will update its own metadata for this frame, to determine whether to send the relevant event.
+        if(c->bgColorChanged(bg.toStdString())) {
+            if(c->getParent())  //notify parent frame of new background color
+                c->getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_BACKGROUND_CHANGED, 
+                        c->webElement.webFrame(), bg.toStdString());
         }
+        if(c->fgColorChanged(fg.toStdString())) {
+            if(c->getParent())  //notify parent frame of new foreground color
+                c->getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_COLOR_CHANGED, 
+                        c->webElement.webFrame(), fg.toStdString());
+        }
+    } else {  //styling another element
+        location.setStyleProperty(arg[0].c_str(), arg[1].c_str());
     }
 }
 

@@ -381,25 +381,10 @@ bool Sanitation::isAllowedTag(std::string input)
 }
 
 bool Sanitation::isAllowedCSS(std::string input)
+//Text added to a <style> element is raw text up to the next "</style", so "</" is the only sequence that could
+//end the stylesheet early and start markup.
 {
-    for(size_t i=0; i<input.size(); i++) {
-        if(input[i] == '<') return false; //don't let the user break out of the stylesheet to inject html code.
-        if(input[i] == '>') return false;
-        if(input[i] == '{') return false; //the user isn't allowed to fill in a whole stylesheet directly, so has no need of these.
-        if(input[i] == '}') return false;
-        if((input[i] == 'u' || input[i] == 'U') && i+2 < input.size()) { //screen for URLs, which are not allowed to be entered directly.
-            if((input[i+1] == 'r' || input[i+1] == 'R')
-                    && (input[i+2] == 'l' || input[i+2] == 'L')) {
-                //we've detected an instance of the string "url".
-                //at this point, we'll reject the input if there is a '(' or whitespace followed by a '('.
-                size_t j = i+3;
-                while(j<input.size() && isspace((unsigned char)input[j])) //skip any whitespace.
-                    j++;
-                if(j<input.size() && input[j] == '(') return false;
-            }
-        }
-    }
-    return true;
+    return input.find("</") == std::string::npos;
 }
 
 QWebPage::WebAction Sanitation::editCodeLookup(char code) {

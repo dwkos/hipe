@@ -190,9 +190,7 @@ int main(int argc, char **argv) {
 
     hipe_send(session, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2,
               "body", "margin:0; overflow:hidden; font-family:sans-serif;");
-    /* descendant selector (space), not child combinator (">") -- Sanitation::isAllowedCSS()
-     * rejects any '>' in either the selector or the value, silently dropping the whole rule.
-     * inline-block (not block) so sequential mode wraps items left-to-right within the container
+    /* inline-block (not block) so sequential mode wraps items left-to-right within the container
      * instead of stacking one per line -- position:absolute gets applied per-item only in random
      * mode, since an item positioned that way ignores this base display value anyway. */
     hipe_send(session, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "#listArea div",

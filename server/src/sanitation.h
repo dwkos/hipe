@@ -61,6 +61,7 @@ public:
     static bool isAllowedAttribute(std::string input);
     static bool isAllowedTag(std::string input);
     static bool isAllowedCSS(std::string input);
+    //true if input can be added to a <style> element's text as it stands (it contains no "</").
 
     static QWebPage::WebAction editCodeLookup(char code);
 
