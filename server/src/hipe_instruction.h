@@ -72,7 +72,7 @@ extern "C" {
 /* arg[0] is the name of the attribute and arg[1] is the retrieved value */
 
 #define HIPE_OP_CONTAINER_GRANT    6
-/* Server response to container request. Arg1 is "0" if the container request
+/* Server response to container request. arg[0] is "0" if the container request
  * was denied, or "1" if a new container has been granted. */
 
 #define HIPE_OP_EVENT              7
@@ -117,7 +117,7 @@ extern "C" {
 #define HIPE_OP_GET_FIRST_CHILD    13
 
 #define HIPE_OP_GET_GEOMETRY       14
-/* Request a HIPE_OP_GEOMETRY reply with the x,y,width,height coordinates of location.*/
+/* Request a HIPE_OP_GEOMETRY_RETURN reply with the x,y,width,height coordinates of location.*/
 
 #define HIPE_OP_GET_LAST_CHILD     15
 #define HIPE_OP_GET_NEXT_SIBLING   16
@@ -221,6 +221,7 @@ extern "C" {
  * location is the iframe element.
  * arg[0] is the event type
  * arg[1] is event detail (if applicable).
+ * arg[2] is the client's process ID (or "0") for HIPE_FRAME_EVENT_CLIENT_CONNECTED.
  */
 
 #define HIPE_OP_FRAME_CLOSE        31
@@ -260,11 +261,13 @@ extern "C" {
 #define HIPE_OP_FILE_RETURN        36
 /* Sent to the client when the client requests a file (e.g. a snapshot of the frame contents).
  * requestor carries the value of the instruction that requested the file.
+ * arg[0] is the file contents (empty on error). arg[1] is empty on success, or describes the error.
  */
 
 #define HIPE_OP_ADD_STYLE_RULE_SRC 37
 /* Sets background image data for a particular CSS style rule.
- * arg[0] is the CSS designator and arg[1] is the image file data, which should be PNG format.
+ * arg[0] is the CSS designator and arg[1] is the image file data.
+ * arg[2] is the mime type of the data (optional; default "image/png").
  */
 
 #define HIPE_OP_USE_CANVAS         38
@@ -299,7 +302,7 @@ extern "C" {
  * Location: * 0 (or body element) means the message is being passed to/from the direct parent
  *               (which manages the client frame)
  *           * a frame element means message is being passed to/from that child frame's client.
- * arg[0], arg[1], requestor: passed through to other client unmodified. User-defined message data can be passed through here.
+ * arg[0] to arg[3], requestor: passed through to other client unmodified. User-defined message data can be passed through here.
  */
 
 #define HIPE_OP_GET_SCROLL_GEOMETRY 44
@@ -557,6 +560,7 @@ extern "C" {
 #define HIPE_OP_OPEN_LINK 69
 /* Used to communicate a hyperlink to the framing manager to be made available to the user
  * Same internal logic as HIPE_OP_MESSAGE.
+ * arg[0] is the fully qualified link, e.g. "http://hipe.generaldevelopment.net". arg[1] is reserved.
  */
 
 #define HIPE_OP_INSERT_TAG 70
