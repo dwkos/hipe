@@ -118,9 +118,6 @@ void QWebSettingsPrivate::apply()
                                       global->attributes.value(QWebSettings::AutoLoadImages));
         settings->setLoadsImagesAutomatically(value);
 
-        value = attributes.value(QWebSettings::JavascriptEnabled,
-                                 global->attributes.value(QWebSettings::JavascriptEnabled));
-        settings->setScriptEnabled(value);
         value = attributes.value(QWebSettings::AcceleratedCompositingEnabled,
                                       global->attributes.value(QWebSettings::AcceleratedCompositingEnabled));
 
@@ -157,18 +154,6 @@ void QWebSettingsPrivate::apply()
                                  global->attributes.value(QWebSettings::CSSRegionsEnabled));
         WebCore::RuntimeEnabledFeatures::sharedFeatures().setCSSRegionsEnabled(value);
 
-        value = attributes.value(QWebSettings::JavascriptCanOpenWindows,
-                                      global->attributes.value(QWebSettings::JavascriptCanOpenWindows));
-        settings->setJavaScriptCanOpenWindowsAutomatically(value);
-
-        value = attributes.value(QWebSettings::JavascriptCanCloseWindows,
-                                      global->attributes.value(QWebSettings::JavascriptCanCloseWindows));
-        settings->setAllowScriptsToCloseWindows(value);
-
-        value = attributes.value(QWebSettings::JavaEnabled,
-                                      global->attributes.value(QWebSettings::JavaEnabled));
-        settings->setJavaEnabled(value);
-
         value = attributes.value(QWebSettings::PluginsEnabled,
                                       global->attributes.value(QWebSettings::PluginsEnabled));
         settings->setPluginsEnabled(value);
@@ -176,11 +161,6 @@ void QWebSettingsPrivate::apply()
         value = attributes.value(QWebSettings::SpatialNavigationEnabled,
                                       global->attributes.value(QWebSettings::SpatialNavigationEnabled));
         settings->setSpatialNavigationEnabled(value);
-
-        value = attributes.value(QWebSettings::JavascriptCanAccessClipboard,
-                                      global->attributes.value(QWebSettings::JavascriptCanAccessClipboard));
-        settings->setDOMPasteAllowed(value);
-        settings->setJavaScriptCanAccessClipboard(value);
 
         value = attributes.value(QWebSettings::FrameFlatteningEnabled,
                                       global->attributes.value(QWebSettings::FrameFlatteningEnabled));
@@ -319,10 +299,7 @@ QWebSettings* QWebSettings::globalSettings()
 
     \value MissingImageGraphic The replacement graphic shown when an image could not be loaded.
     \value MissingPluginGraphic The replacement graphic shown when a plugin could not be loaded.
-    \value DefaultFrameIconGraphic The default icon for QWebFrame::icon().
     \value TextAreaSizeGripCornerGraphic The graphic shown for the size grip of text areas.
-    \value DeleteButtonGraphic The graphic shown for the WebKit-Editing-Delete-Button in Deletion UI.
-    \value InputSpeechButtonGraphic The graphic shown in input fields that support speech recognition.
     \value SearchCancelButtonGraphic The graphic shown for clearing the text in a search field.
     \value SearchCancelButtonPressedGraphic The graphic shown when SearchCancelButtonGraphic is pressed.
 */
@@ -334,18 +311,8 @@ QWebSettings* QWebSettings::globalSettings()
 
     \value AutoLoadImages Specifies whether images are automatically loaded in
         web pages. This is enabled by default.
-    \value JavascriptEnabled Enables or disables the running of JavaScript
-        programs. This is enabled by default
-    \value JavaEnabled Enables or disables Java applets.
-        Currently Java applets are not supported.
     \value PluginsEnabled Enables or disables plugins in Web pages (e.g. using NPAPI). Qt plugins
         with a mimetype such as "application/x-qt-plugin" are not affected by this setting. This is disabled by default.
-    \value JavascriptCanOpenWindows Specifies whether JavaScript programs
-        can open popup windows without user interaction. This is disabled by default.
-    \value JavascriptCanCloseWindows Specifies whether JavaScript programs
-        can close windows. This is disabled by default.
-    \value JavascriptCanAccessClipboard Specifies whether JavaScript programs
-        can read or write to the clipboard. This is disabled by default.
     \value SpatialNavigationEnabled Enables or disables the Spatial Navigation
         feature, which consists in the ability to navigate between focusable
         elements in a Web page, such as hyperlinks and form controls, by using
@@ -425,7 +392,6 @@ QWebSettings::QWebSettings()
     d->fontFamilies.insert(QWebSettings::FixedFont, defaultFont.defaultFamily());
 
     d->attributes.insert(QWebSettings::AutoLoadImages, true);
-    d->attributes.insert(QWebSettings::JavascriptEnabled, false);
     d->attributes.insert(QWebSettings::SpatialNavigationEnabled, false);
     d->attributes.insert(QWebSettings::LinksIncludedInFocusChain, true);
     d->attributes.insert(QWebSettings::ZoomTextOnly, false);
@@ -444,7 +410,6 @@ QWebSettings::QWebSettings()
     d->attributes.insert(QWebSettings::CaretBrowsingEnabled, false);
     d->attributes.insert(QWebSettings::Accelerated2dCanvasEnabled, false);
     d->attributes.insert(QWebSettings::WebSecurityEnabled, true);
-    d->attributes.insert(QWebSettings::FullScreenSupportEnabled, true);
     d->attributes.insert(QWebSettings::ImagesEnabled, true);
     d->defaultTextEncoding = QLatin1String("iso-8859-1");
 }
@@ -538,10 +503,7 @@ static const char* resourceNameForWebGraphic(QWebSettings::WebGraphic type)
     switch (type) {
     case QWebSettings::MissingImageGraphic: return "missingImage";
     case QWebSettings::MissingPluginGraphic: return "nullPlugin";
-    case QWebSettings::DefaultFrameIconGraphic: return "urlIcon";
     case QWebSettings::TextAreaSizeGripCornerGraphic: return "textAreaResizeCorner";
-    case QWebSettings::DeleteButtonGraphic: return "deleteButton";
-    case QWebSettings::InputSpeechButtonGraphic: return "inputSpeech";
     case QWebSettings::SearchCancelButtonGraphic: return "searchCancelButton";
     case QWebSettings::SearchCancelButtonPressedGraphic: return "searchCancelButtonPressed";
     }

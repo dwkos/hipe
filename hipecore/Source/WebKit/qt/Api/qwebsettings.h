@@ -50,11 +50,7 @@ public:
     };
     enum WebAttribute {
         AutoLoadImages,
-        JavascriptEnabled,
-        JavaEnabled,
         PluginsEnabled,
-        JavascriptCanOpenWindows,
-        JavascriptCanAccessClipboard,
         LinksIncludedInFocusChain,
         ZoomTextOnly,
         AcceleratedCompositingEnabled,
@@ -63,7 +59,6 @@ public:
         TiledBackingStoreEnabled,
         FrameFlatteningEnabled,
         SiteSpecificQuirksEnabled,
-        JavascriptCanCloseWindows,
         WebGLEnabled,
         CSSRegionsEnabled,
         CSSGridLayoutEnabled,
@@ -74,16 +69,12 @@ public:
         MediaSourceEnabled,
         MediaEnabled,
         WebSecurityEnabled,
-        FullScreenSupportEnabled,
         ImagesEnabled
     };
     enum WebGraphic {
         MissingImageGraphic,
         MissingPluginGraphic,
-        DefaultFrameIconGraphic,
         TextAreaSizeGripCornerGraphic,
-        DeleteButtonGraphic,
-        InputSpeechButtonGraphic,
         SearchCancelButtonGraphic,
         SearchCancelButtonPressedGraphic
     };

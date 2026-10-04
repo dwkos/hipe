@@ -311,7 +311,6 @@ protected:
     virtual QWebPage *createWindow(WebWindowType type);
     virtual QObject *createPlugin(const QString &classid, const QUrl &url, const QStringList &paramNames, const QStringList &paramValues);
 
-    virtual void javaScriptConsoleMessage(const QString& message, int lineNumber, const QString& sourceID);
 
 private:
     Q_PRIVATE_SLOT(d, void _q_onLoadProgressChanged(int))
