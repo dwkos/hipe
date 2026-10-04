@@ -120,11 +120,6 @@ private:
     ~QWebFrame();
 
 public:
-    enum ValueOwnership {
-        QtOwnership,
-        ScriptOwnership,
-        AutoOwnership
-    };
 
     QWebPage *page() const;
 
@@ -132,7 +127,6 @@ public:
     void setHtml(const QString &html, const QUrl &baseUrl = QUrl());
     void setContent(const QByteArray &data, const QString &mimeType = QString(), const QUrl &baseUrl = QUrl());
 
-    void addToJavaScriptWindowObject(const QString &name, QObject *object, ValueOwnership ownership = QtOwnership);
     QString toHtml() const;
     QString toPlainText() const;
 
@@ -201,9 +195,6 @@ public:
 
     QWebSecurityOrigin securityOrigin() const;
     QWebFrameAdapter* handle() const;
-
-public Q_SLOTS:
-    QVariant evaluateJavaScript(const QString& scriptSource);
 
 Q_SIGNALS:
     void provisionalLoad();

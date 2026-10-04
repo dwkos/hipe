@@ -3151,21 +3151,6 @@ QWebFrame *QWebElement::webFrame() const
 }
 
 /*!
-    Executes \a scriptSource with this element as \c this object
-    and returns the result of the last executed statement.
-
-    \note This method may be very inefficient if \a scriptSource returns
-    a DOM element as a result. See \l{QWebFrame::evaluateJavaScript()}
-    for more details.
-
-    \sa QWebFrame::evaluateJavaScript()
-*/
-QVariant QWebElement::evaluateJavaScript(const QString& scriptSource)
-{
-    return QVariant(); //no-op - javascript support removed from hipecore
-}
-
-/*!
     \enum QWebElement::StyleResolveStrategy
 
     This enum describes how QWebElement's styleProperty resolves the given

@@ -52,10 +52,7 @@
 #include <QDropEvent>
 #include <QFileDialog>
 #include <QGestureEvent>
-#include <QInputDialog>
-#include <QLabel>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
 #include <QStyle>
@@ -229,26 +226,6 @@ void QWebPagePrivate::consoleMessageReceived(MessageSource source, MessageLevel 
 {
     q->javaScriptConsoleMessage(message, lineNumber, sourceID);
     emit q->consoleMessageReceived(QWebPage::MessageSource(source), QWebPage::MessageLevel(level), message, lineNumber, sourceID);
-}
-
-void QWebPagePrivate::javaScriptAlert(QWebFrameAdapter* frame, const QString& msg)
-{
-    q->javaScriptAlert(QWebFramePrivate::kit(frame), msg);
-}
-
-bool QWebPagePrivate::javaScriptConfirm(QWebFrameAdapter* frame, const QString& msg)
-{
-    return q->javaScriptConfirm(QWebFramePrivate::kit(frame), msg);
-}
-
-bool QWebPagePrivate::javaScriptPrompt(QWebFrameAdapter *frame, const QString &msg, const QString &defaultValue, QString *result)
-{
-    return q->javaScriptPrompt(QWebFramePrivate::kit(frame), msg, defaultValue, result);
-}
-
-bool QWebPagePrivate::shouldInterruptJavaScript()
-{
-    return q->shouldInterruptJavaScript();
 }
 
 void QWebPagePrivate::setToolTip(const QString &tip)
@@ -1068,106 +1045,6 @@ void QWebPage::javaScriptConsoleMessage(const QString& message, int lineNumber, 
             fprintf(stdout, "%s\n", message.toUtf8().constData());
         }
     }
-}
-
-/*!
-    This function is called whenever a JavaScript program running inside \a frame calls the alert() function with
-    the message \a msg.
-
-    The default implementation shows the message, \a msg, with QMessageBox::information.
-*/
-void QWebPage::javaScriptAlert(QWebFrame *frame, const QString& msg)
-{
-    Q_UNUSED(frame);
-#ifndef QT_NO_MESSAGEBOX
-    QMessageBox box(view());
-    box.setWindowTitle(tr("JavaScript Alert - %1").arg(mainFrame()->url().host()));
-    box.setTextFormat(Qt::PlainText);
-    box.setText(msg);
-    box.setStandardButtons(QMessageBox::Ok);
-    box.exec();
-#endif
-}
-
-/*!
-    This function is called whenever a JavaScript program running inside \a frame calls the confirm() function
-    with the message, \a msg. Returns true if the user confirms the message; otherwise returns false.
-
-    The default implementation executes the query using QMessageBox::information with QMessageBox::Ok and QMessageBox::Cancel buttons.
-*/
-bool QWebPage::javaScriptConfirm(QWebFrame *frame, const QString& msg)
-{
-    Q_UNUSED(frame);
-#ifdef QT_NO_MESSAGEBOX
-    return true;
-#else
-    QMessageBox box(view());
-    box.setWindowTitle(tr("JavaScript Confirm - %1").arg(mainFrame()->url().host()));
-    box.setTextFormat(Qt::PlainText);
-    box.setText(msg);
-    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    return QMessageBox::Ok == box.exec();
-#endif
-}
-
-/*!
-    This function is called whenever a JavaScript program running inside \a frame tries to prompt the user for input.
-    The program may provide an optional message, \a msg, as well as a default value for the input in \a defaultValue.
-
-    If the prompt was cancelled by the user the implementation should return false; otherwise the
-    result should be written to \a result and true should be returned. If the prompt was not cancelled by the
-    user, the implementation should return true and the result string must not be null.
-
-    The default implementation uses QInputDialog::getText().
-*/
-bool QWebPage::javaScriptPrompt(QWebFrame *frame, const QString& msg, const QString& defaultValue, QString* result)
-{
-    Q_UNUSED(frame);
-    bool ok = false;
-#ifndef QT_NO_INPUTDIALOG
-
-    QInputDialog dlg(view());
-    dlg.setWindowTitle(tr("JavaScript Prompt - %1").arg(mainFrame()->url().host()));
-
-    // Hack to force the dialog's QLabel into plain text mode
-    // prevents https://bugs.webkit.org/show_bug.cgi?id=34429
-    QLabel* label = dlg.findChild<QLabel*>();
-    if (label)
-        label->setTextFormat(Qt::PlainText);
-
-    // double the &'s because single & will underline the following character
-    // (Accelerator mnemonics)
-    QString escMsg(msg);
-    escMsg.replace(QChar::fromLatin1('&'), QLatin1String("&&"));
-    dlg.setLabelText(escMsg);
-
-    dlg.setTextEchoMode(QLineEdit::Normal);
-    dlg.setTextValue(defaultValue);
-
-    ok = !!dlg.exec();
-
-    if (ok && result)
-        *result = dlg.textValue();
-#endif
-    return ok;
-}
-
-/*!
-    \fn bool QWebPage::shouldInterruptJavaScript()
-    \since 4.6
-    This function is called when a JavaScript program is running for a long period of time.
-
-    If the user wanted to stop the JavaScript the implementation should return true; otherwise false.
-
-    The default implementation executes the query using QMessageBox::information with QMessageBox::Yes and QMessageBox::No buttons.
-*/
-bool QWebPage::shouldInterruptJavaScript()
-{
-#ifdef QT_NO_MESSAGEBOX
-    return false;
-#else
-    return QMessageBox::Yes == QMessageBox::information(view(), tr("JavaScript Problem - %1").arg(mainFrame()->url().host()), tr("The script on this page appears to have a problem. Do you want to stop the script?"), QMessageBox::Yes, QMessageBox::No);
-#endif
 }
 
 /*!

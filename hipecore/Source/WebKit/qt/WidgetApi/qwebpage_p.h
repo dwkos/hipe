@@ -77,10 +77,6 @@ public:
     QWebPageAdapter* createWindow(bool /*dialog*/) override;
     QObject* handle() override { return q; }
     void consoleMessageReceived(MessageSource source, MessageLevel level, const QString& message, int lineNumber, const QString& sourceID) override;
-    void javaScriptAlert(QWebFrameAdapter*, const QString& msg) override;
-    bool javaScriptConfirm(QWebFrameAdapter*, const QString& msg) override;
-    bool javaScriptPrompt(QWebFrameAdapter*, const QString& msg, const QString& defaultValue, QString* result) override;
-    bool shouldInterruptJavaScript() override;
     void setToolTip(const QString&) override;
     QWebFrameAdapter& mainFrameAdapter() override;
     QColor colorSelectionRequested(const QColor& selectedColor) override;

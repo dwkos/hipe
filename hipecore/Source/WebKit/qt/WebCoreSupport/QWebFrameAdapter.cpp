@@ -118,16 +118,6 @@ void QWebFrameAdapter::handleGestureEvent(QGestureEventFacade* gestureEvent)
 }
 #endif
 
-QVariant QWebFrameAdapter::evaluateJavaScript(const QString &scriptSource)
-{
-    return QVariant(); //no-op -- removing JS
-}
-
-void QWebFrameAdapter::addToJavaScriptWindowObject(const QString& name, QObject* object, ValueOwnership ownership)
-{
-    //no-op -- removing JS
-}
-
 QString QWebFrameAdapter::toHtml() const
 {
     if (!frame->document())

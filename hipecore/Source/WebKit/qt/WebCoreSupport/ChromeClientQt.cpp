@@ -361,30 +361,19 @@ void ChromeClientQt::closeWindowSoon()
     m_webPage->page->mainFrame().loader().stopAllLoaders();
 }
 
-void ChromeClientQt::runJavaScriptAlert(Frame* f, const String& msg)
+// JavaScript dialogs can't be opened: hipecore runs no scripts.
+void ChromeClientQt::runJavaScriptAlert(Frame*, const String&)
 {
-    m_webPage->javaScriptAlert(QWebFrameAdapter::kit(f), msg);
 }
 
-bool ChromeClientQt::runJavaScriptConfirm(Frame* f, const String& msg)
+bool ChromeClientQt::runJavaScriptConfirm(Frame*, const String&)
 {
-    return m_webPage->javaScriptConfirm(QWebFrameAdapter::kit(f), msg);
+    return false;
 }
 
-bool ChromeClientQt::runJavaScriptPrompt(Frame* f, const String& message, const String& defaultValue, String& result)
+bool ChromeClientQt::runJavaScriptPrompt(Frame*, const String&, const String&, String&)
 {
-    QString x = result;
-    QWebFrameAdapter* webFrame = QWebFrameAdapter::kit(f);
-    bool rc = m_webPage->javaScriptPrompt(webFrame, message, defaultValue, &x);
-
-    // Fix up a quirk in the QInputDialog class. If no input happened the string should be empty
-    // but it is null. See https://bugs.webkit.org/show_bug.cgi?id=30914.
-    if (rc && x.isNull())
-        result = emptyString();
-    else
-        result = x;
-
-    return rc;
+    return false;
 }
 
 void ChromeClientQt::setStatusbarText(const String& msg)

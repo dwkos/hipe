@@ -97,12 +97,6 @@ private:
 
 class QWEBKIT_EXPORT QWebFrameAdapter {
 public:
-    enum ValueOwnership {
-        QtOwnership,
-        ScriptOwnership,
-        AutoOwnership
-    };
-
     enum RenderLayers {
         ContentsLayer = 0x10,
         ScrollBarLayer = 0x20,
@@ -135,8 +129,6 @@ public:
 #endif
     QWebFrameAdapter* createFrame(QWebFrameData*);
 
-    QVariant evaluateJavaScript(const QString& scriptSource);
-    void addToJavaScriptWindowObject(const QString& name, QObject*, ValueOwnership);
 
     QString toHtml() const;
     QString toPlainText() const;

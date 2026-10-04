@@ -317,7 +317,6 @@ public:
     void removeFromDocument();
     void removeAllChildren();
 
-    QVariant evaluateJavaScript(const QString& scriptSource);
 
     enum StyleResolveStrategy {
          InlineStyle,

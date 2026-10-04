@@ -200,30 +200,6 @@ QWebFrame::~QWebFrame()
 }
 
 /*!
-    \fn void QWebFrame::addToJavaScriptWindowObject(const QString &name, QObject *object, ValueOwnership own)
-
-    Make \a object available under \a name from within the frame's JavaScript
-    context. The \a object will be inserted as a child of the frame's window
-    object.
-
-    Qt properties will be exposed as JavaScript properties and slots as
-    JavaScript methods.
-    The interaction between C++ and JavaScript is explained in the documentation of the \l{The Qt WebKit Bridge}{Qt WebKit bridge}.
-
-    If you want to ensure that your QObjects remain accessible after loading a
-    new URL, you should add them in a slot connected to the
-    javaScriptWindowObjectCleared() signal.
-
-    If Javascript is not enabled for this page, then this method does nothing.
-
-    The ownership of \a object is specified using \a own.
-*/
-void QWebFrame::addToJavaScriptWindowObject(const QString &name, QObject *object, ValueOwnership ownership)
-{
-    d->addToJavaScriptWindowObject(name, object, static_cast<QWebFrameAdapter::ValueOwnership>(ownership));
-}
-
-/*!
     Returns the frame's content as HTML, enclosed in HTML and BODY tags.
 
     \sa setHtml(), toPlainText()
@@ -772,31 +748,6 @@ QWebHitTestResult QWebFrame::hitTestContent(const QPoint &pos) const
 bool QWebFrame::event(QEvent *e)
 {
     return QObject::event(e);
-}
-
-/*!
-    Evaluates the JavaScript defined by \a scriptSource using this frame as context
-    and returns the result of the last executed statement.
-
-    \note This method may be very inefficient if \a scriptSource returns a DOM element
-    as a result. For example, evaluation of the next innocuously looking code may take
-    a lot of CPU and memory to execute:
-
-    \code
-        var img = document.createElement('img');
-        document.getElementById(\"foo\").appendChild(img);
-    \endcode
-
-    This code returns appended DOM element, which is converted to QVariantMap
-    containing all its properties. To avoid this issue you can add "true" after
-    the last statement.
-
-    \sa addToJavaScriptWindowObject(), javaScriptWindowObjectCleared(),
-    QWebElement::evaluateJavaScript()
-*/
-QVariant QWebFrame::evaluateJavaScript(const QString& scriptSource)
-{
-    return d->evaluateJavaScript(scriptSource);
 }
 
 /*!

@@ -279,7 +279,6 @@ public:
 
     QWebPageAdapter* handle() const;
 
-    virtual bool shouldInterruptJavaScript();
 
 Q_SIGNALS:
     void loadStarted();
@@ -312,9 +311,6 @@ protected:
     virtual QWebPage *createWindow(WebWindowType type);
     virtual QObject *createPlugin(const QString &classid, const QUrl &url, const QStringList &paramNames, const QStringList &paramValues);
 
-    virtual void javaScriptAlert(QWebFrame *originatingFrame, const QString& msg);
-    virtual bool javaScriptConfirm(QWebFrame *originatingFrame, const QString& msg);
-    virtual bool javaScriptPrompt(QWebFrame *originatingFrame, const QString& msg, const QString& defaultValue, QString* result);
     virtual void javaScriptConsoleMessage(const QString& message, int lineNumber, const QString& sourceID);
 
 private:
