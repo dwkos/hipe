@@ -124,7 +124,7 @@ bool HTMLElement::ieForbidsInsertHTML() const
 static inline CSSValueID unicodeBidiAttributeForDirAuto(HTMLElement& element)
 {
     if (element.hasTagName(preTag) || element.hasTagName(textareaTag))
-        return CSSValueWebkitPlaintext;
+        return CSSValuePlaintext;
     // FIXME: For bdo element, dir="auto" should result in "bidi-override isolate" but we don't support having multiple values in unicode-bidi yet.
     // See https://bugs.webkit.org/show_bug.cgi?id=73164.
     return CSSValueWebkitIsolate;
@@ -214,7 +214,7 @@ void HTMLElement::collectStyleForPresentationAttribute(const QualifiedName& name
         case ContentEditableType::True:
             addPropertyToPresentationAttributeStyle(style, CSSPropertyWordWrap, CSSValueBreakWord);
             addPropertyToPresentationAttributeStyle(style, CSSPropertyWebkitNbspMode, CSSValueSpace);
-            addPropertyToPresentationAttributeStyle(style, CSSPropertyWebkitLineBreak, CSSValueAfterWhiteSpace);
+            addPropertyToPresentationAttributeStyle(style, CSSPropertyLineBreak, CSSValueAfterWhiteSpace);
             break;
         }
         addPropertyToPresentationAttributeStyle(style, CSSPropertyWebkitUserModify, userModifyValue);
@@ -223,7 +223,7 @@ void HTMLElement::collectStyleForPresentationAttribute(const QualifiedName& name
     } else if (name == draggableAttr) {
         if (equalLettersIgnoringASCIICase(value, "true")) {
             addPropertyToPresentationAttributeStyle(style, CSSPropertyWebkitUserDrag, CSSValueElement);
-            addPropertyToPresentationAttributeStyle(style, CSSPropertyWebkitUserSelect, CSSValueNone);
+            addPropertyToPresentationAttributeStyle(style, CSSPropertyUserSelect, CSSValueNone);
         } else if (equalLettersIgnoringASCIICase(value, "false"))
             addPropertyToPresentationAttributeStyle(style, CSSPropertyWebkitUserDrag, CSSValueNone);
     } else if (name == dirAttr) {

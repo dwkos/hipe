@@ -152,7 +152,7 @@ void VTTCueBox::applyCSSProperties(const IntSize& videoSize)
     setInlineStyleProperty(CSSPropertyPosition, CSSValueAbsolute);
 
     //  the 'unicode-bidi' property must be set to 'plaintext'
-    setInlineStyleProperty(CSSPropertyUnicodeBidi, CSSValueWebkitPlaintext);
+    setInlineStyleProperty(CSSPropertyUnicodeBidi, CSSValuePlaintext);
 
     // the 'direction' property must be set to direction
     setInlineStyleProperty(CSSPropertyDirection, m_cue.getCSSWritingDirection());
@@ -186,14 +186,14 @@ void VTTCueBox::applyCSSProperties(const IntSize& videoSize)
     if (m_cue.vertical() == horizontalKeyword()) {
         setInlineStyleProperty(CSSPropertyWidth, newCueSize, CSSPrimitiveValue::CSS_PERCENTAGE);
         setInlineStyleProperty(CSSPropertyHeight, CSSValueAuto);
-        setInlineStyleProperty(CSSPropertyMinWidth, "-webkit-min-content");
+        setInlineStyleProperty(CSSPropertyMinWidth, "min-content");
         setInlineStyleProperty(CSSPropertyMaxWidth, maxSize, CSSPrimitiveValue::CSS_PERCENTAGE);
         if ((alignment == CSSValueMiddle || alignment == CSSValueCenter) && multiplier != 1.0)
             setInlineStyleProperty(CSSPropertyLeft, static_cast<double>(position.first - (newCueSize - m_cue.getCSSSize()) / 2), CSSPrimitiveValue::CSS_PERCENTAGE);
     } else {
         setInlineStyleProperty(CSSPropertyWidth, CSSValueAuto);
         setInlineStyleProperty(CSSPropertyHeight, newCueSize, CSSPrimitiveValue::CSS_PERCENTAGE);
-        setInlineStyleProperty(CSSPropertyMinHeight, "-webkit-min-content");
+        setInlineStyleProperty(CSSPropertyMinHeight, "min-content");
         setInlineStyleProperty(CSSPropertyMaxHeight, maxSize, CSSPrimitiveValue::CSS_PERCENTAGE);
         if ((alignment == CSSValueMiddle || alignment == CSSValueCenter) && multiplier != 1.0)
             setInlineStyleProperty(CSSPropertyTop, static_cast<double>(position.second - (newCueSize - m_cue.getCSSSize()) / 2), CSSPrimitiveValue::CSS_PERCENTAGE);

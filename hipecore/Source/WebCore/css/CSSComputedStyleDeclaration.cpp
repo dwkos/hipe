@@ -210,11 +210,11 @@ static const CSSPropertyID computedProperties[] = {
     CSSPropertyWebkitTextAlignLast,
     CSSPropertyWebkitTextJustify,
 #endif // CSS3_TEXT
-    CSSPropertyWebkitTextDecorationLine,
-    CSSPropertyWebkitTextDecorationStyle,
-    CSSPropertyWebkitTextDecorationColor,
+    CSSPropertyTextDecorationLine,
+    CSSPropertyTextDecorationStyle,
+    CSSPropertyTextDecorationColor,
     CSSPropertyWebkitTextDecorationSkip,
-    CSSPropertyWebkitTextUnderlinePosition,
+    CSSPropertyTextUnderlinePosition,
     CSSPropertyTextIndent,
     CSSPropertyTextRendering,
     CSSPropertyTextShadow,
@@ -257,8 +257,8 @@ static const CSSPropertyID computedProperties[] = {
 #if ENABLE(CSS_ANIMATIONS_LEVEL_2)
     CSSPropertyWebkitAnimationTrigger,
 #endif
-    CSSPropertyWebkitAppearance,
-    CSSPropertyWebkitBackfaceVisibility,
+    CSSPropertyAppearance,
+    CSSPropertyBackfaceVisibility,
     CSSPropertyWebkitBackgroundClip,
     CSSPropertyWebkitBackgroundComposite,
     CSSPropertyWebkitBackgroundOrigin,
@@ -273,7 +273,7 @@ static const CSSPropertyID computedProperties[] = {
     CSSPropertyWebkitBorderVerticalSpacing,
     CSSPropertyWebkitBoxAlign,
 #if ENABLE(CSS_BOX_DECORATION_BREAK)
-    CSSPropertyWebkitBoxDecorationBreak,
+    CSSPropertyBoxDecorationBreak,
 #endif
     CSSPropertyWebkitBoxDirection,
     CSSPropertyWebkitBoxFlex,
@@ -319,7 +319,7 @@ static const CSSPropertyID computedProperties[] = {
 #if ENABLE(FILTERS_LEVEL_2)
     CSSPropertyWebkitBackdropFilter,
 #endif
-    CSSPropertyWebkitFontKerning,
+    CSSPropertyFontKerning,
     CSSPropertyWebkitFontSmoothing,
     CSSPropertyFontVariantLigatures,
     CSSPropertyFontVariantPosition,
@@ -341,15 +341,15 @@ static const CSSPropertyID computedProperties[] = {
     CSSPropertyWebkitGridColumnGap,
     CSSPropertyWebkitGridRowGap,
 #endif
-    CSSPropertyWebkitHyphenateCharacter,
+    CSSPropertyHyphenateCharacter,
     CSSPropertyWebkitHyphenateLimitAfter,
     CSSPropertyWebkitHyphenateLimitBefore,
     CSSPropertyWebkitHyphenateLimitLines,
-    CSSPropertyWebkitHyphens,
-    CSSPropertyWebkitInitialLetter,
+    CSSPropertyHyphens,
+    CSSPropertyInitialLetter,
     CSSPropertyWebkitLineAlign,
     CSSPropertyWebkitLineBoxContain,
-    CSSPropertyWebkitLineBreak,
+    CSSPropertyLineBreak,
     CSSPropertyWebkitLineClamp,
     CSSPropertyWebkitLineGrid,
     CSSPropertyWebkitLineSnap,
@@ -381,21 +381,21 @@ static const CSSPropertyID computedProperties[] = {
 #endif
     CSSPropertyPerspective,
     CSSPropertyPerspectiveOrigin,
-    CSSPropertyWebkitPrintColorAdjust,
+    CSSPropertyPrintColorAdjust,
     CSSPropertyWebkitRtlOrdering,
 #if ENABLE(CSS_SHAPES)
-    CSSPropertyWebkitShapeOutside,
+    CSSPropertyShapeOutside,
 #endif
 #if ENABLE(TOUCH_EVENTS)
     CSSPropertyWebkitTapHighlightColor,
 #endif
     CSSPropertyWebkitTextCombine,
     CSSPropertyWebkitTextDecorationsInEffect,
-    CSSPropertyWebkitTextEmphasisColor,
-    CSSPropertyWebkitTextEmphasisPosition,
-    CSSPropertyWebkitTextEmphasisStyle,
+    CSSPropertyTextEmphasisColor,
+    CSSPropertyTextEmphasisPosition,
+    CSSPropertyTextEmphasisStyle,
     CSSPropertyWebkitTextFillColor,
-    CSSPropertyWebkitTextOrientation,
+    CSSPropertyTextOrientation,
     CSSPropertyWebkitTextSecurity,
 #if ENABLE(IOS_TEXT_AUTOSIZING)
     CSSPropertyWebkitTextSizeAdjust,
@@ -410,7 +410,7 @@ static const CSSPropertyID computedProperties[] = {
     CSSPropertyWebkitTransitionTimingFunction,
     CSSPropertyWebkitUserDrag,
     CSSPropertyWebkitUserModify,
-    CSSPropertyWebkitUserSelect,
+    CSSPropertyUserSelect,
     CSSPropertyWebkitWritingMode,
 #if ENABLE(CSS_REGIONS)
     CSSPropertyWebkitFlowInto,
@@ -421,8 +421,8 @@ static const CSSPropertyID computedProperties[] = {
     CSSPropertyWebkitRegionFragment,
 #endif
 #if ENABLE(CSS_SHAPES)
-    CSSPropertyWebkitShapeMargin,
-    CSSPropertyWebkitShapeImageThreshold,
+    CSSPropertyShapeMargin,
+    CSSPropertyShapeImageThreshold,
 #endif
     CSSPropertyBufferedRendering,
     CSSPropertyClipPath,
@@ -2615,7 +2615,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
         case CSSPropertyWebkitBoxAlign:
             return cssValuePool.createValue(style->boxAlign());
 #if ENABLE(CSS_BOX_DECORATION_BREAK)
-        case CSSPropertyWebkitBoxDecorationBreak:
+        case CSSPropertyBoxDecorationBreak:
             if (style->boxDecorationBreak() == DSLICE)
                 return cssValuePool.createIdentifierValue(CSSValueSlice);
         return cssValuePool.createIdentifierValue(CSSValueClone);
@@ -2645,7 +2645,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             return cssValuePool.createValue(style->clear());
         case CSSPropertyColor:
             return cssValuePool.createColorValue(m_allowVisitedStyle ? style->visitedDependentColor(CSSPropertyColor).rgb() : style->color().rgb());
-        case CSSPropertyWebkitPrintColorAdjust:
+        case CSSPropertyPrintColorAdjust:
             return cssValuePool.createValue(style->printColorAdjust());
         case CSSPropertyWebkitColumnAxis:
             return cssValuePool.createValue(style->columnAxis());
@@ -2879,9 +2879,9 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
                 return zoomAdjustedPixelValue(sizingBox(*renderer).height(), *style);
             }
             return zoomAdjustedPixelValueForLength(style->height(), *style);
-        case CSSPropertyWebkitHyphens:
+        case CSSPropertyHyphens:
             return cssValuePool.createValue(style->hyphens());
-        case CSSPropertyWebkitHyphenateCharacter:
+        case CSSPropertyHyphenateCharacter:
             if (style->hyphenationString().isNull())
                 return cssValuePool.createIdentifierValue(CSSValueAuto);
             return cssValuePool.createValue(style->hyphenationString(), CSSPrimitiveValue::CSS_STRING);
@@ -3051,7 +3051,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             return cssValuePool.createValue(style->position());
         case CSSPropertyRight:
             return positionOffsetValue(*style, CSSPropertyRight);
-        case CSSPropertyWebkitRubyPosition:
+        case CSSPropertyRubyPosition:
             return cssValuePool.createValue(style->rubyPosition());
         case CSSPropertyTableLayout:
             return cssValuePool.createValue(style->tableLayout());
@@ -3067,25 +3067,25 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
 #endif // CSS3_TEXT
         case CSSPropertyWebkitTextDecoration:
             return getCSSPropertyValuesForShorthandProperties(webkitTextDecorationShorthand());
-        case CSSPropertyWebkitTextDecorationLine:
+        case CSSPropertyTextDecorationLine:
             return renderTextDecorationFlagsToCSSValue(style->textDecoration());
-        case CSSPropertyWebkitTextDecorationStyle:
+        case CSSPropertyTextDecorationStyle:
             return renderTextDecorationStyleFlagsToCSSValue(style->textDecorationStyle());
-        case CSSPropertyWebkitTextDecorationColor:
+        case CSSPropertyTextDecorationColor:
             return currentColorOrValidColor(style.get(), style->textDecorationColor());
         case CSSPropertyWebkitTextDecorationSkip:
             return renderTextDecorationSkipFlagsToCSSValue(style->textDecorationSkip());
-        case CSSPropertyWebkitTextUnderlinePosition:
+        case CSSPropertyTextUnderlinePosition:
             return cssValuePool.createValue(style->textUnderlinePosition());
         case CSSPropertyWebkitTextDecorationsInEffect:
             return renderTextDecorationFlagsToCSSValue(style->textDecorationsInEffect());
         case CSSPropertyWebkitTextFillColor:
             return currentColorOrValidColor(style.get(), style->textFillColor());
-        case CSSPropertyWebkitTextEmphasisColor:
+        case CSSPropertyTextEmphasisColor:
             return currentColorOrValidColor(style.get(), style->textEmphasisColor());
-        case CSSPropertyWebkitTextEmphasisPosition:
+        case CSSPropertyTextEmphasisPosition:
             return renderEmphasisPositionFlagsToCSSValue(style->textEmphasisPosition());
-        case CSSPropertyWebkitTextEmphasisStyle:
+        case CSSPropertyTextEmphasisStyle:
             switch (style->textEmphasisMark()) {
             case TextEmphasisMarkNone:
                 return cssValuePool.createIdentifierValue(CSSValueNone);
@@ -3205,13 +3205,13 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             return zoomAdjustedPixelValue(style->fontCascade().wordSpacing(), *style);
         case CSSPropertyWordWrap:
             return cssValuePool.createValue(style->overflowWrap());
-        case CSSPropertyWebkitLineBreak:
+        case CSSPropertyLineBreak:
             return cssValuePool.createValue(style->lineBreak());
         case CSSPropertyWebkitNbspMode:
             return cssValuePool.createValue(style->nbspMode());
         case CSSPropertyResize:
             return cssValuePool.createValue(style->resize());
-        case CSSPropertyWebkitFontKerning:
+        case CSSPropertyFontKerning:
             return cssValuePool.createValue(style->fontDescription().kerning());
         case CSSPropertyWebkitFontSmoothing:
             return cssValuePool.createValue(style->fontDescription().fontSmoothing());
@@ -3375,7 +3375,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
         case CSSPropertyWebkitAnimationTrigger:
             return getAnimationTriggerValue(style->animations(), *style);
 #endif
-        case CSSPropertyWebkitAppearance:
+        case CSSPropertyAppearance:
             return cssValuePool.createValue(style->appearance());
         case CSSPropertyWebkitAspectRatio:
             if (style->aspectRatioType() == AspectRatioAuto)
@@ -3385,7 +3385,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             if (style->aspectRatioType() == AspectRatioFromIntrinsic)
                 return cssValuePool.createIdentifierValue(CSSValueFromIntrinsic);
             return CSSAspectRatioValue::create(style->aspectRatioNumerator(), style->aspectRatioDenominator());
-        case CSSPropertyWebkitBackfaceVisibility:
+        case CSSPropertyBackfaceVisibility:
             return cssValuePool.createIdentifierValue((style->backfaceVisibility() == BackfaceVisibilityHidden) ? CSSValueHidden : CSSValueVisible);
         case CSSPropertyWebkitBorderImage:
             return valueForNinePieceImage(style->borderImage());
@@ -3414,7 +3414,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
         case CSSPropertyWebkitFontSizeDelta:
             // Not a real style property -- used by the editing engine -- so has no computed value.
             break;
-        case CSSPropertyWebkitInitialLetter: {
+        case CSSPropertyInitialLetter: {
             RefPtr<CSSPrimitiveValue> drop = !style->initialLetterDrop() ? cssValuePool.createIdentifierValue(CSSValueNormal) : cssValuePool.createValue(style->initialLetterDrop(), CSSPrimitiveValue::CSS_NUMBER);
             RefPtr<CSSPrimitiveValue> size = !style->initialLetterHeight() ? cssValuePool.createIdentifierValue(CSSValueNormal) : cssValuePool.createValue(style->initialLetterHeight(), CSSPrimitiveValue::CSS_NUMBER);
             return cssValuePool.createValue(Pair::create(drop.release(), size.release()));
@@ -3462,7 +3462,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
 #endif
         case CSSPropertyWebkitUserDrag:
             return cssValuePool.createValue(style->userDrag());
-        case CSSPropertyWebkitUserSelect:
+        case CSSPropertyUserSelect:
             return cssValuePool.createValue(style->userSelect());
         case CSSPropertyBorderBottomLeftRadius:
             return getBorderRadiusCornerValue(style->borderBottomLeftRadius(), *style);
@@ -3559,7 +3559,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             return cssValuePool.createValue(style->writingMode());
         case CSSPropertyWebkitTextCombine:
             return cssValuePool.createValue(style->textCombine());
-        case CSSPropertyWebkitTextOrientation:
+        case CSSPropertyTextOrientation:
             return CSSPrimitiveValue::create(style->textOrientation());
         case CSSPropertyWebkitLineBoxContain:
             return createLineBoxContainValue(style->lineBoxContain());
@@ -3605,11 +3605,11 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             return cssValuePool.createValue(style->regionFragment());
 #endif
 #if ENABLE(CSS_SHAPES)
-        case CSSPropertyWebkitShapeMargin:
+        case CSSPropertyShapeMargin:
             return cssValuePool.createValue(style->shapeMargin(), *style);
-        case CSSPropertyWebkitShapeImageThreshold:
+        case CSSPropertyShapeImageThreshold:
             return cssValuePool.createValue(style->shapeImageThreshold(), CSSPrimitiveValue::CSS_NUMBER);
-        case CSSPropertyWebkitShapeOutside:
+        case CSSPropertyShapeOutside:
             return shapePropertyValue(*style, style->shapeOutside());
 #endif
         case CSSPropertyFilter:
@@ -3725,7 +3725,7 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
         /* Unimplemented CSS 3 properties (including CSS3 shorthand properties) */
         case CSSPropertyAll:
         case CSSPropertyAnimation:
-        case CSSPropertyWebkitTextEmphasis:
+        case CSSPropertyTextEmphasis:
         case CSSPropertyTextLineThrough:
         case CSSPropertyTextLineThroughColor:
         case CSSPropertyTextLineThroughMode:
@@ -3744,36 +3744,36 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             break;
 
         /* Directional properties are resolved by resolveDirectionAwareProperty() before the switch. */
-        case CSSPropertyWebkitBorderEnd:
-        case CSSPropertyWebkitBorderEndColor:
-        case CSSPropertyWebkitBorderEndStyle:
-        case CSSPropertyWebkitBorderEndWidth:
-        case CSSPropertyWebkitBorderStart:
-        case CSSPropertyWebkitBorderStartColor:
-        case CSSPropertyWebkitBorderStartStyle:
-        case CSSPropertyWebkitBorderStartWidth:
-        case CSSPropertyWebkitBorderAfter:
-        case CSSPropertyWebkitBorderAfterColor:
-        case CSSPropertyWebkitBorderAfterStyle:
-        case CSSPropertyWebkitBorderAfterWidth:
-        case CSSPropertyWebkitBorderBefore:
-        case CSSPropertyWebkitBorderBeforeColor:
-        case CSSPropertyWebkitBorderBeforeStyle:
-        case CSSPropertyWebkitBorderBeforeWidth:
-        case CSSPropertyWebkitMarginEnd:
-        case CSSPropertyWebkitMarginStart:
-        case CSSPropertyWebkitMarginAfter:
-        case CSSPropertyWebkitMarginBefore:
-        case CSSPropertyWebkitPaddingEnd:
-        case CSSPropertyWebkitPaddingStart:
-        case CSSPropertyWebkitPaddingAfter:
-        case CSSPropertyWebkitPaddingBefore:
-        case CSSPropertyWebkitLogicalWidth:
-        case CSSPropertyWebkitLogicalHeight:
-        case CSSPropertyWebkitMinLogicalWidth:
-        case CSSPropertyWebkitMinLogicalHeight:
-        case CSSPropertyWebkitMaxLogicalWidth:
-        case CSSPropertyWebkitMaxLogicalHeight:
+        case CSSPropertyBorderInlineEnd:
+        case CSSPropertyBorderInlineEndColor:
+        case CSSPropertyBorderInlineEndStyle:
+        case CSSPropertyBorderInlineEndWidth:
+        case CSSPropertyBorderInlineStart:
+        case CSSPropertyBorderInlineStartColor:
+        case CSSPropertyBorderInlineStartStyle:
+        case CSSPropertyBorderInlineStartWidth:
+        case CSSPropertyBorderBlockEnd:
+        case CSSPropertyBorderBlockEndColor:
+        case CSSPropertyBorderBlockEndStyle:
+        case CSSPropertyBorderBlockEndWidth:
+        case CSSPropertyBorderBlockStart:
+        case CSSPropertyBorderBlockStartColor:
+        case CSSPropertyBorderBlockStartStyle:
+        case CSSPropertyBorderBlockStartWidth:
+        case CSSPropertyMarginInlineEnd:
+        case CSSPropertyMarginInlineStart:
+        case CSSPropertyMarginBlockEnd:
+        case CSSPropertyMarginBlockStart:
+        case CSSPropertyPaddingInlineEnd:
+        case CSSPropertyPaddingInlineStart:
+        case CSSPropertyPaddingBlockEnd:
+        case CSSPropertyPaddingBlockStart:
+        case CSSPropertyInlineSize:
+        case CSSPropertyBlockSize:
+        case CSSPropertyMinInlineSize:
+        case CSSPropertyMinBlockSize:
+        case CSSPropertyMaxInlineSize:
+        case CSSPropertyMaxBlockSize:
             ASSERT_NOT_REACHED();
             break;
 

@@ -103,7 +103,7 @@ public:
     DECLARE_PROPERTY_CUSTOM_HANDLERS(WebkitMaskBoxImageSlice);
     DECLARE_PROPERTY_CUSTOM_HANDLERS(WebkitMaskBoxImageWidth);
     DECLARE_PROPERTY_CUSTOM_HANDLERS(WebkitSvgShadow);
-    DECLARE_PROPERTY_CUSTOM_HANDLERS(WebkitTextEmphasisStyle);
+    DECLARE_PROPERTY_CUSTOM_HANDLERS(TextEmphasisStyle);
     DECLARE_PROPERTY_CUSTOM_HANDLERS(Zoom);
 
     // Custom handling of initial + inherit value setting only.
@@ -124,7 +124,7 @@ public:
     static void applyValueWebkitDashboardRegion(StyleResolver&, CSSValue&);
 #endif
     static void applyValueWebkitLocale(StyleResolver&, CSSValue&);
-    static void applyValueWebkitTextOrientation(StyleResolver&, CSSValue&);
+    static void applyValueTextOrientation(StyleResolver&, CSSValue&);
 #if ENABLE(IOS_TEXT_AUTOSIZING)
     static void applyValueWebkitTextSizeAdjust(StyleResolver&, CSSValue&);
 #endif
@@ -707,7 +707,7 @@ inline void StyleBuilderCustom::applyValueWebkitWritingMode(StyleResolver& style
     styleResolver.style()->setHasExplicitlySetWritingMode(true);
 }
 
-inline void StyleBuilderCustom::applyValueWebkitTextOrientation(StyleResolver& styleResolver, CSSValue& value)
+inline void StyleBuilderCustom::applyValueTextOrientation(StyleResolver& styleResolver, CSSValue& value)
 {
     styleResolver.setTextOrientation(downcast<CSSPrimitiveValue>(value));
 }
@@ -998,21 +998,21 @@ inline void StyleBuilderCustom::applyValueWebkitAspectRatio(StyleResolver& style
     styleResolver.style()->setAspectRatioNumerator(aspectRatioValue.numeratorValue());
 }
 
-inline void StyleBuilderCustom::applyInitialWebkitTextEmphasisStyle(StyleResolver& styleResolver)
+inline void StyleBuilderCustom::applyInitialTextEmphasisStyle(StyleResolver& styleResolver)
 {
     styleResolver.style()->setTextEmphasisFill(RenderStyle::initialTextEmphasisFill());
     styleResolver.style()->setTextEmphasisMark(RenderStyle::initialTextEmphasisMark());
     styleResolver.style()->setTextEmphasisCustomMark(RenderStyle::initialTextEmphasisCustomMark());
 }
 
-inline void StyleBuilderCustom::applyInheritWebkitTextEmphasisStyle(StyleResolver& styleResolver)
+inline void StyleBuilderCustom::applyInheritTextEmphasisStyle(StyleResolver& styleResolver)
 {
     styleResolver.style()->setTextEmphasisFill(styleResolver.parentStyle()->textEmphasisFill());
     styleResolver.style()->setTextEmphasisMark(styleResolver.parentStyle()->textEmphasisMark());
     styleResolver.style()->setTextEmphasisCustomMark(styleResolver.parentStyle()->textEmphasisCustomMark());
 }
 
-inline void StyleBuilderCustom::applyValueWebkitTextEmphasisStyle(StyleResolver& styleResolver, CSSValue& value)
+inline void StyleBuilderCustom::applyValueTextEmphasisStyle(StyleResolver& styleResolver, CSSValue& value)
 {
     if (is<CSSValueList>(value)) {
         auto& list = downcast<CSSValueList>(value);
@@ -1564,7 +1564,7 @@ inline void StyleBuilderCustom::applyValueFontSize(StyleResolver& styleResolver,
         case CSSValueLarge:
         case CSSValueXLarge:
         case CSSValueXxLarge:
-        case CSSValueWebkitXxxLarge:
+        case CSSValueXxxLarge:
             size = Style::fontSizeForKeyword(ident, fontDescription.useFixedDefaultSize(), styleResolver.document());
             fontDescription.setKeywordSizeFromIdentifier(ident);
             break;

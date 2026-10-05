@@ -167,7 +167,7 @@ static unsigned simpleSelectorFunctionalPseudoClassStaticSpecificity(const CSSSe
         if (pseudoClassType == CSSSelector::PseudoClassMatches || pseudoClassType == CSSSelector::PseudoClassNthChild || pseudoClassType == CSSSelector::PseudoClassNthLastChild) {
             const CSSSelectorList* selectorList = simpleSelector.selectorList();
             if (!selectorList) {
-                ASSERT_WITH_MESSAGE(pseudoClassType != CSSSelector::PseudoClassMatches, ":matches() should never be created without a valid selector list.");
+                ASSERT_WITH_MESSAGE(pseudoClassType != CSSSelector::PseudoClassMatches, ":is() should never be created without a valid selector list.");
                 return 0;
             }
 
@@ -428,7 +428,7 @@ String CSSSelector::selectorText(const String& rightSide) const
                 str.appendLiteral(":-webkit-any-link");
                 break;
             case CSSSelector::PseudoClassAutofill:
-                str.appendLiteral(":-webkit-autofill");
+                str.appendLiteral(":autofill");
                 break;
             case CSSSelector::PseudoClassDrag:
                 str.appendLiteral(":-webkit-drag");
@@ -563,7 +563,7 @@ String CSSSelector::selectorText(const String& rightSide) const
                 str.appendLiteral(":optional");
                 break;
             case CSSSelector::PseudoClassMatches: {
-                str.appendLiteral(":matches(");
+                str.appendLiteral(":is(");
                 cs->selectorList()->buildSelectorsText(str);
                 str.append(')');
                 break;

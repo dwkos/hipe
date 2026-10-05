@@ -1613,7 +1613,7 @@ Color RenderElement::selectionForegroundColor() const
 
 Color RenderElement::selectionEmphasisMarkColor() const
 {
-    return selectionColor(CSSPropertyWebkitTextEmphasisColor);
+    return selectionColor(CSSPropertyTextEmphasisColor);
 }
 
 Color RenderElement::selectionBackgroundColor() const

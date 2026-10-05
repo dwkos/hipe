@@ -144,7 +144,7 @@ medium
 large
 x-large
 xx-large
--webkit-xxx-large
+xxx-large
 -webkit-ruby-text
 smaller
 larger
@@ -294,7 +294,7 @@ justify
 -webkit-left
 -webkit-right
 -webkit-center
--webkit-match-parent
+match-parent
 //
 // CSS_PROP_TEXT_JUSTIFY:
 //
@@ -457,8 +457,8 @@ text
 wait
 help
 all-scroll
--webkit-grab
--webkit-grabbing
+grab
+grabbing
 -webkit-zoom-in
 -webkit-zoom-out
 // none
@@ -511,8 +511,8 @@ higher
 invert
 inverted
 -webkit-isolate
--webkit-isolate-override
--webkit-plaintext
+isolate-override
+plaintext
 landscape
 ledger
 legal
@@ -687,10 +687,10 @@ min-intrinsic
 //
 // CSS3 intrinsic dimension keywords
 //
--webkit-min-content
--webkit-max-content
+min-content
+max-content
 -webkit-fill-available
--webkit-fit-content
+fit-content
 
 //
 // CSS_PROP_TEXT_OVERFLOW
@@ -1097,7 +1097,7 @@ edges
 alphabetic
 
 // position
--webkit-sticky
+sticky
 
 // (pointer:) media feature
 // none

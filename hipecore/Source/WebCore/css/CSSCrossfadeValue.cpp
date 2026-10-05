@@ -69,7 +69,7 @@ CSSCrossfadeValue::~CSSCrossfadeValue()
 String CSSCrossfadeValue::customCSSText() const
 {
     StringBuilder result;
-    result.appendLiteral("-webkit-cross-fade(");
+    result.appendLiteral("cross-fade(");
     result.append(m_fromValue->cssText());
     result.appendLiteral(", ");
     result.append(m_toValue->cssText());

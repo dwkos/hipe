@@ -211,13 +211,13 @@ inline Length StyleBuilderConverter::convertLengthSizing(StyleResolver& styleRes
         return Length(Intrinsic);
     case CSSValueMinIntrinsic:
         return Length(MinIntrinsic);
-    case CSSValueWebkitMinContent:
+    case CSSValueMinContent:
         return Length(MinContent);
-    case CSSValueWebkitMaxContent:
+    case CSSValueMaxContent:
         return Length(MaxContent);
     case CSSValueWebkitFillAvailable:
         return Length(FillAvailable);
-    case CSSValueWebkitFitContent:
+    case CSSValueFitContent:
         return Length(FitContent);
     case CSSValueAuto:
         return Length(Auto);
@@ -477,7 +477,7 @@ inline ETextAlign StyleBuilderConverter::convertTextAlign(StyleResolver& styleRe
     auto& primitiveValue = downcast<CSSPrimitiveValue>(value);
     ASSERT(primitiveValue.isValueID());
 
-    if (primitiveValue.getValueID() != CSSValueWebkitMatchParent)
+    if (primitiveValue.getValueID() != CSSValueMatchParent)
         return primitiveValue;
 
     auto* parentStyle = styleResolver.parentStyle();
@@ -750,7 +750,7 @@ inline PassRefPtr<ShapeValue> StyleBuilderConverter::convertShapeValue(StyleReso
     }
 
     if (isImageShape(value))
-        return ShapeValue::createImageValue(styleResolver.styleImage(CSSPropertyWebkitShapeOutside, value));
+        return ShapeValue::createImageValue(styleResolver.styleImage(CSSPropertyShapeOutside, value));
 
     RefPtr<BasicShape> shape;
     CSSBoxType referenceBox = BoxMissing;
@@ -833,10 +833,10 @@ inline Vector<LengthSize> StyleBuilderConverter::convertScrollSnapCoordinates(St
 #if ENABLE(CSS_GRID_LAYOUT)
 inline GridLength StyleBuilderConverter::createGridTrackBreadth(CSSPrimitiveValue& primitiveValue, StyleResolver& styleResolver)
 {
-    if (primitiveValue.getValueID() == CSSValueWebkitMinContent)
+    if (primitiveValue.getValueID() == CSSValueMinContent)
         return Length(MinContent);
 
-    if (primitiveValue.getValueID() == CSSValueWebkitMaxContent)
+    if (primitiveValue.getValueID() == CSSValueMaxContent)
         return Length(MaxContent);
 
     // Fractional unit.

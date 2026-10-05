@@ -105,8 +105,8 @@ font-style [Inherited, FontProperty, NameForMethods=Italic]
 font-weight [Inherited, Custom=All]
 text-rendering [Inherited, FontProperty, NameForMethods=TextRenderingMode]
 font-feature-settings [Inherited, FontProperty, Custom=Initial|Inherit, Converter=FontFeatureSettings, NameForMethods=FeatureSettings]
--webkit-font-kerning [Inherited, FontProperty, NameForMethods=Kerning]
-font-kerning = -webkit-font-kerning
+font-kerning [Inherited, FontProperty, NameForMethods=Kerning]
+-webkit-font-kerning = font-kerning
 -webkit-font-smoothing [Inherited, FontProperty]
 font-variant-ligatures [Inherited, FontProperty, NameForMethods=VariantLigatures, Custom=All]
 font-variant-position [Inherited, FontProperty, NameForMethods=VariantPosition]
@@ -115,8 +115,9 @@ font-variant-numeric [Inherited, FontProperty, NameForMethods=VariantNumeric, Cu
 font-variant-alternates [Inherited, FontProperty, NameForMethods=VariantAlternates]
 font-variant-east-asian [Inherited, FontProperty, NameForMethods=VariantEastAsian, Custom=All]
 -webkit-locale [Inherited, FontProperty, Custom=Value]
--webkit-text-orientation [Inherited, Custom=Value]
--epub-text-orientation = -webkit-text-orientation
+text-orientation [Inherited, Custom=Value]
+-webkit-text-orientation = text-orientation
+-epub-text-orientation = text-orientation
 #if defined(ENABLE_IOS_TEXT_AUTOSIZING) && ENABLE_IOS_TEXT_AUTOSIZING
 -webkit-text-size-adjust [Inherited, Custom=Value]
 #endif
@@ -127,7 +128,8 @@ zoom [Custom=All]
 font-synthesis [Inherited, FontProperty, Converter=FontSynthesis]
 
 // Keep this in between the highest priority props and the lower ones.
--webkit-ruby-position [Inherited]
+ruby-position [Inherited]
+-webkit-ruby-position = ruby-position
 
 // The remaining properties are listed in alphabetical order
 alignment-baseline [SVG]
@@ -384,9 +386,11 @@ alt [NameForMethods=ContentAltText, Custom=Value]
 #if defined(ENABLE_CSS_ANIMATIONS_LEVEL_2) && ENABLE_CSS_ANIMATIONS_LEVEL_2
 -webkit-animation-trigger [AnimationProperty, NameForMethods=Trigger]
 #endif
--webkit-appearance
+appearance
+-webkit-appearance = appearance
 -webkit-aspect-ratio [Inherited, Custom=All]
--webkit-backface-visibility
+backface-visibility
+-webkit-backface-visibility = backface-visibility
 -webkit-background-clip [FillLayerProperty, NameForMethods=Clip]
 -webkit-background-composite [FillLayerProperty, NameForMethods=Composite]
 -webkit-background-origin [FillLayerProperty, NameForMethods=Origin]
@@ -394,18 +398,30 @@ alt [NameForMethods=ContentAltText, Custom=Value]
 // a single value: -webkit-background-size: l; is equivalent to background-size: l l;
 // whereas background-size: l; is equivalent to background-size: l auto;
 -webkit-background-size [FillLayerProperty, NameForMethods=Size]
--webkit-border-after [Longhands=-webkit-border-after-width|-webkit-border-after-style|-webkit-border-after-color]
--webkit-border-after-color [SkipBuilder]
--webkit-border-after-style [SkipBuilder]
--webkit-border-after-width [SkipBuilder]
--webkit-border-before [Longhands=-webkit-border-before-width|-webkit-border-before-style|-webkit-border-before-color]
--webkit-border-before-color [SkipBuilder]
--webkit-border-before-style [SkipBuilder]
--webkit-border-before-width [SkipBuilder]
--webkit-border-end [Longhands=-webkit-border-end-width|-webkit-border-end-style|-webkit-border-end-color]
--webkit-border-end-color [SkipBuilder]
--webkit-border-end-style [SkipBuilder]
--webkit-border-end-width [SkipBuilder]
+border-block-end [Longhands=border-block-end-width|border-block-end-style|border-block-end-color]
+-webkit-border-after = border-block-end
+border-block-end-color [SkipBuilder]
+-webkit-border-after-color = border-block-end-color
+border-block-end-style [SkipBuilder]
+-webkit-border-after-style = border-block-end-style
+border-block-end-width [SkipBuilder]
+-webkit-border-after-width = border-block-end-width
+border-block-start [Longhands=border-block-start-width|border-block-start-style|border-block-start-color]
+-webkit-border-before = border-block-start
+border-block-start-color [SkipBuilder]
+-webkit-border-before-color = border-block-start-color
+border-block-start-style [SkipBuilder]
+-webkit-border-before-style = border-block-start-style
+border-block-start-width [SkipBuilder]
+-webkit-border-before-width = border-block-start-width
+border-inline-end [Longhands=border-inline-end-width|border-inline-end-style|border-inline-end-color]
+-webkit-border-end = border-inline-end
+border-inline-end-color [SkipBuilder]
+-webkit-border-end-color = border-inline-end-color
+border-inline-end-style [SkipBuilder]
+-webkit-border-end-style = border-inline-end-style
+border-inline-end-width [SkipBuilder]
+-webkit-border-end-width = border-inline-end-width
 -webkit-border-fit
 -webkit-border-horizontal-spacing [Inherited, NameForMethods=HorizontalBorderSpacing, Converter=ComputedLength<short>]
 -webkit-border-image [Initial=initialNinePieceImage, Converter=BorderImage<CSSPropertyWebkitBorderImage>]
@@ -413,10 +429,14 @@ alt [NameForMethods=ContentAltText, Custom=Value]
 // a value consisting of two lengths: "-webkit-border-radius: l1 l2;" is equivalent
 // to "border-radius: l1 / l2;"
 -webkit-border-radius [Longhands=border-top-left-radius|border-top-right-radius|border-bottom-right-radius|border-bottom-left-radius]
--webkit-border-start [Longhands=-webkit-border-start-width|-webkit-border-start-style|-webkit-border-start-color]
--webkit-border-start-color [SkipBuilder]
--webkit-border-start-style [SkipBuilder]
--webkit-border-start-width [SkipBuilder]
+border-inline-start [Longhands=border-inline-start-width|border-inline-start-style|border-inline-start-color]
+-webkit-border-start = border-inline-start
+border-inline-start-color [SkipBuilder]
+-webkit-border-start-color = border-inline-start-color
+border-inline-start-style [SkipBuilder]
+-webkit-border-start-style = border-inline-start-style
+border-inline-start-width [SkipBuilder]
+-webkit-border-start-width = border-inline-start-width
 -webkit-border-vertical-spacing [Inherited, NameForMethods=VerticalBorderSpacing, Converter=ComputedLength<short>]
 -webkit-box-align
 -webkit-box-direction [Inherited]
@@ -458,7 +478,8 @@ column-width [AutoFunctions, Converter=ComputedLength<float>]
 columns [Longhands=column-width|column-count]
 -webkit-columns = columns
 #if defined(ENABLE_CSS_BOX_DECORATION_BREAK) && ENABLE_CSS_BOX_DECORATION_BREAK
--webkit-box-decoration-break
+box-decoration-break
+-webkit-box-decoration-break = box-decoration-break
 #endif
 #if defined(ENABLE_CSS_COMPOSITING) && ENABLE_CSS_COMPOSITING
 mix-blend-mode [NameForMethods=BlendMode]
@@ -515,30 +536,40 @@ justify-items [Initial=initialSelfAlignment, Converter=SelfOrDefaultAlignmentDat
 -webkit-grid-template-areas [Custom=All]
 -webkit-grid-auto-flow [Converter=GridAutoFlow]
 #endif
--webkit-hyphenate-character [Inherited, NameForMethods=HyphenationString, Converter=StringOrAuto]
+hyphenate-character [Inherited, NameForMethods=HyphenationString, Converter=StringOrAuto]
+-webkit-hyphenate-character = hyphenate-character
 -webkit-hyphenate-limit-after [Inherited, NameForMethods=HyphenationLimitAfter, Converter=NumberOrAuto<short>]
 -webkit-hyphenate-limit-before [Inherited, NameForMethods=HyphenationLimitBefore, Converter=NumberOrAuto<short>]
 -webkit-hyphenate-limit-lines [Inherited, NameForMethods=HyphenationLimitLines, Converter=WebkitHyphenateLimitLines]
--webkit-hyphens [Inherited]
--epub-hyphens = -webkit-hyphens
--webkit-initial-letter [Converter=InitialLetter]
+hyphens [Inherited]
+-webkit-hyphens = hyphens
+-epub-hyphens = hyphens
+initial-letter [Converter=InitialLetter]
+-webkit-initial-letter = initial-letter
 -webkit-line-box-contain [Inherited, Converter=LineBoxContain]
 -webkit-line-align [Inherited]
--webkit-line-break [Inherited]
+line-break [Inherited]
+-webkit-line-break = line-break
 -webkit-line-clamp
 -webkit-line-grid [Inherited, Converter=StringOrNone]
 -webkit-line-snap [Inherited]
--webkit-logical-width [SkipBuilder]
--webkit-logical-height [SkipBuilder]
+inline-size [SkipBuilder]
+-webkit-logical-width = inline-size
+block-size [SkipBuilder]
+-webkit-logical-height = block-size
 -webkit-margin-after-collapse
 -webkit-margin-before-collapse
 -webkit-margin-bottom-collapse [NameForMethods=MarginAfterCollapse]
 -webkit-margin-top-collapse [NameForMethods=MarginBeforeCollapse]
 -webkit-margin-collapse [Longhands=-webkit-margin-before-collapse|-webkit-margin-after-collapse]
--webkit-margin-after [SkipBuilder]
--webkit-margin-before [SkipBuilder]
--webkit-margin-end [SkipBuilder]
--webkit-margin-start [SkipBuilder]
+margin-block-end [SkipBuilder]
+-webkit-margin-after = margin-block-end
+margin-block-start [SkipBuilder]
+-webkit-margin-before = margin-block-start
+margin-inline-end [SkipBuilder]
+-webkit-margin-end = margin-inline-end
+margin-inline-start [SkipBuilder]
+-webkit-margin-start = margin-inline-start
 -webkit-marquee [Longhands=-webkit-marquee-direction|-webkit-marquee-increment|-webkit-marquee-repetition|-webkit-marquee-style|-webkit-marquee-speed]
 -webkit-marquee-direction
 -webkit-marquee-increment [ConditionalConverter=MarqueeIncrement]
@@ -564,17 +595,25 @@ justify-items [Initial=initialSelfAlignment, Converter=SelfOrDefaultAlignmentDat
 -webkit-mask-repeat-y [FillLayerProperty, NameForMethods=RepeatY]
 -webkit-mask-size [FillLayerProperty, NameForMethods=Size]
 -webkit-mask-source-type [FillLayerProperty, NameForMethods=MaskSourceType]
--webkit-max-logical-width [SkipBuilder]
--webkit-max-logical-height [SkipBuilder]
--webkit-min-logical-width [SkipBuilder]
--webkit-min-logical-height [SkipBuilder]
+max-inline-size [SkipBuilder]
+-webkit-max-logical-width = max-inline-size
+max-block-size [SkipBuilder]
+-webkit-max-logical-height = max-block-size
+min-inline-size [SkipBuilder]
+-webkit-min-logical-width = min-inline-size
+min-block-size [SkipBuilder]
+-webkit-min-logical-height = min-block-size
 -webkit-nbsp-mode [Inherited, Setter=setNBSPMode, Initial=initialNBSPMode]
 order
 -webkit-order = order
--webkit-padding-after [SkipBuilder]
--webkit-padding-before [SkipBuilder]
--webkit-padding-end [SkipBuilder]
--webkit-padding-start [SkipBuilder]
+padding-block-end [SkipBuilder]
+-webkit-padding-after = padding-block-end
+padding-block-start [SkipBuilder]
+-webkit-padding-before = padding-block-start
+padding-inline-end [SkipBuilder]
+-webkit-padding-end = padding-inline-end
+padding-inline-start [SkipBuilder]
+-webkit-padding-start = padding-inline-start
 perspective [ConditionalConverter=Perspective]
 -webkit-perspective = perspective
 perspective-origin [Longhands=perspective-origin-x|perspective-origin-y]
@@ -583,7 +622,8 @@ perspective-origin-x [Converter=Length]
 -webkit-perspective-origin-x = perspective-origin-x
 perspective-origin-y [Converter=Length]
 -webkit-perspective-origin-y = perspective-origin-y
--webkit-print-color-adjust [Inherited]
+print-color-adjust [Inherited]
+-webkit-print-color-adjust = print-color-adjust
 -webkit-rtl-ordering [Inherited, Setter=setRTLOrdering, Initial=initialRTLOrdering]
 #if defined(ENABLE_CSS_SCROLL_SNAP)
 -webkit-scroll-snap-points-x [Converter=ScrollSnapPoints, Custom=Initial|Inherit]
@@ -599,24 +639,28 @@ perspective-origin-y [Converter=Length]
 -webkit-text-align-last [Inherited]
 -webkit-text-justify [Inherited]
 #endif
--webkit-text-decoration [Longhands=-webkit-text-decoration-line|-webkit-text-decoration-style|-webkit-text-decoration-color]
--webkit-text-decoration-line [NameForMethods=TextDecoration, Converter=TextDecoration]
--webkit-text-decoration-style
--webkit-text-decoration-color [VisitedLinkColorSupport, Initial=invalidColor]
+-webkit-text-decoration [Longhands=text-decoration-line|text-decoration-style|text-decoration-color]
+text-decoration-line [NameForMethods=TextDecoration, Converter=TextDecoration]
+-webkit-text-decoration-line = text-decoration-line
+text-decoration-style
+-webkit-text-decoration-style = text-decoration-style
+text-decoration-color [VisitedLinkColorSupport, Initial=invalidColor]
+-webkit-text-decoration-color = text-decoration-color
 -webkit-text-decoration-skip [Inherited, Converter=TextDecorationSkip]
--webkit-text-underline-position [Inherited, Converter=TextUnderlinePosition]
+text-underline-position [Inherited, Converter=TextUnderlinePosition]
+-webkit-text-underline-position = text-underline-position
 -webkit-text-decorations-in-effect [Inherited, SkipBuilder]
--webkit-text-emphasis [Inherited, Longhands=-webkit-text-emphasis-style|-webkit-text-emphasis-color]
--epub-text-emphasis = -webkit-text-emphasis
-text-emphasis = -webkit-text-emphasis
--webkit-text-emphasis-color [Inherited, VisitedLinkColorSupport, Initial=invalidColor]
--epub-text-emphasis-color = -webkit-text-emphasis-color
-text-emphasis-color = -webkit-text-emphasis-color
--webkit-text-emphasis-position [Inherited, Converter=TextEmphasisPosition]
-text-emphasis-position = -webkit-text-emphasis-position
--webkit-text-emphasis-style [Inherited, Custom=All]
--epub-text-emphasis-style = -webkit-text-emphasis-style
-text-emphasis-style = -webkit-text-emphasis-style
+text-emphasis [Inherited, Longhands=text-emphasis-style|text-emphasis-color]
+-webkit-text-emphasis = text-emphasis
+-epub-text-emphasis = text-emphasis
+text-emphasis-color [Inherited, VisitedLinkColorSupport, Initial=invalidColor]
+-webkit-text-emphasis-color = text-emphasis-color
+-epub-text-emphasis-color = text-emphasis-color
+text-emphasis-position [Inherited, Converter=TextEmphasisPosition]
+-webkit-text-emphasis-position = text-emphasis-position
+text-emphasis-style [Inherited, Custom=All]
+-webkit-text-emphasis-style = text-emphasis-style
+-epub-text-emphasis-style = text-emphasis-style
 -webkit-text-fill-color [Inherited, VisitedLinkColorSupport, Initial=invalidColor]
 -webkit-text-security [Inherited]
 -webkit-text-stroke [Inherited, Longhands=-webkit-text-stroke-width|-webkit-text-stroke-color]
@@ -642,7 +686,8 @@ transform-style [NameForMethods=TransformStyle3D]
 -webkit-transition-timing-function [AnimationProperty, NameForMethods=TimingFunction]
 -webkit-user-drag
 -webkit-user-modify [Inherited]
--webkit-user-select [Inherited]
+user-select [Inherited]
+-webkit-user-select = user-select
 #if defined(ENABLE_CSS_REGIONS) && ENABLE_CSS_REGIONS
 -webkit-flow-into [NameForMethods=FlowThread, Converter=StringOrNone]
 -webkit-flow-from [NameForMethods=RegionThread, Converter=StringOrNone]
@@ -652,9 +697,12 @@ transform-style [NameForMethods=TransformStyle3D]
 -webkit-region-break-inside [Initial=initialBreakInside, NameForMethods=BreakInside, Converter=RegionBreakInside]
 #endif
 #if defined(ENABLE_CSS_SHAPES) && ENABLE_CSS_SHAPES
--webkit-shape-outside [Converter=ShapeValue]
--webkit-shape-margin [Converter=Length]
--webkit-shape-image-threshold [Converter=NumberOrAuto<float>]
+shape-outside [Converter=ShapeValue]
+-webkit-shape-outside = shape-outside
+shape-margin [Converter=Length]
+-webkit-shape-margin = shape-margin
+shape-image-threshold [Converter=NumberOrAuto<float>]
+-webkit-shape-image-threshold = shape-image-threshold
 #endif
 #if defined(ENABLE_CSS_DEVICE_ADAPTATION) && ENABLE_CSS_DEVICE_ADAPTATION
 max-zoom [SkipBuilder]

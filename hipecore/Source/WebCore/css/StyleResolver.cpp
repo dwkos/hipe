@@ -1078,11 +1078,11 @@ static bool shouldApplyPropertyInParseOrder(CSSPropertyID propertyID)
     case CSSPropertyWebkitBoxShadow:
     case CSSPropertyBoxShadow:
     case CSSPropertyWebkitTextDecoration:
-    case CSSPropertyWebkitTextDecorationLine:
-    case CSSPropertyWebkitTextDecorationStyle:
-    case CSSPropertyWebkitTextDecorationColor:
+    case CSSPropertyTextDecorationLine:
+    case CSSPropertyTextDecorationStyle:
+    case CSSPropertyTextDecorationColor:
     case CSSPropertyWebkitTextDecorationSkip:
-    case CSSPropertyWebkitTextUnderlinePosition:
+    case CSSPropertyTextUnderlinePosition:
     case CSSPropertyTextDecoration:
         return true;
     default:
@@ -1283,7 +1283,7 @@ void StyleResolver::applyMatchedProperties(const MatchResult& matchResult, const
         cascade.addMatches(matchResult, false, matchResult.ranges.firstUARule, matchResult.ranges.lastUARule, applyInheritedOnly);
         cascade.addMatches(matchResult, true, matchResult.ranges.firstUARule, matchResult.ranges.lastUARule, applyInheritedOnly);
 
-        applyCascadedProperties(cascade, CSSPropertyWebkitRubyPosition, CSSPropertyWebkitRubyPosition, &matchResult);
+        applyCascadedProperties(cascade, CSSPropertyRubyPosition, CSSPropertyRubyPosition, &matchResult);
         adjustStyleForInterCharacterRuby();
     
         // Resolve custom variables first.
@@ -1307,7 +1307,7 @@ void StyleResolver::applyMatchedProperties(const MatchResult& matchResult, const
     // Resolve custom properties first.
     applyCascadedProperties(cascade, CSSPropertyCustom, CSSPropertyCustom, &matchResult);
 
-    applyCascadedProperties(cascade, CSSPropertyWebkitRubyPosition, CSSPropertyWebkitRubyPosition, &matchResult);
+    applyCascadedProperties(cascade, CSSPropertyRubyPosition, CSSPropertyRubyPosition, &matchResult);
     
     // Adjust the font size to be smaller if ruby-position is inter-character.
     adjustStyleForInterCharacterRuby();
@@ -1371,8 +1371,8 @@ inline bool isValidVisitedLinkProperty(CSSPropertyID id)
     case CSSPropertyColor:
     case CSSPropertyOutlineColor:
     case CSSPropertyColumnRuleColor:
-    case CSSPropertyWebkitTextDecorationColor:
-    case CSSPropertyWebkitTextEmphasisColor:
+    case CSSPropertyTextDecorationColor:
+    case CSSPropertyTextEmphasisColor:
     case CSSPropertyWebkitTextFillColor:
     case CSSPropertyWebkitTextStrokeColor:
     case CSSPropertyFill:
@@ -2164,7 +2164,7 @@ void StyleResolver::loadPendingImages()
             break;
         }
 #if ENABLE(CSS_SHAPES)
-        case CSSPropertyWebkitShapeOutside:
+        case CSSPropertyShapeOutside:
             loadPendingShapeImage(m_state.style()->shapeOutside());
             break;
 #endif

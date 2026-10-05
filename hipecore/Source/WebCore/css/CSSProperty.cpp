@@ -78,75 +78,75 @@ static const StylePropertyShorthand& borderDirections()
 CSSPropertyID CSSProperty::resolveDirectionAwareProperty(CSSPropertyID propertyID, TextDirection direction, WritingMode writingMode)
 {
     switch (propertyID) {
-    case CSSPropertyWebkitMarginEnd:
+    case CSSPropertyMarginInlineEnd:
         return resolveToPhysicalProperty(direction, writingMode, EndSide, marginShorthand());
-    case CSSPropertyWebkitMarginStart:
+    case CSSPropertyMarginInlineStart:
         return resolveToPhysicalProperty(direction, writingMode, StartSide, marginShorthand());
-    case CSSPropertyWebkitMarginBefore:
+    case CSSPropertyMarginBlockStart:
         return resolveToPhysicalProperty(direction, writingMode, BeforeSide, marginShorthand());
-    case CSSPropertyWebkitMarginAfter:
+    case CSSPropertyMarginBlockEnd:
         return resolveToPhysicalProperty(direction, writingMode, AfterSide, marginShorthand());
-    case CSSPropertyWebkitPaddingEnd:
+    case CSSPropertyPaddingInlineEnd:
         return resolveToPhysicalProperty(direction, writingMode, EndSide, paddingShorthand());
-    case CSSPropertyWebkitPaddingStart:
+    case CSSPropertyPaddingInlineStart:
         return resolveToPhysicalProperty(direction, writingMode, StartSide, paddingShorthand());
-    case CSSPropertyWebkitPaddingBefore:
+    case CSSPropertyPaddingBlockStart:
         return resolveToPhysicalProperty(direction, writingMode, BeforeSide, paddingShorthand());
-    case CSSPropertyWebkitPaddingAfter:
+    case CSSPropertyPaddingBlockEnd:
         return resolveToPhysicalProperty(direction, writingMode, AfterSide, paddingShorthand());
-    case CSSPropertyWebkitBorderEnd:
+    case CSSPropertyBorderInlineEnd:
         return resolveToPhysicalProperty(direction, writingMode, EndSide, borderDirections());
-    case CSSPropertyWebkitBorderStart:
+    case CSSPropertyBorderInlineStart:
         return resolveToPhysicalProperty(direction, writingMode, StartSide, borderDirections());
-    case CSSPropertyWebkitBorderBefore:
+    case CSSPropertyBorderBlockStart:
         return resolveToPhysicalProperty(direction, writingMode, BeforeSide, borderDirections());
-    case CSSPropertyWebkitBorderAfter:
+    case CSSPropertyBorderBlockEnd:
         return resolveToPhysicalProperty(direction, writingMode, AfterSide, borderDirections());
-    case CSSPropertyWebkitBorderEndColor:
+    case CSSPropertyBorderInlineEndColor:
         return resolveToPhysicalProperty(direction, writingMode, EndSide, borderColorShorthand());
-    case CSSPropertyWebkitBorderStartColor:
+    case CSSPropertyBorderInlineStartColor:
         return resolveToPhysicalProperty(direction, writingMode, StartSide, borderColorShorthand());
-    case CSSPropertyWebkitBorderBeforeColor:
+    case CSSPropertyBorderBlockStartColor:
         return resolveToPhysicalProperty(direction, writingMode, BeforeSide, borderColorShorthand());
-    case CSSPropertyWebkitBorderAfterColor:
+    case CSSPropertyBorderBlockEndColor:
         return resolveToPhysicalProperty(direction, writingMode, AfterSide, borderColorShorthand());
-    case CSSPropertyWebkitBorderEndStyle:
+    case CSSPropertyBorderInlineEndStyle:
         return resolveToPhysicalProperty(direction, writingMode, EndSide, borderStyleShorthand());
-    case CSSPropertyWebkitBorderStartStyle:
+    case CSSPropertyBorderInlineStartStyle:
         return resolveToPhysicalProperty(direction, writingMode, StartSide, borderStyleShorthand());
-    case CSSPropertyWebkitBorderBeforeStyle:
+    case CSSPropertyBorderBlockStartStyle:
         return resolveToPhysicalProperty(direction, writingMode, BeforeSide, borderStyleShorthand());
-    case CSSPropertyWebkitBorderAfterStyle:
+    case CSSPropertyBorderBlockEndStyle:
         return resolveToPhysicalProperty(direction, writingMode, AfterSide, borderStyleShorthand());
-    case CSSPropertyWebkitBorderEndWidth:
+    case CSSPropertyBorderInlineEndWidth:
         return resolveToPhysicalProperty(direction, writingMode, EndSide, borderWidthShorthand());
-    case CSSPropertyWebkitBorderStartWidth:
+    case CSSPropertyBorderInlineStartWidth:
         return resolveToPhysicalProperty(direction, writingMode, StartSide, borderWidthShorthand());
-    case CSSPropertyWebkitBorderBeforeWidth:
+    case CSSPropertyBorderBlockStartWidth:
         return resolveToPhysicalProperty(direction, writingMode, BeforeSide, borderWidthShorthand());
-    case CSSPropertyWebkitBorderAfterWidth:
+    case CSSPropertyBorderBlockEndWidth:
         return resolveToPhysicalProperty(direction, writingMode, AfterSide, borderWidthShorthand());
-    case CSSPropertyWebkitLogicalWidth: {
+    case CSSPropertyInlineSize: {
         const CSSPropertyID properties[2] = { CSSPropertyWidth, CSSPropertyHeight };
         return resolveToPhysicalProperty(writingMode, LogicalWidth, properties);
     }
-    case CSSPropertyWebkitLogicalHeight: {
+    case CSSPropertyBlockSize: {
         const CSSPropertyID properties[2] = { CSSPropertyWidth, CSSPropertyHeight };
         return resolveToPhysicalProperty(writingMode, LogicalHeight, properties);
     }
-    case CSSPropertyWebkitMinLogicalWidth: {
+    case CSSPropertyMinInlineSize: {
         const CSSPropertyID properties[2] = { CSSPropertyMinWidth, CSSPropertyMinHeight };
         return resolveToPhysicalProperty(writingMode, LogicalWidth, properties);
     }
-    case CSSPropertyWebkitMinLogicalHeight: {
+    case CSSPropertyMinBlockSize: {
         const CSSPropertyID properties[2] = { CSSPropertyMinWidth, CSSPropertyMinHeight };
         return resolveToPhysicalProperty(writingMode, LogicalHeight, properties);
     }
-    case CSSPropertyWebkitMaxLogicalWidth: {
+    case CSSPropertyMaxInlineSize: {
         const CSSPropertyID properties[2] = { CSSPropertyMaxWidth, CSSPropertyMaxHeight };
         return resolveToPhysicalProperty(writingMode, LogicalWidth, properties);
     }
-    case CSSPropertyWebkitMaxLogicalHeight: {
+    case CSSPropertyMaxBlockSize: {
         const CSSPropertyID properties[2] = { CSSPropertyMaxWidth, CSSPropertyMaxHeight };
         return resolveToPhysicalProperty(writingMode, LogicalHeight, properties);
     }
@@ -158,32 +158,32 @@ CSSPropertyID CSSProperty::resolveDirectionAwareProperty(CSSPropertyID propertyI
 bool CSSProperty::isDirectionAwareProperty(CSSPropertyID propertyID)
 {
     switch (propertyID) {
-    case CSSPropertyWebkitBorderEndColor:
-    case CSSPropertyWebkitBorderEndStyle:
-    case CSSPropertyWebkitBorderEndWidth:
-    case CSSPropertyWebkitBorderStartColor:
-    case CSSPropertyWebkitBorderStartStyle:
-    case CSSPropertyWebkitBorderStartWidth:
-    case CSSPropertyWebkitBorderBeforeColor:
-    case CSSPropertyWebkitBorderBeforeStyle:
-    case CSSPropertyWebkitBorderBeforeWidth:
-    case CSSPropertyWebkitBorderAfterColor:
-    case CSSPropertyWebkitBorderAfterStyle:
-    case CSSPropertyWebkitBorderAfterWidth:
-    case CSSPropertyWebkitMarginEnd:
-    case CSSPropertyWebkitMarginStart:
-    case CSSPropertyWebkitMarginBefore:
-    case CSSPropertyWebkitMarginAfter:
-    case CSSPropertyWebkitPaddingEnd:
-    case CSSPropertyWebkitPaddingStart:
-    case CSSPropertyWebkitPaddingBefore:
-    case CSSPropertyWebkitPaddingAfter:
-    case CSSPropertyWebkitLogicalWidth:
-    case CSSPropertyWebkitLogicalHeight:
-    case CSSPropertyWebkitMinLogicalWidth:
-    case CSSPropertyWebkitMinLogicalHeight:
-    case CSSPropertyWebkitMaxLogicalWidth:
-    case CSSPropertyWebkitMaxLogicalHeight:
+    case CSSPropertyBorderInlineEndColor:
+    case CSSPropertyBorderInlineEndStyle:
+    case CSSPropertyBorderInlineEndWidth:
+    case CSSPropertyBorderInlineStartColor:
+    case CSSPropertyBorderInlineStartStyle:
+    case CSSPropertyBorderInlineStartWidth:
+    case CSSPropertyBorderBlockStartColor:
+    case CSSPropertyBorderBlockStartStyle:
+    case CSSPropertyBorderBlockStartWidth:
+    case CSSPropertyBorderBlockEndColor:
+    case CSSPropertyBorderBlockEndStyle:
+    case CSSPropertyBorderBlockEndWidth:
+    case CSSPropertyMarginInlineEnd:
+    case CSSPropertyMarginInlineStart:
+    case CSSPropertyMarginBlockStart:
+    case CSSPropertyMarginBlockEnd:
+    case CSSPropertyPaddingInlineEnd:
+    case CSSPropertyPaddingInlineStart:
+    case CSSPropertyPaddingBlockStart:
+    case CSSPropertyPaddingBlockEnd:
+    case CSSPropertyInlineSize:
+    case CSSPropertyBlockSize:
+    case CSSPropertyMinInlineSize:
+    case CSSPropertyMinBlockSize:
+    case CSSPropertyMaxInlineSize:
+    case CSSPropertyMaxBlockSize:
         return true;
     default:
         return false;

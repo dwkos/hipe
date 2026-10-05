@@ -1259,10 +1259,10 @@ template<> inline CSSPrimitiveValue::CSSPrimitiveValue(ECursor e)
         m_value.valueID = CSSValueAllScroll;
         break;
     case CursorWebkitGrab:
-        m_value.valueID = CSSValueWebkitGrab;
+        m_value.valueID = CSSValueGrab;
         break;
     case CursorWebkitGrabbing:
-        m_value.valueID = CSSValueWebkitGrabbing;
+        m_value.valueID = CSSValueGrabbing;
         break;
     }
 }
@@ -2369,7 +2369,7 @@ template<> inline CSSPrimitiveValue::CSSPrimitiveValue(EPosition e)
         m_value.valueID = CSSValueFixed;
         break;
     case StickyPosition:
-        m_value.valueID = CSSValueWebkitSticky;
+        m_value.valueID = CSSValueSticky;
         break;
     }
 }
@@ -2387,7 +2387,7 @@ template<> inline CSSPrimitiveValue::operator EPosition() const
         return AbsolutePosition;
     case CSSValueFixed:
         return FixedPosition;
-    case CSSValueWebkitSticky:
+    case CSSValueSticky:
         return StickyPosition;
     default:
         break;
@@ -2811,10 +2811,10 @@ template<> inline CSSPrimitiveValue::CSSPrimitiveValue(EUnicodeBidi e)
         m_value.valueID = CSSValueWebkitIsolate;
         break;
     case IsolateOverride:
-        m_value.valueID = CSSValueWebkitIsolateOverride;
+        m_value.valueID = CSSValueIsolateOverride;
         break;
     case Plaintext:
-        m_value.valueID = CSSValueWebkitPlaintext;
+        m_value.valueID = CSSValuePlaintext;
         break;
     }
 }
@@ -2832,9 +2832,9 @@ template<> inline CSSPrimitiveValue::operator EUnicodeBidi() const
         return Override;
     case CSSValueWebkitIsolate:
         return Isolate;
-    case CSSValueWebkitIsolateOverride:
+    case CSSValueIsolateOverride:
         return IsolateOverride;
-    case CSSValueWebkitPlaintext:
+    case CSSValuePlaintext:
         return Plaintext;
     default:
         break;

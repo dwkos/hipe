@@ -1796,7 +1796,7 @@ static Color decorationColor(RenderStyle* style)
 {
     Color result;
     // Check for text decoration color first.
-    result = style->visitedDependentColor(CSSPropertyWebkitTextDecorationColor);
+    result = style->visitedDependentColor(CSSPropertyTextDecorationColor);
     if (result.isValid())
         return result;
     if (style->textStrokeWidth() > 0) {

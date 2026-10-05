@@ -1628,10 +1628,10 @@ Color RenderStyle::colorIncludingFallback(int colorProperty, bool visitedLink) c
     case CSSPropertyColumnRuleColor:
         result = visitedLink ? visitedLinkColumnRuleColor() : columnRuleColor();
         break;
-    case CSSPropertyWebkitTextDecorationColor:
+    case CSSPropertyTextDecorationColor:
         // Text decoration color fallback is handled in RenderObject::decorationColor.
         return visitedLink ? visitedLinkTextDecorationColor() : textDecorationColor();
-    case CSSPropertyWebkitTextEmphasisColor:
+    case CSSPropertyTextEmphasisColor:
         result = visitedLink ? visitedLinkTextEmphasisColor() : textEmphasisColor();
         break;
     case CSSPropertyWebkitTextFillColor:
@@ -1663,7 +1663,7 @@ Color RenderStyle::visitedDependentColor(int colorProperty) const
     Color visitedColor = colorIncludingFallback(colorProperty, true);
 
     // Text decoration color validity is preserved (checked in RenderObject::decorationColor).
-    if (colorProperty == CSSPropertyWebkitTextDecorationColor)
+    if (colorProperty == CSSPropertyTextDecorationColor)
         return visitedColor;
 
     // FIXME: Technically someone could explicitly specify the color transparent, but for now we'll just

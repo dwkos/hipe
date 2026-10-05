@@ -1,7 +1,7 @@
 -khtml-drag
 -webkit-any(
 -webkit-any-link, PseudoClassAnyLinkDeprecated, PseudoElementUnknown
--webkit-autofill
+autofill
 -webkit-drag
 -webkit-full-page-media
 active
@@ -35,7 +35,7 @@ lang(
 last-child
 last-of-type
 link
-matches(
+is(, PseudoClassMatches, PseudoElementUnknown
 no-button
 not(
 nth-child(

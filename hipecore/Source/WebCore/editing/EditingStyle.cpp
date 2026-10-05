@@ -1393,7 +1393,7 @@ bool EditingStyle::convertPositionStyle()
         return false;
 
     auto& cssValuePool = CSSValuePool::singleton();
-    RefPtr<CSSPrimitiveValue> sticky = cssValuePool.createIdentifierValue(CSSValueWebkitSticky);
+    RefPtr<CSSPrimitiveValue> sticky = cssValuePool.createIdentifierValue(CSSValueSticky);
     if (m_mutableStyle->propertyMatches(CSSPropertyPosition, sticky.get())) {
         m_mutableStyle->setProperty(CSSPropertyPosition, cssValuePool.createIdentifierValue(CSSValueStatic), m_mutableStyle->propertyIsImportant(CSSPropertyPosition));
         return false;
@@ -1825,7 +1825,7 @@ int legacyFontSizeFromCSSValue(Document* document, CSSPrimitiveValue* value, boo
         return 0;
     }
 
-    if (CSSValueXSmall <= value->getValueID() && value->getValueID() <= CSSValueWebkitXxxLarge)
+    if (CSSValueXSmall <= value->getValueID() && value->getValueID() <= CSSValueXxxLarge)
         return value->getValueID() - CSSValueXSmall + 1;
 
     return 0;
