@@ -68,7 +68,6 @@ class CSSStyleDeclaration;
 class CSSStyleSheet;
 class CachedCSSStyleSheet;
 class CachedResourceLoader;
-class CachedScript;
 class CanvasRenderingContext;
 class CharacterData;
 class Comment;
@@ -1038,8 +1037,6 @@ public:
 
     void sendWillRevealEdgeEventsIfNeeded(const IntPoint& oldPosition, const IntPoint& newPosition, const IntRect& visibleRect, const IntSize& contentsSize, Element* target = nullptr);
 
-    virtual EventTarget* errorEventTarget() override final;
-    virtual void logExceptionToConsole(const String& errorMessage, const String& sourceURL, int lineNumber, int columnNumber) override final;
 
     void didAddWheelEventHandler(Node&);
     void didRemoveWheelEventHandler(Node&, EventHandlerRemoval = EventHandlerRemoval::One);

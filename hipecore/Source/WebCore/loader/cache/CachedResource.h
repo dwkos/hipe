@@ -65,7 +65,6 @@ public:
         MainResource,
         ImageResource,
         CSSStyleSheet,
-        Script,
         FontResource,
 #if ENABLE(SVG_FONTS)
         SVGFontResource,

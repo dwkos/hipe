@@ -29,9 +29,7 @@
 #include "config.h"
 #include "ScriptExecutionContext.h"
 
-#include "CachedScript.h"
 #include "Document.h"
-#include "ErrorEvent.h"
 #include "PublicURLManager.h"
 #include "Settings.h"
 #include <wtf/MainThread.h>
@@ -39,25 +37,8 @@
 
 namespace WebCore {
 
-class ScriptExecutionContext::PendingException {
-    WTF_MAKE_NONCOPYABLE(PendingException);
-public:
-    PendingException(const String& errorMessage, int lineNumber, int columnNumber, const String& sourceURL)
-        : m_errorMessage(errorMessage)
-        , m_lineNumber(lineNumber)
-        , m_columnNumber(columnNumber)
-        , m_sourceURL(sourceURL)
-    {
-    }
-    String m_errorMessage;
-    int m_lineNumber;
-    int m_columnNumber;
-    String m_sourceURL;
-};
-
 ScriptExecutionContext::ScriptExecutionContext()
-    : m_inDispatchErrorEvent(false)
-    , m_activeDOMObjectsAreSuspended(false)
+    : m_activeDOMObjectsAreSuspended(false)
     , m_reasonForSuspendingActiveDOMObjects(static_cast<ActiveDOMObject::ReasonForSuspension>(-1))
     , m_activeDOMObjectsAreStopped(false)
     , m_activeDOMObjectAdditionForbidden(false)
@@ -275,62 +256,9 @@ void ScriptExecutionContext::willDestroyDestructionObserver(ContextDestructionOb
     m_destructionObservers.remove(&observer);
 }
 
-bool ScriptExecutionContext::sanitizeScriptError(String& errorMessage, int& lineNumber, int& columnNumber, String& sourceURL, CachedScript* cachedScript)
-{
-    URL targetURL = completeURL(sourceURL);
-    if (securityOrigin()->canRequest(targetURL) || (cachedScript && cachedScript->passesAccessControlCheck(*securityOrigin())))
-        return false;
-    errorMessage = "Script error.";
-    sourceURL = String();
-    lineNumber = 0;
-    columnNumber = 0;
-    return true;
-}
-
-void ScriptExecutionContext::reportException(const String& errorMessage, int lineNumber, int columnNumber, const String& sourceURL, CachedScript* cachedScript)
-{
-    if (m_inDispatchErrorEvent) {
-        if (!m_pendingExceptions)
-            m_pendingExceptions = std::make_unique<Vector<std::unique_ptr<PendingException>>>();
-        m_pendingExceptions->append(std::make_unique<PendingException>(errorMessage, lineNumber, columnNumber, sourceURL));
-        return;
-    }
-
-    // First report the original exception and only then all the nested ones.
-    if (!dispatchErrorEvent(errorMessage, lineNumber, columnNumber, sourceURL, cachedScript))
-        logExceptionToConsole(errorMessage, sourceURL, lineNumber, columnNumber);
-
-    if (!m_pendingExceptions)
-        return;
-
-    std::unique_ptr<Vector<std::unique_ptr<PendingException>>> pendingExceptions = WTFMove(m_pendingExceptions);
-    for (auto& exception : *pendingExceptions)
-        logExceptionToConsole(exception->m_errorMessage, exception->m_sourceURL, exception->m_lineNumber, exception->m_columnNumber);
-}
-
 void ScriptExecutionContext::addConsoleMessage(MessageSource source, MessageLevel level, const String& message, const String& sourceURL, unsigned lineNumber, unsigned columnNumber, unsigned long requestIdentifier)
 {
     addMessage(source, level, message, sourceURL, lineNumber, columnNumber, requestIdentifier);
-}
-
-bool ScriptExecutionContext::dispatchErrorEvent(const String& errorMessage, int lineNumber, int columnNumber, const String& sourceURL, CachedScript* cachedScript)
-{
-    EventTarget* target = errorEventTarget();
-    if (!target)
-        return false;
-
-    String message = errorMessage;
-    int line = lineNumber;
-    int column = columnNumber;
-    String sourceName = sourceURL;
-    sanitizeScriptError(message, line, column, sourceName, cachedScript);
-
-    ASSERT(!m_inDispatchErrorEvent);
-    m_inDispatchErrorEvent = true;
-    Ref<ErrorEvent> errorEvent = ErrorEvent::create(message, sourceName, line, column);
-    target->dispatchEvent(errorEvent);
-    m_inDispatchErrorEvent = false;
-    return errorEvent->defaultPrevented();
 }
 
 PublicURLManager& ScriptExecutionContext::publicURLManager()

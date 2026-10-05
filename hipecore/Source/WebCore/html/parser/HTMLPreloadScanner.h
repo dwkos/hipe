@@ -50,7 +50,6 @@ private:
         Img,
         Input,
         Link,
-        Script,
         Meta,
         Source,
 

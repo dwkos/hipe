@@ -67,7 +67,6 @@ static ResourceLoadPriority defaultPriorityForResourceType(CachedResource::Type 
         return ResourceLoadPriority::VeryHigh;
     case CachedResource::CSSStyleSheet:
         return ResourceLoadPriority::High;
-    case CachedResource::Script:
 #if ENABLE(SVG_FONTS)
     case CachedResource::SVGFontResource:
 #endif
@@ -91,11 +90,8 @@ static ResourceLoadPriority defaultPriorityForResourceType(CachedResource::Type 
     return ResourceLoadPriority::Low;
 }
 
-static std::chrono::milliseconds deadDecodedDataDeletionIntervalForResourceType(CachedResource::Type type)
+static std::chrono::milliseconds deadDecodedDataDeletionIntervalForResourceType(CachedResource::Type)
 {
-    if (type == CachedResource::Script)
-        return std::chrono::milliseconds { 0 };
-
     return MemoryCache::singleton().deadDecodedDataDeletionInterval();
 }
 

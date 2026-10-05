@@ -2663,16 +2663,6 @@ void Document::writeln(const String& text, Document* ownerDocument)
     write("\n", ownerDocument);
 }
 
-EventTarget* Document::errorEventTarget()
-{
-    return m_domWindow.get();
-}
-
-void Document::logExceptionToConsole(const String& errorMessage, const String& sourceURL, int lineNumber, int columnNumber)
-{
-    addMessage(MessageSource::JS, MessageLevel::Error, errorMessage, sourceURL, lineNumber, columnNumber);
-}
-
 void Document::setURL(const URL& url)
 {
     const URL& newURL = url.isEmpty() ? blankURL() : url;

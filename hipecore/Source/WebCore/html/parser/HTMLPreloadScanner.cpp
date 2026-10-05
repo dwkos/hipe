@@ -52,8 +52,6 @@ TokenPreloadScanner::TagId TokenPreloadScanner::tagIdFor(const HTMLToken::DataVe
         return TagId::Input;
     if (tagName == linkTag)
         return TagId::Link;
-    if (tagName == scriptTag)
-        return TagId::Script;
     if (tagName == styleTag)
         return TagId::Style;
     if (tagName == baseTag)
@@ -79,8 +77,6 @@ String TokenPreloadScanner::initiatorFor(TagId tagId)
         return "input";
     case TagId::Link:
         return "link";
-    case TagId::Script:
-        return "script";
     case TagId::Unknown:
     case TagId::Style:
     case TagId::Base:
@@ -204,9 +200,6 @@ private:
                 m_mediaMatched = evaluator.evalCheckingViewportDependentResults(mediaSet.ptr(), viewportDependentMediaQueryResults);
             }
             break;
-        case TagId::Script:
-            processImageAndScriptAttribute(attributeName, attributeValue);
-            break;
         case TagId::Link:
             if (match(attributeName, hrefAttr))
                 setUrlToLoad(attributeValue);
@@ -264,8 +257,6 @@ private:
     CachedResource::Type resourceType() const
     {
         switch (m_tagId) {
-        case TagId::Script:
-            return CachedResource::Script;
         case TagId::Img:
         case TagId::Input:
         case TagId::Source:

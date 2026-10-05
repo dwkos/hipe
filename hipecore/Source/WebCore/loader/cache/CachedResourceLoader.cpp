@@ -34,7 +34,6 @@
 #include "CachedRawResource.h"
 #include "CachedResourceRequest.h"
 #include "CachedSVGFont.h"
-#include "CachedScript.h"
 #include "CachedXSLStyleSheet.h"
 #include "Chrome.h"
 #include "ChromeClient.h"
@@ -86,8 +85,6 @@ static CachedResource* createResource(CachedResource::Type type, ResourceRequest
         return new CachedImage(request, sessionID);
     case CachedResource::CSSStyleSheet:
         return new CachedCSSStyleSheet(request, charset, sessionID);
-    case CachedResource::Script:
-        return new CachedScript(request, charset, sessionID);
     case CachedResource::SVGDocumentResource:
         return new CachedSVGDocument(request, sessionID);
 #if ENABLE(SVG_FONTS)
@@ -232,11 +229,6 @@ CachedResourceHandle<CachedCSSStyleSheet> CachedResourceLoader::requestUserCSSSt
     return userSheet;
 }
 
-CachedResourceHandle<CachedScript> CachedResourceLoader::requestScript(CachedResourceRequest& request)
-{
-    return downcast<CachedScript>(requestResource(CachedResource::Script, request).get());
-}
-
 #if ENABLE(XSLT)
 CachedResourceHandle<CachedXSLStyleSheet> CachedResourceLoader::requestXSLStyleSheet(CachedResourceRequest& request)
 {
@@ -277,7 +269,6 @@ bool CachedResourceLoader::canRequest(CachedResource::Type type, const URL& url,
     case CachedResource::MainResource:
     case CachedResource::ImageResource:
     case CachedResource::CSSStyleSheet:
-    case CachedResource::Script:
 #if ENABLE(SVG_FONTS)
     case CachedResource::SVGFontResource:
 #endif
@@ -309,12 +300,6 @@ bool CachedResourceLoader::canRequest(CachedResource::Type type, const URL& url,
             return false;
         break;
 #endif
-    case CachedResource::Script:
-        if (!m_document->contentSecurityPolicy()->allowScriptFromSource(url, skipContentSecurityPolicyCheck))
-            return false;
-        if (frame() && !frame()->settings().isScriptEnabled())
-            return false;
-        break;
     case CachedResource::CSSStyleSheet:
         if (!m_document->contentSecurityPolicy()->allowStyleFromSource(url, skipContentSecurityPolicyCheck))
             return false;
@@ -861,7 +846,7 @@ void CachedResourceLoader::decrementRequestCount(const CachedResource* res)
 void CachedResourceLoader::preload(CachedResource::Type type, CachedResourceRequest& request, const String& charset)
 {
     bool hasRendering = m_document->bodyOrFrameset() && m_document->renderView();
-    bool canBlockParser = type == CachedResource::Script || type == CachedResource::CSSStyleSheet;
+    bool canBlockParser = type == CachedResource::CSSStyleSheet;
     if (!hasRendering && !canBlockParser) {
         // Don't preload subresources that can't block the parser before we have something to draw.
         // This helps prevent preloads from delaying first display when bandwidth is limited.
@@ -891,7 +876,7 @@ void CachedResourceLoader::checkForPendingPreloads()
 void CachedResourceLoader::requestPreload(CachedResource::Type type, CachedResourceRequest& request, const String& charset)
 {
     String encoding;
-    if (type == CachedResource::Script || type == CachedResource::CSSStyleSheet)
+    if (type == CachedResource::CSSStyleSheet)
         encoding = charset.isEmpty() ? m_document->charset() : charset;
 
     request.setCharset(encoding);
@@ -954,8 +939,6 @@ void CachedResourceLoader::clearPendingPreloads()
 #if PRELOAD_DEBUG
 void CachedResourceLoader::printPreloadStats()
 {
-    unsigned scripts = 0;
-    unsigned scriptMisses = 0;
     unsigned stylesheets = 0;
     unsigned stylesheetMisses = 0;
     unsigned images = 0;
@@ -968,11 +951,7 @@ void CachedResourceLoader::printPreloadStats()
         else if (resource->preloadResult() == CachedResource::PreloadReferencedWhileLoading)
             printf("HIT LOADING PRELOAD %s\n", resource->url().latin1().data());
         
-        if (resource->type() == CachedResource::Script) {
-            scripts++;
-            if (resource->preloadResult() < CachedResource::PreloadReferencedWhileLoading)
-                scriptMisses++;
-        } else if (resource->type() == CachedResource::CSSStyleSheet) {
+        if (resource->type() == CachedResource::CSSStyleSheet) {
             stylesheets++;
             if (resource->preloadResult() < CachedResource::PreloadReferencedWhileLoading)
                 stylesheetMisses++;
@@ -989,8 +968,6 @@ void CachedResourceLoader::printPreloadStats()
     }
     m_preloads = nullptr;
     
-    if (scripts)
-        printf("SCRIPTS: %d (%d hits, hit rate %d%%)\n", scripts, scripts - scriptMisses, (scripts - scriptMisses) * 100 / scripts);
     if (stylesheets)
         printf("STYLESHEETS: %d (%d hits, hit rate %d%%)\n", stylesheets, stylesheets - stylesheetMisses, (stylesheets - stylesheetMisses) * 100 / stylesheets);
     if (images)

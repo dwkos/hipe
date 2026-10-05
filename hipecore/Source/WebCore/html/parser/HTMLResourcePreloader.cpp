@@ -46,9 +46,6 @@ CachedResourceRequest PreloadRequest::resourceRequest(Document& document)
     CachedResourceRequest request(ResourceRequest(completeURL(document)));
     request.setInitiator(m_initiator);
 
-    // FIXME: It's possible CORS should work for other request types?
-    if (m_resourceType == CachedResource::Script)
-        request.mutableResourceRequest().setAllowCookies(m_crossOriginModeAllowsCookies);
     return request;
 }
 

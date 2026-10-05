@@ -656,9 +656,6 @@ MemoryCache::Statistics MemoryCache::getStatistics()
             case CachedResource::CSSStyleSheet:
                 stats.cssStyleSheets.addResource(*resource);
                 break;
-            case CachedResource::Script:
-                stats.scripts.addResource(*resource);
-                break;
 #if ENABLE(XSLT)
             case CachedResource::XSLStyleSheet:
                 stats.xslStyleSheets.addResource(*resource);
@@ -750,7 +747,6 @@ void MemoryCache::dumpStats()
 #if ENABLE(XSLT)
     printf("%-13s %13d %13d %13d %13d\n", "XSL", s.xslStyleSheets.count, s.xslStyleSheets.size, s.xslStyleSheets.liveSize, s.xslStyleSheets.decodedSize);
 #endif
-    printf("%-13s %13d %13d %13d %13d\n", "JavaScript", s.scripts.count, s.scripts.size, s.scripts.liveSize, s.scripts.decodedSize);
     printf("%-13s %13d %13d %13d %13d\n", "Fonts", s.fonts.count, s.fonts.size, s.fonts.liveSize, s.fonts.decodedSize);
     printf("%-13s %-13s %-13s %-13s %-13s\n\n", "-------------", "-------------", "-------------", "-------------", "-------------");
 }

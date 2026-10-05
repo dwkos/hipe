@@ -85,7 +85,6 @@ public:
     struct Statistics {
         TypeStatistic images;
         TypeStatistic cssStyleSheets;
-        TypeStatistic scripts;
         TypeStatistic xslStyleSheets;
         TypeStatistic fonts;
     };

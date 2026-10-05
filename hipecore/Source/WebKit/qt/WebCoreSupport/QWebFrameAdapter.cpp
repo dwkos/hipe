@@ -43,7 +43,6 @@
 #include "QWebFrameData.h"
 #include "QWebPageAdapter.h"
 #include "RenderObject.h"
-#include "ScriptSourceCode.h"
 #include "SubstituteData.h"
 #include "TextureMapperLayerClientQt.h"
 #if USE(TILED_BACKING_STORE)
