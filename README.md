@@ -39,6 +39,9 @@ and remain available from the website's Download page as "classic" Hipe.
 Classic Hipe could also be built against stock Qt5WebKit. Version 3.0 cannot: hipecore is
 Hipe's display engine, and the server needs it.
 
+3.0 uses version 3 of the protocol, and the server refuses clients built with the 2.x client
+library. Rebuild applications against the 3.0 library.
+
 Licensing
 ---------
 
