@@ -4,6 +4,7 @@
  * Copyright (C) 2010 Google Inc. All rights reserved.
  * Copyright (C) 2013 ChangSeok Oh <shivamidow@gmail.com>
  * Copyright (C) 2013 Adobe Systems Inc. All right reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -26,6 +27,7 @@
 #define BreakingContext_h
 
 #include "Hyphenation.h"
+#include "LengthFunctions.h"
 #include "LineBreaker.h"
 #include "LineInfo.h"
 #include "LineLayoutState.h"
@@ -92,6 +94,16 @@ private:
     const RenderStyle& m_style;
     TextLayout* m_textLayout { nullptr };
 };
+
+// The space below a line that ends with U+2029: -hipe-paragraph-spacing, where a number (kept as a percentage) is a
+// multiple of the line height.
+inline LayoutUnit paragraphSpacingForStyle(const RenderStyle& style)
+{
+    const Length& spacing = style.paragraphSpacing();
+    if (spacing.isPercent())
+        return LayoutUnit(spacing.percent() * style.computedLineHeight() / 100);
+    return minimumValueForLength(spacing, 0);
+}
 
 class BreakingContext {
 public:
@@ -202,6 +214,7 @@ private:
         unsigned offset() const { return this->at(0).offset(); }
         int nextBreakablePosition() const { return this->at(0).nextBreakablePosition(); }
         bool atTextParagraphSeparator() const { return this->at(0).atTextParagraphSeparator(); }
+        bool atParagraphSeparatorCharacter() const { return this->at(0).atParagraphSeparatorCharacter(); }
         UChar previousInSameNode() const { return this->at(0).previousInSameNode(); }
         const InlineIterator& get(size_t i) const { return this->at(i); };
         const InlineIterator& current() const { return get(0); }
@@ -809,7 +822,7 @@ inline bool BreakingContext::handleText(WordMeasurements& wordMeasurements, bool
         }
 
         int nextBreakablePosition = m_current.nextBreakablePosition();
-        bool betweenWords = c == '\n' || (m_currWS != PRE && !m_atStart && isBreakable(m_renderTextInfo.lineBreakIterator, m_current.offset(), nextBreakablePosition, breakNBSP, isLooseCJKMode, keepAllWords)
+        bool betweenWords = c == '\n' || c == paragraphSeparator || (m_currWS != PRE && !m_atStart && isBreakable(m_renderTextInfo.lineBreakIterator, m_current.offset(), nextBreakablePosition, breakNBSP, isLooseCJKMode, keepAllWords)
             && (style.hyphens() != HyphensNone || (m_current.previousInSameNode() != softHyphen)));
         m_current.setNextBreakablePosition(nextBreakablePosition);
 
@@ -903,8 +916,13 @@ inline bool BreakingContext::handleText(WordMeasurements& wordMeasurements, bool
                     if (m_lineBreakHistory.atTextParagraphSeparator()) {
                         if (!stoppedIgnoringSpaces && m_current.offset() > 0)
                             ensureCharacterGetsLineBox(m_lineMidpointState, m_current);
+                        bool atParagraphSeparator = m_lineBreakHistory.atParagraphSeparatorCharacter();
+                        const RenderStyle& separatorStyle = m_lineBreakHistory.renderer()->style();
                         m_lineBreakHistory.increment();
-                        m_lineInfo.setPreviousLineBrokeCleanly(true);
+                        if (atParagraphSeparator)
+                            m_lineInfo.setPreviousLineBrokeAtParagraphSeparator(paragraphSpacingForStyle(separatorStyle));
+                        else
+                            m_lineInfo.setPreviousLineBrokeCleanly(true);
                         wordMeasurement.endOffset = m_lineBreakHistory.offset();
                     }
                     // Check if the last breaking position is a soft-hyphen.
@@ -956,12 +974,15 @@ inline bool BreakingContext::handleText(WordMeasurements& wordMeasurements, bool
                 }
             }
 
-            if (c == '\n' && m_preservesNewline) {
+            if (isForcedLineBreakCharacter(c, m_preservesNewline)) {
                 if (!stoppedIgnoringSpaces && m_current.offset())
                     ensureCharacterGetsLineBox(m_lineMidpointState, m_current);
                 commitLineBreakAtCurrentWidth(*m_current.renderer(), m_current.offset(), m_current.nextBreakablePosition());
                 m_lineBreakHistory.increment();
-                m_lineInfo.setPreviousLineBrokeCleanly(true);
+                if (c == paragraphSeparator)
+                    m_lineInfo.setPreviousLineBrokeAtParagraphSeparator(paragraphSpacingForStyle(style));
+                else
+                    m_lineInfo.setPreviousLineBrokeCleanly(true);
                 return true;
             }
 

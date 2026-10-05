@@ -2,6 +2,7 @@
  * (C) 1999 Lars Knoll (knoll@kde.org)
  * (C) 2000 Dirk Mueller (mueller@kde.org)
  * Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -29,8 +30,16 @@
 #include "Text.h"
 #include "TextBreakIterator.h"
 #include <wtf/Forward.h>
+#include <wtf/unicode/CharacterNames.h>
 
 namespace WebCore {
+
+// A forced line break in text: '\n' where newlines are preserved, and U+2029 PARAGRAPH SEPARATOR in every
+// white-space mode (hipecore: U+2029 makes a paragraph break, see -hipe-paragraph-spacing/-indent).
+inline bool isForcedLineBreakCharacter(UChar c, bool preservesNewline)
+{
+    return (c == '\n' && preservesNewline) || c == paragraphSeparator;
+}
 
 class InlineTextBox;
 struct GlyphOverflow;

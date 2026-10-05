@@ -681,3 +681,7 @@ touch-action
 #if defined(ENABLE_CSS_TRAILING_WORD) && ENABLE_CSS_TRAILING_WORD
 -apple-trailing-word [Inherited, NameForMethods=TrailingWord]
 #endif
+
+// hipecore: paragraph breaks made with U+2029 PARAGRAPH SEPARATOR (spacing below, indent of the next line)
+-hipe-paragraph-indent [Inherited, Converter=Length, NameForMethods=ParagraphIndent]
+-hipe-paragraph-spacing [Inherited, Converter=ParagraphSpacing, NameForMethods=ParagraphSpacing]

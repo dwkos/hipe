@@ -4,6 +4,7 @@
  *           (C) 2000 Dirk Mueller (mueller@kde.org)
  * Copyright (C) 2003-2014 Apple Inc. All rights reserved.
  * Copyright (C) 2006 Graham Dennis (graham.dennis@gmail.com)
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -1052,6 +1053,8 @@ public:
     bool hasTextCombine() const { return textCombine() != TextCombineNone; }
 
     unsigned tabSize() const { return rareInheritedData->m_tabSize; }
+    const Length& paragraphSpacing() const { return rareInheritedData->m_paragraphSpacing; }
+    const Length& paragraphIndent() const { return rareInheritedData->m_paragraphIndent; }
 
     // End CSS3 Getters
 
@@ -1614,6 +1617,8 @@ public:
 #endif
 
     void setTabSize(unsigned size) { SET_VAR(rareInheritedData, m_tabSize, size); }
+    void setParagraphSpacing(Length length) { SET_VAR(rareInheritedData, m_paragraphSpacing, WTFMove(length)); }
+    void setParagraphIndent(Length length) { SET_VAR(rareInheritedData, m_paragraphIndent, WTFMove(length)); }
 
     void setBreakBefore(BreakBetween breakBehavior) { SET_VAR(rareNonInheritedData, m_breakBefore, breakBehavior); }
     void setBreakAfter(BreakBetween breakBehavior) { SET_VAR(rareNonInheritedData, m_breakAfter, breakBehavior); }
@@ -2071,6 +2076,8 @@ public:
 #endif /* ENABLE(CSS_GRID_LAYOUT) */
 
     static unsigned initialTabSize() { return 8; }
+    static Length initialParagraphSpacing() { return Length(50, Percent); } // half the line height
+    static Length initialParagraphIndent() { return Length(Fixed); }
 
     static const AtomicString& initialLineGrid() { return nullAtom; }
     static LineSnap initialLineSnap() { return LineSnapNone; }

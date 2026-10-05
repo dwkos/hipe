@@ -4,6 +4,7 @@
  *           (C) 2007 David Smith (catfish.man@gmail.com)
  * Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Apple Inc. All rights reserved.
  * Copyright (C) Research In Motion Limited 2010. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -2344,6 +2345,27 @@ LayoutUnit RenderBlock::textIndentOffset() const
     return minimumValueForLength(style().textIndent(), cw);
 }
 
+LayoutUnit RenderBlock::paragraphIndentOffset() const
+{
+    LayoutUnit cw = 0;
+    if (style().paragraphIndent().isPercentOrCalculated())
+        cw = containingBlock()->availableLogicalWidth();
+    return minimumValueForLength(style().paragraphIndent(), cw);
+}
+
+LayoutUnit RenderBlock::indentOffset(IndentTextOrNot indent) const
+{
+    switch (indent) {
+    case IndentText:
+        return textIndentOffset();
+    case IndentParagraph:
+        return paragraphIndentOffset();
+    case DoNotIndentText:
+        break;
+    }
+    return 0;
+}
+
 LayoutUnit RenderBlock::logicalLeftOffsetForContent(RenderRegion* region) const
 {
     LayoutUnit logicalLeftOffset = style().isHorizontalWritingMode() ? borderLeft() + paddingLeft() : borderTop() + paddingTop();
@@ -2363,12 +2385,12 @@ LayoutUnit RenderBlock::logicalRightOffsetForContent(RenderRegion* region) const
     return logicalRightOffset - (logicalWidth() - (isHorizontalWritingMode() ? boxRect.maxX() : boxRect.maxY()));
 }
 
-LayoutUnit RenderBlock::adjustLogicalLeftOffsetForLine(LayoutUnit offsetFromFloats, bool applyTextIndent) const
+LayoutUnit RenderBlock::adjustLogicalLeftOffsetForLine(LayoutUnit offsetFromFloats, IndentTextOrNot applyTextIndent) const
 {
     LayoutUnit left = offsetFromFloats;
 
-    if (applyTextIndent && style().isLeftToRightDirection())
-        left += textIndentOffset();
+    if (applyTextIndent != DoNotIndentText && style().isLeftToRightDirection())
+        left += indentOffset(applyTextIndent);
 
     if (style().lineAlign() == LineAlignNone)
         return left;
@@ -2403,12 +2425,12 @@ LayoutUnit RenderBlock::adjustLogicalLeftOffsetForLine(LayoutUnit offsetFromFloa
     return left;
 }
 
-LayoutUnit RenderBlock::adjustLogicalRightOffsetForLine(LayoutUnit offsetFromFloats, bool applyTextIndent) const
+LayoutUnit RenderBlock::adjustLogicalRightOffsetForLine(LayoutUnit offsetFromFloats, IndentTextOrNot applyTextIndent) const
 {
     LayoutUnit right = offsetFromFloats;
     
-    if (applyTextIndent && !style().isLeftToRightDirection())
-        right -= textIndentOffset();
+    if (applyTextIndent != DoNotIndentText && !style().isLeftToRightDirection())
+        right -= indentOffset(applyTextIndent);
     
     if (style().lineAlign() == LineAlignNone)
         return right;

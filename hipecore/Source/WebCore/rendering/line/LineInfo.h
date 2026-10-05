@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Adobe Systems Incorporated. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,6 +44,7 @@ public:
         , m_isLastLine(false)
         , m_isEmpty(true)
         , m_previousLineBrokeCleanly(true)
+        , m_previousLineBrokeAtParagraphSeparator(false)
         , m_floatPaginationStrut(0)
         , m_runsFromLeadingWhitespace(0)
     { }
@@ -51,6 +53,9 @@ public:
     bool isLastLine() const { return m_isLastLine; }
     bool isEmpty() const { return m_isEmpty; }
     bool previousLineBrokeCleanly() const { return m_previousLineBrokeCleanly; }
+    // The previous line ended with U+2029; the next line starts a paragraph, paragraphSpacing() below it.
+    bool previousLineBrokeAtParagraphSeparator() const { return m_previousLineBrokeAtParagraphSeparator; }
+    LayoutUnit paragraphSpacing() const { return m_paragraphSpacing; }
     LayoutUnit floatPaginationStrut() const { return m_floatPaginationStrut; }
     unsigned runsFromLeadingWhitespace() const { return m_runsFromLeadingWhitespace; }
     void resetRunsFromLeadingWhitespace() { m_runsFromLeadingWhitespace = 0; }
@@ -59,7 +64,18 @@ public:
     void setFirstLine(bool firstLine) { m_isFirstLine = firstLine; }
     void setLastLine(bool lastLine) { m_isLastLine = lastLine; }
     void setEmpty(bool empty, RenderBlock* block = 0, LineWidth* lineWidth = 0);
-    void setPreviousLineBrokeCleanly(bool previousLineBrokeCleanly) { m_previousLineBrokeCleanly = previousLineBrokeCleanly; }
+    void setPreviousLineBrokeCleanly(bool previousLineBrokeCleanly)
+    {
+        m_previousLineBrokeCleanly = previousLineBrokeCleanly;
+        m_previousLineBrokeAtParagraphSeparator = false;
+        m_paragraphSpacing = 0;
+    }
+    void setPreviousLineBrokeAtParagraphSeparator(LayoutUnit spacing)
+    {
+        m_previousLineBrokeCleanly = true;
+        m_previousLineBrokeAtParagraphSeparator = true;
+        m_paragraphSpacing = spacing;
+    }
     void setFloatPaginationStrut(LayoutUnit strut) { m_floatPaginationStrut = strut; }
 
 private:
@@ -67,6 +83,8 @@ private:
     bool m_isLastLine;
     bool m_isEmpty;
     bool m_previousLineBrokeCleanly;
+    bool m_previousLineBrokeAtParagraphSeparator;
+    LayoutUnit m_paragraphSpacing;
     LayoutUnit m_floatPaginationStrut;
     unsigned m_runsFromLeadingWhitespace;
 };

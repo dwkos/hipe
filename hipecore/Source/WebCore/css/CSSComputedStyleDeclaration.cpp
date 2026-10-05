@@ -5,6 +5,7 @@
  * Copyright (C) 2007 Nicholas Shanks <webkit@nickshanks.com>
  * Copyright (C) 2011 Sencha, Inc. All rights reserved.
  * Copyright (C) 2013 Adobe Systems Incorporated. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -2680,6 +2681,12 @@ RefPtr<CSSValue> ComputedStyleExtractor::propertyValue(CSSPropertyID propertyID,
             return zoomAdjustedPixelValue(style->columnWidth(), *style);
         case CSSPropertyTabSize:
             return cssValuePool.createValue(style->tabSize(), CSSPrimitiveValue::CSS_NUMBER);
+        case CSSPropertyHipeParagraphSpacing:
+            if (style->paragraphSpacing().isPercent())
+                return cssValuePool.createValue(style->paragraphSpacing().percent() / 100, CSSPrimitiveValue::CSS_NUMBER);
+            return zoomAdjustedPixelValueForLength(style->paragraphSpacing(), *style);
+        case CSSPropertyHipeParagraphIndent:
+            return zoomAdjustedPixelValueForLength(style->paragraphIndent(), *style);
 #if ENABLE(CSS_REGIONS)
         case CSSPropertyWebkitRegionBreakAfter:
             return cssValuePool.createValue(convertToRegionBreak(style->breakAfter()));

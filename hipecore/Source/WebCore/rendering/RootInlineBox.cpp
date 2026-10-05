@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2003, 2006, 2008 Apple Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -46,6 +47,8 @@ namespace WebCore {
 struct SameSizeAsRootInlineBox : public InlineFlowBox {
     unsigned variables[7];
     void* pointers[3];
+    LayoutUnit paragraphSpacingAfter;
+    bool endsWithParagraphSeparator;
 };
 
 COMPILE_ASSERT(sizeof(RootInlineBox) == sizeof(SameSizeAsRootInlineBox), RootInlineBox_should_stay_small);
@@ -276,6 +279,10 @@ LayoutUnit RootInlineBox::alignBoxesInBlockDirection(LayoutUnit heightOfBlock, G
         adjustMaxAscentAndDescent(maxAscent, maxDescent, maxPositionTop, maxPositionBottom);
 
     LayoutUnit maxHeight = maxAscent + maxDescent;
+    // A line after U+2029 starts lower by the paragraph spacing; the gap is part of this line's top leading.
+    LayoutUnit leadingTop = heightOfBlock;
+    if (prevRootBox() && prevRootBox()->endsWithParagraphSeparator())
+        heightOfBlock += prevRootBox()->paragraphSpacingAfter();
     LayoutUnit lineTop = heightOfBlock;
     LayoutUnit lineBottom = heightOfBlock;
     LayoutUnit lineTopIncludingMargins = heightOfBlock;
@@ -290,7 +297,7 @@ LayoutUnit RootInlineBox::alignBoxesInBlockDirection(LayoutUnit heightOfBlock, G
     
     maxHeight = std::max<LayoutUnit>(0, maxHeight); // FIXME: Is this really necessary?
 
-    LayoutUnit lineTopWithLeading = !hasAnonymousInlineBlock() ? heightOfBlock : lineTop;
+    LayoutUnit lineTopWithLeading = !hasAnonymousInlineBlock() ? leadingTop : lineTop;
     LayoutUnit lineBottomWithLeading = !hasAnonymousInlineBlock() ? heightOfBlock + maxHeight : lineBottom;
     setLineTopBottomPositions(lineTop, lineBottom, lineTopWithLeading, lineBottomWithLeading);
     setPaginatedLineWidth(blockFlow().availableLogicalWidthForContent(heightOfBlock));

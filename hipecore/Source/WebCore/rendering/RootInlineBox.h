@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2003, 2006, 2007, 2008, 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -97,6 +98,16 @@ public:
 
     using InlineBox::endsWithBreak;
     using InlineBox::setEndsWithBreak;
+
+    // The line ends with U+2029: the next line starts a paragraph, paragraphSpacingAfter() lower and indented by
+    // -hipe-paragraph-indent. The space belongs to the next line's top leading, so a trailing U+2029 adds none.
+    bool endsWithParagraphSeparator() const { return m_endsWithParagraphSeparator; }
+    LayoutUnit paragraphSpacingAfter() const { return m_paragraphSpacingAfter; }
+    void setEndsWithParagraphSeparator(bool ends, LayoutUnit spacing)
+    {
+        m_endsWithParagraphSeparator = ends;
+        m_paragraphSpacingAfter = ends ? spacing : LayoutUnit();
+    }
 
     void childRemoved(InlineBox* box);
 
@@ -222,6 +233,9 @@ private:
 
     LayoutUnit m_paginationStrut;
     LayoutUnit m_paginatedLineWidth;
+
+    LayoutUnit m_paragraphSpacingAfter;
+    bool m_endsWithParagraphSeparator { false };
 
     // Floats hanging off the line are pushed into this vector during layout. It is only
     // good for as long as the line has not been marked dirty.

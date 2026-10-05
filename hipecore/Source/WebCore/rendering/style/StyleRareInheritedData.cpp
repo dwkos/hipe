@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 1999 Antti Koivisto (koivisto@kde.org)
  * Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010 Apple Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -124,6 +125,8 @@ StyleRareInheritedData::StyleRareInheritedData()
     , hyphenationLimitLines(-1)
     , m_lineGrid(RenderStyle::initialLineGrid())
     , m_tabSize(RenderStyle::initialTabSize())
+    , m_paragraphSpacing(RenderStyle::initialParagraphSpacing())
+    , m_paragraphIndent(RenderStyle::initialParagraphIndent())
 #if ENABLE(IOS_TEXT_AUTOSIZING)
     , textSizeAdjust(RenderStyle::initialTextSizeAdjust())
 #endif
@@ -205,6 +208,8 @@ inline StyleRareInheritedData::StyleRareInheritedData(const StyleRareInheritedDa
     , textEmphasisCustomMark(o.textEmphasisCustomMark)
     , m_lineGrid(o.m_lineGrid)
     , m_tabSize(o.m_tabSize)
+    , m_paragraphSpacing(o.m_paragraphSpacing)
+    , m_paragraphIndent(o.m_paragraphIndent)
 #if ENABLE(IOS_TEXT_AUTOSIZING)
     , textSizeAdjust(o.textSizeAdjust)
 #endif
@@ -277,6 +282,8 @@ bool StyleRareInheritedData::operator==(const StyleRareInheritedData& o) const
         && textEmphasisCustomMark == o.textEmphasisCustomMark
         && arePointingToEqualData(quotes, o.quotes)
         && m_tabSize == o.m_tabSize
+        && m_paragraphSpacing == o.m_paragraphSpacing
+        && m_paragraphIndent == o.m_paragraphIndent
         && m_lineGrid == o.m_lineGrid
 #if ENABLE(CSS_IMAGE_ORIENTATION)
         && m_imageOrientation == o.m_imageOrientation

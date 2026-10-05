@@ -600,6 +600,8 @@ bool RenderStyle::changeRequiresLayout(const RenderStyle& other, unsigned& chang
             || rareInheritedData->textEmphasisCustomMark != other.rareInheritedData->textEmphasisCustomMark
             || rareInheritedData->m_textOrientation != other.rareInheritedData->m_textOrientation
             || rareInheritedData->m_tabSize != other.rareInheritedData->m_tabSize
+            || rareInheritedData->m_paragraphSpacing != other.rareInheritedData->m_paragraphSpacing
+            || rareInheritedData->m_paragraphIndent != other.rareInheritedData->m_paragraphIndent
             || rareInheritedData->m_lineBoxContain != other.rareInheritedData->m_lineBoxContain
             || rareInheritedData->m_lineGrid != other.rareInheritedData->m_lineGrid
 #if ENABLE(CSS_IMAGE_ORIENTATION)

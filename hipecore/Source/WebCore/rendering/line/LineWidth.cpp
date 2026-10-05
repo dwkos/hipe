@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Adobe Systems Incorporated. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -95,8 +96,8 @@ void LineWidth::shrinkAvailableWidthForNewFloatIfNeeded(const FloatingObject& ne
 
     if (newFloat.type() == FloatingObject::FloatLeft) {
         float newLeft = m_block.logicalRightForFloat(newFloat);
-        if (shouldIndentText() == IndentText && m_block.style().isLeftToRightDirection())
-            newLeft += floorToInt(m_block.textIndentOffset());
+        if (shouldIndentText() != DoNotIndentText && m_block.style().isLeftToRightDirection())
+            newLeft += floorToInt(m_block.indentOffset(shouldIndentText()));
 #if ENABLE(CSS_SHAPES)
         if (shapeDeltas.isValid()) {
             if (shapeDeltas.lineOverlapsShape())
@@ -108,8 +109,8 @@ void LineWidth::shrinkAvailableWidthForNewFloatIfNeeded(const FloatingObject& ne
         m_left = std::max<float>(m_left, newLeft);
     } else {
         float newRight = m_block.logicalLeftForFloat(newFloat);
-        if (shouldIndentText() == IndentText && !m_block.style().isLeftToRightDirection())
-            newRight -= floorToInt(m_block.textIndentOffset());
+        if (shouldIndentText() != DoNotIndentText && !m_block.style().isLeftToRightDirection())
+            newRight -= floorToInt(m_block.indentOffset(shouldIndentText()));
 #if ENABLE(CSS_SHAPES)
         if (shapeDeltas.isValid()) {
             if (shapeDeltas.lineOverlapsShape())
@@ -245,11 +246,13 @@ bool LineWidth::fitsOnLineExcludingTrailingCollapsedWhitespace() const
     return currentWidth() - m_trailingCollapsedWhitespaceWidth <= m_availableWidth;
 }
 
-IndentTextOrNot requiresIndent(bool isFirstLine, bool isAfterHardLineBreak, const RenderStyle& style)
+IndentTextOrNot requiresIndent(bool isFirstLine, bool isAfterHardLineBreak, bool isAfterParagraphSeparator, const RenderStyle& style)
 {
     IndentTextOrNot shouldIndentText = DoNotIndentText;
     if (isFirstLine)
         shouldIndentText = IndentText;
+    else if (isAfterParagraphSeparator)
+        return IndentParagraph;
 #if ENABLE(CSS3_TEXT)
     else if (isAfterHardLineBreak && style.textIndentLine() == TextIndentEachLine)
         shouldIndentText = IndentText;

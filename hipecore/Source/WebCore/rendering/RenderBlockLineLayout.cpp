@@ -4,6 +4,7 @@
  * Copyright (C) 2010 Google Inc. All rights reserved.
  * Copyright (C) 2013 ChangSeok Oh <shivamidow@gmail.com>
  * Copyright (C) 2013 Adobe Systems Inc. All right reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -696,7 +697,8 @@ void RenderBlockFlow::computeInlineDirectionPositionsForLine(RootInlineBox* line
     // but does not affect lines after a soft wrap break.
     bool isFirstLine = lineInfo.isFirstLine() && !(isAnonymousBlock() && parent()->firstChild() != this);
     bool isAfterHardLineBreak = lineBox->prevRootBox() && lineBox->prevRootBox()->endsWithBreak();
-    IndentTextOrNot shouldIndentText = requiresIndent(isFirstLine, isAfterHardLineBreak, style());
+    bool isAfterParagraphSeparator = lineBox->prevRootBox() && lineBox->prevRootBox()->endsWithParagraphSeparator();
+    IndentTextOrNot shouldIndentText = requiresIndent(isFirstLine, isAfterHardLineBreak, isAfterParagraphSeparator, style());
     float lineLogicalLeft;
     float lineLogicalRight;
     float availableLogicalWidth;
@@ -1144,6 +1146,7 @@ RootInlineBox* RenderBlockFlow::createLineBoxesFromBidiRuns(unsigned bidiLevel, 
 
     lineBox->setBidiLevel(bidiLevel);
     lineBox->setEndsWithBreak(lineInfo.previousLineBrokeCleanly());
+    lineBox->setEndsWithParagraphSeparator(lineInfo.previousLineBrokeAtParagraphSeparator(), lineInfo.paragraphSpacing());
     
     bool isSVGRootInlineBox = is<SVGRootInlineBox>(*lineBox);
     
@@ -1853,6 +1856,8 @@ RootInlineBox* RenderBlockFlow::determineStartPosition(LineLayoutState& layoutSt
 
     layoutState.lineInfo().setFirstLine(!last);
     layoutState.lineInfo().setPreviousLineBrokeCleanly(!last || last->endsWithBreak());
+    if (last && last->endsWithParagraphSeparator())
+        layoutState.lineInfo().setPreviousLineBrokeAtParagraphSeparator(last->paragraphSpacingAfter());
 
     if (last) {
         setLogicalHeight(last->lineBottomWithLeading());

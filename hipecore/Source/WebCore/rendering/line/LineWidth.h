@@ -42,7 +42,8 @@ class RenderStyle;
 
 struct LineSegment;
 
-enum IndentTextOrNot { DoNotIndentText, IndentText };
+// IndentParagraph: the first line after U+2029, indented by -hipe-paragraph-indent instead of text-indent.
+enum IndentTextOrNot { DoNotIndentText, IndentText, IndentParagraph };
 
 class LineWidth {
 public:
@@ -103,7 +104,7 @@ private:
     IndentTextOrNot m_shouldIndentText;
 };
 
-IndentTextOrNot requiresIndent(bool isFirstLine, bool isAfterHardLineBreak, const RenderStyle&);
+IndentTextOrNot requiresIndent(bool isFirstLine, bool isAfterHardLineBreak, bool isAfterParagraphSeparator, const RenderStyle&);
 
 }
 

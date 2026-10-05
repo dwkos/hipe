@@ -145,6 +145,10 @@ public:
     AtomicString m_lineGrid;
     unsigned m_tabSize;
 
+    // Paragraph breaks made with U+2029 (hipecore). A percentage spacing is a multiple of the line height x 100.
+    Length m_paragraphSpacing;
+    Length m_paragraphIndent;
+
 #if ENABLE(IOS_TEXT_AUTOSIZING)
     TextSizeAdjustment textSizeAdjust;
 #endif

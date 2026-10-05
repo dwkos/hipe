@@ -2,6 +2,7 @@
  * Copyright (C) 2000 Lars Knoll (knoll@kde.org)
  * Copyright (C) 2003, 2004, 2006, 2007, 2008, 2009, 2010 Apple Inc. All right reserved.
  * Copyright (C) 2010 Google Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -100,7 +101,13 @@ public:
 
     bool atTextParagraphSeparator() const
     {
-        return is<RenderText>(m_renderer) && m_renderer->preservesNewline() && downcast<RenderText>(*m_renderer).characterAt(m_pos) == '\n';
+        return is<RenderText>(m_renderer) && isForcedLineBreakCharacter(downcast<RenderText>(*m_renderer).characterAt(m_pos), m_renderer->preservesNewline());
+    }
+
+    // At a U+2029 PARAGRAPH SEPARATOR, which breaks the line and starts a spaced/indented paragraph.
+    bool atParagraphSeparatorCharacter() const
+    {
+        return is<RenderText>(m_renderer) && downcast<RenderText>(*m_renderer).characterAt(m_pos) == paragraphSeparator;
     }
     
     bool atParagraphSeparator() const

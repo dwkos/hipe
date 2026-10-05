@@ -1,6 +1,6 @@
 # Paragraph breaks (U+2029)
 
-Status: draft, 2026-10-05. Not built.
+Status: 2026-10-05, being built.
 
 A client puts a paragraph break in text by sending U+2029 PARAGRAPH SEPARATOR (UTF-8 `E2 80 A9`). The engine shows
 it as a line break followed by a themeable gap and/or indent. The character stays in the DOM, so text reads back
@@ -36,7 +36,8 @@ Both are inherited, so a theme sets them once (e.g. on `body`) and they apply ev
 | `-hipe-paragraph-spacing` | a number (a multiple of the line height, like a unitless `line-height`) or a length; not negative | `0.5` | Extra space below each line that ends with U+2029 |
 | `-hipe-paragraph-indent` | a length or a percentage of the containing block's width, like `text-indent`; may be negative | `0` | Indent of the first line after each U+2029, at the line's start edge (the right in right-to-left text) |
 
-The values come from the element that directly contains the U+2029. A theme that indents instead of spacing sets
+The spacing comes from the element that directly contains the U+2029; the indent, like `text-indent`, from the block
+the lines belong to (normally the same values, since both are inherited). A theme that indents instead of spacing sets
 `-hipe-paragraph-spacing: 0; -hipe-paragraph-indent: 2em`. The first line of an element is still indented by
 `text-indent` only. `GET_STYLE` reads both properties back.
 

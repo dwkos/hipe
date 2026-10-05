@@ -482,7 +482,7 @@ void RenderText::trimmedPrefWidths(float leadWidth,
         endMaxW = maxW;
         for (int i = 0; i < len; i++) {
             int linelen = 0;
-            while (i + linelen < len && text[i + linelen] != '\n')
+            while (i + linelen < len && !isForcedLineBreakCharacter(text[i + linelen], style.preserveNewline()))
                 linelen++;
 
             if (linelen) {
@@ -666,8 +666,8 @@ void RenderText::computePreferredLogicalWidths(float leadWidth, HashSet<const Fo
         bool previousCharacterIsSpace = isSpace;
 
         bool isNewline = false;
-        if (c == '\n') {
-            if (style.preserveNewline()) {
+        if (c == '\n' || c == paragraphSeparator) {
+            if (isForcedLineBreakCharacter(c, style.preserveNewline())) {
                 m_hasBreak = true;
                 isNewline = true;
                 isSpace = false;
@@ -706,7 +706,7 @@ void RenderText::computePreferredLogicalWidths(float leadWidth, HashSet<const Fo
         bool hasBreak = breakAll || isBreakable(breakIterator, i, nextBreakable, breakNBSP, isLooseCJKMode, keepAllWords);
         bool betweenWords = true;
         int j = i;
-        while (c != '\n' && !isSpaceAccordingToStyle(c, style) && c != '\t' && (c != softHyphen || style.hyphens() == HyphensNone)) {
+        while (c != '\n' && c != paragraphSeparator && !isSpaceAccordingToStyle(c, style) && c != '\t' && (c != softHyphen || style.hyphens() == HyphensNone)) {
             j++;
             if (j == len)
                 break;

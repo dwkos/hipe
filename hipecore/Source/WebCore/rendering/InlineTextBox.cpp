@@ -322,7 +322,7 @@ float InlineTextBox::placeEllipsisBox(bool flowIsLTR, float visibleLeftEdge, flo
 
 bool InlineTextBox::isLineBreak() const
 {
-    return renderer().style().preserveNewline() && len() == 1 && (*renderer().text())[start()] == '\n';
+    return len() == 1 && isForcedLineBreakCharacter((*renderer().text())[start()], renderer().style().preserveNewline());
 }
 
 bool InlineTextBox::nodeAtPoint(const HitTestRequest& request, HitTestResult& result, const HitTestLocation& locationInContainer, const LayoutPoint& accumulatedOffset, LayoutUnit /* lineTop */, LayoutUnit /*lineBottom*/,

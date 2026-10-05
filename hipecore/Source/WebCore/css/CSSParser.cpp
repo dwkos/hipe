@@ -8,6 +8,7 @@
  * Copyright (C) 2012, 2013 Adobe Systems Incorporated. All rights reserved.
  * Copyright (C) 2012 Intel Corporation. All rights reserved.
  * Copyright (C) 2014 Google Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -2519,6 +2520,12 @@ bool CSSParser::parseValue(CSSPropertyID propId, bool important)
     }
     case CSSPropertyTabSize:
         validPrimitive = validateUnit(valueWithCalculation, FInteger | FNonNeg);
+        break;
+    case CSSPropertyHipeParagraphSpacing: // <number> (times the line height) | <length>, not negative
+        validPrimitive = validateUnit(valueWithCalculation, FNumber | FLength | FNonNeg);
+        break;
+    case CSSPropertyHipeParagraphIndent: // <length> | <percentage>, like text-indent
+        validPrimitive = validateUnit(valueWithCalculation, FLength | FPercent);
         break;
     case CSSPropertyWebkitAspectRatio:
         return parseAspectRatio(important);

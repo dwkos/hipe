@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -111,7 +112,8 @@ enum AvoidanceReason_ : uint64_t {
     FlowHasNoParent                       = 1LLU  << 46,
     FlowHasNoChild                        = 1LLU  << 47,
     FlowChildIsSelected                   = 1LLU  << 48,
-    EndOfReasons                          = 1LLU  << 49
+    FlowTextHasParagraphSeparator         = 1LLU  << 49,
+    EndOfReasons                          = 1LLU  << 50
 };
 const unsigned NoReason = 0;
 
@@ -152,6 +154,9 @@ static AvoidanceReasonFlags canUseForText(const CharacterType* text, unsigned le
             SET_REASON_AND_RETURN_IF_NEEDED(FlowTextHasNoBreakSpace, reasons, includeReasons);
         if (character == softHyphen)
             SET_REASON_AND_RETURN_IF_NEEDED(FlowTextHasSoftHyphen, reasons, includeReasons);
+        // U+2029 is a paragraph break with spacing and indent, which only the full line layout does.
+        if (character == paragraphSeparator)
+            SET_REASON_AND_RETURN_IF_NEEDED(FlowTextHasParagraphSeparator, reasons, includeReasons);
 
         UCharDirection direction = u_charDirection(character);
         if (direction == U_RIGHT_TO_LEFT || direction == U_RIGHT_TO_LEFT_ARABIC
@@ -888,6 +893,9 @@ static void printReason(AvoidanceReason reason, TextStream& stream)
         break;
     case FlowTextHasSoftHyphen:
         stream << "soft hyphen character";
+        break;
+    case FlowTextHasParagraphSeparator:
+        stream << "paragraph separator character";
         break;
     case FlowTextHasDirectionCharacter:
         stream << "direction character";

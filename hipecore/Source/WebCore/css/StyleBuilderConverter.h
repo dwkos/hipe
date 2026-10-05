@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2013 Google Inc. All rights reserved.
  * Copyright (C) 2014 Apple Inc. All rights reserved.
+ * Copyright (C) 2025-2026 General Development Systems
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -58,6 +59,7 @@ namespace WebCore {
 class StyleBuilderConverter {
 public:
     static Length convertLength(StyleResolver&, const CSSValue&);
+    static Length convertParagraphSpacing(StyleResolver&, CSSValue&);
     static Length convertLengthOrAuto(StyleResolver&, CSSValue&);
     static Length convertLengthSizing(StyleResolver&, CSSValue&);
     static Length convertLengthMaxSizing(StyleResolver&, CSSValue&);
@@ -181,6 +183,15 @@ inline Length StyleBuilderConverter::convertLength(StyleResolver& styleResolver,
 
     ASSERT_NOT_REACHED();
     return Length(0, Fixed);
+}
+
+// A number is a multiple of the line height, kept as a percentage like a unitless line-height.
+inline Length StyleBuilderConverter::convertParagraphSpacing(StyleResolver& styleResolver, CSSValue& value)
+{
+    auto& primitiveValue = downcast<CSSPrimitiveValue>(value);
+    if (primitiveValue.isNumber())
+        return Length(primitiveValue.getDoubleValue() * 100.0, Percent);
+    return convertLength(styleResolver, value);
 }
 
 inline Length StyleBuilderConverter::convertLengthOrAuto(StyleResolver& styleResolver, CSSValue& value)
