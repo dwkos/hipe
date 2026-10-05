@@ -75,17 +75,6 @@ static WebGraphicHash& graphics()
             QPixmap(QStringLiteral(":webkit/resources/missingImage@3x.png"))
         } });
 
-        // QWebSettings::MissingPluginGraphic
-        hash.get().add("nullPlugin", WebGraphicVector { {
-            QPixmap(QStringLiteral(":webkit/resources/nullPlugin.png")),
-            QPixmap(QStringLiteral(":webkit/resources/nullPlugin@2x.png"))
-        } });
-
-        // QWebSettings::DefaultFrameIconGraphic
-        hash.get().add("urlIcon", WebGraphicVector { {
-            QPixmap(QStringLiteral(":webkit/resources/urlIcon.png"))
-        } });
-
         // QWebSettings::SearchCancelButtonGraphic / SearchCancelButtonPressedGraphic.
         // hipecore: bundled instead of querying QApplication::style()->standardPixmap() at
         // startup (see InitWebKitQt.cpp) -- that eager OS-theme query was the actual cause of a

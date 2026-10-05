@@ -57,7 +57,6 @@ class QUndoStack;
 class QWindow;
 QT_END_NAMESPACE
 
-class QtPluginWidgetAdapter;
 class QWebFrameAdapter;
 class UndoStepQt;
 
@@ -101,8 +100,6 @@ public:
 
     void emitRestoreFrameStateRequested(QWebFrameAdapter*) override;
     void emitFrameCreated(QWebFrameAdapter*) override;
-    QtPluginWidgetAdapter* createPlugin(const QString &, const QUrl &, const QStringList &, const QStringList &) override;
-    QtPluginWidgetAdapter* adapterForWidget(QObject *) const override;
     bool requestSoftwareInputPanel() const override;
     bool handleScrollbarContextMenuEvent(QContextMenuEvent*, bool, ScrollDirection*, ScrollGranularity*) override;
     void recentlyAudibleChanged(bool) override;

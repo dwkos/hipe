@@ -169,7 +169,6 @@ list(APPEND WebKit_SOURCES
     qt/Api/qwebelement.cpp
     qt/Api/qwebkitglobal.cpp
     qt/Api/qwebkitplatformplugin.h
-    qt/Api/qwebpluginfactory.cpp
     qt/Api/qwebsecurityorigin.cpp
     qt/Api/qwebsettings.cpp
 
@@ -186,7 +185,6 @@ list(APPEND WebKit_SOURCES
     qt/WebCoreSupport/QWebFrameData.cpp
     qt/WebCoreSupport/QWebPageAdapter.cpp
     qt/WebCoreSupport/QtPlatformPlugin.cpp
-    qt/WebCoreSupport/QtPluginWidgetAdapter.cpp
     qt/WebCoreSupport/SearchPopupMenuQt.cpp
     qt/WebCoreSupport/TextCheckerClientQt.cpp
     qt/WebCoreSupport/TextureMapperLayerClientQt.cpp
@@ -236,7 +234,6 @@ ecm_generate_headers(
     HEADER_NAMES
         QWebElement,QWebElementCollection
         QWebKitPlatformPlugin,QWebHapticFeedbackPlayer,QWebSelectData,QWebSelectMethod,QWebSpellChecker,QWebTouchModifier
-        QWebPluginFactory
         QWebSecurityOrigin
         QWebSettings
     COMMON_HEADER
@@ -361,9 +358,7 @@ set(WebKitWidgets_SOURCES
 
     qt/WidgetSupport/InitWebKitQt.cpp
     qt/WidgetSupport/PageClientQt.cpp
-    qt/WidgetSupport/QGraphicsWidgetPluginImpl.cpp
     qt/WidgetSupport/QWebUndoCommand.cpp
-    qt/WidgetSupport/QWidgetPluginImpl.cpp
     qt/WidgetSupport/QtFallbackWebPopup.cpp
     qt/WidgetSupport/QtWebComboBox.cpp
 )
@@ -511,7 +506,6 @@ endif ()
 if (COMPILER_IS_GCC_OR_CLANG)
     set_source_files_properties(
         qt/Api/qwebelement.cpp
-        qt/Api/qwebpluginfactory.cpp
         qt/Api/qwebsecurityorigin.cpp
         qt/Api/qwebsettings.cpp
 

@@ -34,7 +34,6 @@
 #include "config.h"
 #include "FrameLoaderClientQt.h"
 
-#include "CSSComputedStyleDeclaration.h"
 #include "CSSPropertyNames.h"
 #include "DocumentLoader.h"
 #include "EventHandler.h"
@@ -56,13 +55,11 @@
 #include "NotImplemented.h"
 #include "Page.h"
 #include "PlatformMouseEvent.h"
-#include "PluginData.h"
 #include "PolicyChecker.h"
 #include "QWebFrameAdapter.h"
 #include "QWebFrameData.h"
 #include "QWebPageAdapter.h"
 #include "QWebPageClient.h"
-#include "QtPluginWidgetAdapter.h"
 #include "ResourceHandle.h"
 #include "ResourceHandleInternal.h"
 #include "ResourceLoader.h"
@@ -72,14 +69,12 @@
 #include "SubframeLoader.h"
 #include "SubresourceLoader.h"
 #include "UserGestureIndicator.h"
-#include "qwebpluginfactory.h"
 #include "qwebsettings.h"
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QMouseEvent>
 #include <QStringList>
 #include <wtf/NeverDestroyed.h>
-#include <wtf/text/StringBuilder.h>
 
 static QMap<unsigned long, QString> dumpAssignedUrls;
 
@@ -981,9 +976,6 @@ ObjectContentType FrameLoaderClientQt::objectContentType(const URL& url, const S
     // qDebug()<<" ++++++++++++++++ url is "<<url.string()<<", mime = "<<mimeTypeIn;
     QFileInfo fi(url.path());
     String extension = fi.suffix();
-    if (mimeTypeIn == "application/x-qt-plugin" || mimeTypeIn == "application/x-qt-styled-widget")
-        return ObjectContentOtherPlugin;
-
     if (url.isEmpty() && !mimeTypeIn.length())
         return ObjectContentNone;
 
@@ -994,19 +986,8 @@ ObjectContentType FrameLoaderClientQt::objectContentType(const URL& url, const S
     if (!mimeType.length())
         return ObjectContentFrame;
 
-    ObjectContentType plugInType = ObjectContentNone;
-    if (m_frame->page()) {
-        bool allowPlugins = m_frame->loader().subframeLoader().allowPlugins();
-        if ((m_frame->page()->pluginData().supportsMimeType(mimeType, PluginData::AllPlugins) && allowPlugins)
-            || m_frame->page()->pluginData().supportsMimeType(mimeType, PluginData::OnlyApplicationPlugins))
-                plugInType = ObjectContentOtherPlugin;
-    }
-
     if (MIMETypeRegistry::isSupportedImageMIMEType(mimeType))
         return ObjectContentImage;
-    
-    if (plugInType != ObjectContentNone)
-        return plugInType;
 
     if (MIMETypeRegistry::isSupportedNonImageMIMEType(mimeType))
         return ObjectContentFrame;
@@ -1017,167 +998,21 @@ ObjectContentType FrameLoaderClientQt::objectContentType(const URL& url, const S
     return ObjectContentNone;
 }
 
-static const CSSPropertyID qstyleSheetProperties[] = {
-    CSSPropertyColor,
-    CSSPropertyFontFamily,
-    CSSPropertyFontSize,
-    CSSPropertyFontStyle,
-    CSSPropertyFontWeight
-};
-
-const unsigned numqStyleSheetProperties = sizeof(qstyleSheetProperties) / sizeof(qstyleSheetProperties[0]);
-
-class QtPluginWidget: public Widget {
-public:
-    QtPluginWidget(QtPluginWidgetAdapter* w)
-        : Widget(w->handle())
-        , m_adapter(w)
-    {
-        setBindingObject(w->handle());
-    }
-
-    ~QtPluginWidget()
-    {
-        delete m_adapter;
-    }
-
-    inline QtPluginWidgetAdapter* widgetAdapter() const
-    {
-        return m_adapter;
-    }
-
-    void invalidateRect(const IntRect& r) override
-    { 
-        if (platformWidget())
-            widgetAdapter()->update(r);
-    }
-    void frameRectsChanged() override
-    {
-        QtPluginWidgetAdapter* widget = widgetAdapter();
-        if (!widget)
-            return;
-        QRect windowRect = convertToContainingWindow(IntRect(0, 0, frameRect().width(), frameRect().height()));
-
-        ScrollView* parentScrollView = parent();
-        QRect clipRect;
-        if (parentScrollView) {
-            ASSERT_WITH_SECURITY_IMPLICATION(parentScrollView->isFrameView());
-            clipRect = downcast<FrameView>(parentScrollView)->windowClipRect();
-            clipRect.translate(-windowRect.x(), -windowRect.y());
-        }
-        widget->setGeometryAndClip(windowRect, clipRect, isVisible());
-    }
-
-    void show() override
-    {
-        Widget::show();
-        handleVisibility();
-    }
-    void hide() override
-    {
-        Widget::hide();
-        if (platformWidget())
-            widgetAdapter()->setVisible(false);
-    }
-
-private:
-    QtPluginWidgetAdapter* m_adapter;
-
-    void handleVisibility()
-    {
-        if (!isVisible())
-            return;
-        widgetAdapter()->setVisible(true);
-    }
-};
-
-
-RefPtr<Widget> FrameLoaderClientQt::createPlugin(const IntSize& pluginSize, HTMLPlugInElement* element, const URL& url, const Vector<String>& paramNames, const Vector<String>& paramValues, const String& mimeType, bool loadManually)
+// hipecore has no plugins: <object>, <embed> and <applet> show an image, a frame, their fallback content or the
+// missing-plug-in placeholder. (Native surfaces inside an element are made by QWebElement::x11EmbedTargetXid().)
+RefPtr<Widget> FrameLoaderClientQt::createPlugin(const IntSize&, HTMLPlugInElement*, const URL&, const Vector<String>&, const Vector<String>&, const String&, bool)
 {
-    // qDebug()<<"------ Creating plugin in FrameLoaderClientQt::createPlugin for "<<url.string() << mimeType;
-    // qDebug()<<"------\t url = "<<url.string();
-
-    if (!m_webFrame)
-        return 0;
-
-    QStringList params;
-    QStringList values;
-    QString classid(element->getAttribute("classid"));
-
-    for (unsigned i = 0; i < paramNames.size(); ++i) {
-        params.append(paramNames[i]);
-        if (paramNames[i] == "classid")
-            classid = paramValues[i];
-    }
-    for (unsigned i = 0; i < paramValues.size(); ++i)
-        values.append(paramValues[i]);
-
-    QString urlStr(url.string());
-    QUrl qurl = urlStr;
-
-    QObject* pluginAdapter = 0;
-
-    if (mimeType == "application/x-qt-plugin" || mimeType == "application/x-qt-styled-widget") {
-        pluginAdapter = m_webFrame->pageAdapter->createPlugin(classid, qurl, params, values);
-#ifndef QT_NO_STYLE_STYLESHEET
-        QtPluginWidgetAdapter* widget = qobject_cast<QtPluginWidgetAdapter*>(pluginAdapter);
-        if (widget && mimeType == "application/x-qt-styled-widget") {
-
-            StringBuilder styleSheet;
-            styleSheet.append(element->getAttribute("style"));
-            if (!styleSheet.isEmpty())
-                styleSheet.append(';');
-
-            for (unsigned i = 0; i < numqStyleSheetProperties; ++i) {
-                CSSPropertyID property = qstyleSheetProperties[i];
-
-                styleSheet.append(getPropertyName(property));
-                styleSheet.append(':');
-                styleSheet.append(CSSComputedStyleDeclaration::create(element)->getPropertyValue(property));
-                styleSheet.append(';');
-            }
-
-            widget->setStyleSheet(styleSheet.toString());
-        }
-#endif // QT_NO_STYLE_STYLESHEET
-    }
-
-    if (!pluginAdapter) {
-        QWebPluginFactory* factory = m_webFrame->pageAdapter->pluginFactory;
-        if (factory)
-            pluginAdapter = m_webFrame->pageAdapter->adapterForWidget(factory->create(mimeType, qurl, params, values));
-    }
-    if (pluginAdapter) {
-        QtPluginWidgetAdapter* widget = qobject_cast<QtPluginWidgetAdapter*>(pluginAdapter);
-        if (widget) {
-            QObject* parentWidget = 0;
-            if (m_webFrame->pageAdapter->client)
-                parentWidget = m_webFrame->pageAdapter->client->pluginParent();
-            if (parentWidget) // Don't reparent to nothing (i.e. keep whatever parent QWebPage::createPlugin() chose.
-                widget->setWidgetParent(parentWidget);
-            widget->setVisible(false);
-            RefPtr<QtPluginWidget> w = adoptRef(new QtPluginWidget(widget));
-            // Make sure it's invisible until properly placed into the layout.
-            w->setFrameRect(IntRect(0, 0, 0, 0));
-            return w;
-        }
-
-        // FIXME: Make things work for widgetless plugins as well.
-        delete pluginAdapter;
-    }
-
-    return 0;
+    return nullptr;
 }
 
 void FrameLoaderClientQt::redirectDataToPlugin(Widget*)
 {
-    // No real NPAPI PluginView is ever created (see createPlugin() below), so there is
-    // never a plugin to redirect load data to.
+    // No plugin is ever created (see createPlugin()), so there is never one to redirect load data to.
 }
 
-PassRefPtr<Widget> FrameLoaderClientQt::createJavaAppletWidget(const IntSize& pluginSize, HTMLAppletElement* element, const URL& url, const Vector<String>& paramNames, const Vector<String>& paramValues)
+PassRefPtr<Widget> FrameLoaderClientQt::createJavaAppletWidget(const IntSize&, HTMLAppletElement*, const URL&, const Vector<String>&, const Vector<String>&)
 {
-    return createPlugin(pluginSize, element, url, paramNames, paramValues, "application/x-java-applet", true);
+    return nullptr;
 }
 
 String FrameLoaderClientQt::overrideMediaType() const

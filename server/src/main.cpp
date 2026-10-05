@@ -249,7 +249,6 @@ int main(int argc, char *argv[])
     QPixmap brokenImgIcon;
     brokenImgIcon.loadFromData((const uchar*) brokenImgData, (uint) brokenImgDataLen);
     QWebSettings::globalSettings()->setWebGraphic(QWebSettings::MissingImageGraphic, brokenImgIcon);
-    QWebSettings::globalSettings()->setWebGraphic(QWebSettings::MissingPluginGraphic, brokenImgIcon);
 
 
     //Parse command line options ad-hoc to avoid platform dependencies.

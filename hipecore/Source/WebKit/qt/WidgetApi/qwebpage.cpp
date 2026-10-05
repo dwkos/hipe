@@ -25,9 +25,7 @@
 
 #include "InitWebKitQt.h"
 #include "PageClientQt.h"
-#include "QGraphicsWidgetPluginImpl.h"
 #include "QWebUndoCommand.h"
-#include "QWidgetPluginImpl.h"
 #include "QtFallbackWebPopup.h"
 #include "QtPlatformPlugin.h"
 #include "UndoStepQt.h"
@@ -259,23 +257,6 @@ void QWebPagePrivate::emitRestoreFrameStateRequested(QWebFrameAdapter *frame)
 void QWebPagePrivate::emitFrameCreated(QWebFrameAdapter *frame)
 {
     emit q->frameCreated(QWebFramePrivate::kit(frame));
-}
-
-QtPluginWidgetAdapter *QWebPagePrivate::createPlugin(const QString &classid, const QUrl &url, const QStringList &paramNames, const QStringList &paramValues)
-{
-    QObject *widget = q->createPlugin(classid, url, paramNames, paramValues);
-    return adapterForWidget(widget);
-}
-
-QtPluginWidgetAdapter *QWebPagePrivate::adapterForWidget(QObject *object) const
-{
-    if (QWidget *widget = qobject_cast<QWidget*>(object))
-        return new QWidgetPluginImpl(widget);
-#ifndef QT_NO_GRAPHICSVIEW
-    if (QGraphicsWidget *widget = qobject_cast<QGraphicsWidget*>(object))
-        return new QGraphicsWidgetPluginImpl(widget);
-#endif
-    return 0;
 }
 
 void QWebPagePrivate::createMainFrame()
@@ -1051,19 +1032,6 @@ QWebPage *QWebPage::createWindow(WebWindowType type)
     return 0;
 }
 
-/*!
-    This function is called whenever WebKit encounters a HTML object element with type "application/x-qt-plugin". It is
-    called regardless of the value of QWebSettings::PluginsEnabled. The \a classid, \a url, \a paramNames and \a paramValues
-    correspond to the HTML object element attributes and child elements to configure the embeddable object.
-*/
-QObject *QWebPage::createPlugin(const QString &classid, const QUrl &url, const QStringList &paramNames, const QStringList &paramValues)
-{
-    Q_UNUSED(classid);
-    Q_UNUSED(url);
-    Q_UNUSED(paramNames);
-    Q_UNUSED(paramValues);
-    return 0;
-}
 
 /*!
  *  Returns the list of all content types supported by QWebPage.
@@ -2097,29 +2065,6 @@ QWebSettings *QWebPage::settings() const
     return d->settings;
 }
 
-/*!
-    Sets the QWebPluginFactory \a factory responsible for creating plugins embedded into this
-    QWebPage.
-
-    Note: The plugin factory is only used if the QWebSettings::PluginsEnabled attribute is enabled.
-
-    \sa pluginFactory()
-*/
-void QWebPage::setPluginFactory(QWebPluginFactory *factory)
-{
-    d->pluginFactory = factory;
-}
-
-/*!
-    Returns the QWebPluginFactory that is responsible for creating plugins embedded into
-    this QWebPage. If no plugin factory is installed a null pointer is returned.
-
-    \sa setPluginFactory()
-*/
-QWebPluginFactory *QWebPage::pluginFactory() const
-{
-    return d->pluginFactory;
-}
 
 
 /*!

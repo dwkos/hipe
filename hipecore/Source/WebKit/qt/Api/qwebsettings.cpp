@@ -154,10 +154,6 @@ void QWebSettingsPrivate::apply()
                                  global->attributes.value(QWebSettings::CSSRegionsEnabled));
         WebCore::RuntimeEnabledFeatures::sharedFeatures().setCSSRegionsEnabled(value);
 
-        value = attributes.value(QWebSettings::PluginsEnabled,
-                                      global->attributes.value(QWebSettings::PluginsEnabled));
-        settings->setPluginsEnabled(value);
-
         value = attributes.value(QWebSettings::SpatialNavigationEnabled,
                                       global->attributes.value(QWebSettings::SpatialNavigationEnabled));
         settings->setSpatialNavigationEnabled(value);
@@ -247,15 +243,6 @@ QWebSettings* QWebSettings::globalSettings()
     QWebSettings also configures global properties such as the web page memory
     cache and offline applications storage.
 
-    \section1 Enabling Plugins
-
-    Support for browser plugins can enabled by setting the
-    \l{QWebSettings::PluginsEnabled}{PluginsEnabled} attribute. For many applications,
-    this attribute is enabled for all pages by setting it on the
-    \l{globalSettings()}{global settings object}. Qt WebKit will always ignore this setting
-    when processing Qt plugins. The decision to allow a Qt plugin is made by the client
-    in its reimplementation of QWebPage::createPlugin().
-
     \section1 Web Application Support
 
     WebKit provides support for features specified in \l{HTML 5} that improve the
@@ -298,7 +285,6 @@ QWebSettings* QWebSettings::globalSettings()
     This enums describes the standard graphical elements used in webpages.
 
     \value MissingImageGraphic The replacement graphic shown when an image could not be loaded.
-    \value MissingPluginGraphic The replacement graphic shown when a plugin could not be loaded.
     \value TextAreaSizeGripCornerGraphic The graphic shown for the size grip of text areas.
     \value SearchCancelButtonGraphic The graphic shown for clearing the text in a search field.
     \value SearchCancelButtonPressedGraphic The graphic shown when SearchCancelButtonGraphic is pressed.
@@ -311,8 +297,6 @@ QWebSettings* QWebSettings::globalSettings()
 
     \value AutoLoadImages Specifies whether images are automatically loaded in
         web pages. This is enabled by default.
-    \value PluginsEnabled Enables or disables plugins in Web pages (e.g. using NPAPI). Qt plugins
-        with a mimetype such as "application/x-qt-plugin" are not affected by this setting. This is disabled by default.
     \value SpatialNavigationEnabled Enables or disables the Spatial Navigation
         feature, which consists in the ability to navigate between focusable
         elements in a Web page, such as hyperlinks and form controls, by using
@@ -502,7 +486,6 @@ static const char* resourceNameForWebGraphic(QWebSettings::WebGraphic type)
 {
     switch (type) {
     case QWebSettings::MissingImageGraphic: return "missingImage";
-    case QWebSettings::MissingPluginGraphic: return "nullPlugin";
     case QWebSettings::TextAreaSizeGripCornerGraphic: return "textAreaResizeCorner";
     case QWebSettings::SearchCancelButtonGraphic: return "searchCancelButton";
     case QWebSettings::SearchCancelButtonPressedGraphic: return "searchCancelButtonPressed";

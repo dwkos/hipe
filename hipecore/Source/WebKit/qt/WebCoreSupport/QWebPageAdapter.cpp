@@ -79,7 +79,6 @@
 #include "WebEventConversion.h"
 #include "WebStorageNamespaceProvider.h"
 #include "WindowFeatures.h"
-#include "qwebpluginfactory.h"
 #include "qwebsettings.h"
 #include <Page.h>
 #include <QBitArray>
@@ -158,7 +157,6 @@ static UserContentController& userContentProvider()
 QWebPageAdapter::QWebPageAdapter()
     : settings(0)
     , page(0)
-    , pluginFactory(0)
     , clickCausedFocus(false)
     , mousePressed(false)
     , m_useNativeVirtualKeyAsDOMKey(false)

@@ -50,7 +50,6 @@ public:
     };
     enum WebAttribute {
         AutoLoadImages,
-        PluginsEnabled,
         LinksIncludedInFocusChain,
         ZoomTextOnly,
         AcceleratedCompositingEnabled,
@@ -73,7 +72,6 @@ public:
     };
     enum WebGraphic {
         MissingImageGraphic,
-        MissingPluginGraphic,
         TextAreaSizeGripCornerGraphic,
         SearchCancelButtonGraphic,
         SearchCancelButtonPressedGraphic

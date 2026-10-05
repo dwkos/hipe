@@ -44,7 +44,6 @@ class QWebHitTestResult;
 class QWebNetworkInterface;
 class QWebPageAdapter;
 class QWebPagePrivate;
-class QWebPluginFactory;
 class QWebSecurityOrigin;
 
 namespace WebCore {
@@ -220,8 +219,6 @@ public:
     QUndoStack *undoStack() const;
 #endif
 
-    void setPluginFactory(QWebPluginFactory *factory);
-    QWebPluginFactory *pluginFactory() const;
 
     quint64 totalBytes() const;
     quint64 bytesReceived() const;
@@ -309,7 +306,6 @@ Q_SIGNALS:
 
 protected:
     virtual QWebPage *createWindow(WebWindowType type);
-    virtual QObject *createPlugin(const QString &classid, const QUrl &url, const QStringList &paramNames, const QStringList &paramValues);
 
 
 private:

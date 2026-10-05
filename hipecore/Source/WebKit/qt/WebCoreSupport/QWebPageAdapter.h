@@ -51,11 +51,9 @@ class Page;
 class UndoStep;
 }
 
-class QtPluginWidgetAdapter;
 class QWebFrameAdapter;
 class QWebHitTestResultPrivate;
 class QWebPageClient;
-class QWebPluginFactory;
 class QWebSecurityOrigin;
 class QWebSelectMethod;
 class QWebSettings;
@@ -200,8 +198,6 @@ public:
 
     virtual void emitRestoreFrameStateRequested(QWebFrameAdapter *) = 0;
     virtual void emitFrameCreated(QWebFrameAdapter*) = 0;
-    virtual QtPluginWidgetAdapter* createPlugin(const QString&, const QUrl&, const QStringList&, const QStringList&) = 0;
-    virtual QtPluginWidgetAdapter* adapterForWidget(QObject*) const = 0;
     virtual bool requestSoftwareInputPanel() const = 0;
     struct MenuItemDescription {
         MenuItemDescription()
@@ -322,7 +318,6 @@ public:
     QHash<const void*, const void*> lastFocusedFrames; //frame -> frame in its subtree that last had focus (addresses only)
     QScopedPointer<QWebPageClient> client;
 
-    QWebPluginFactory *pluginFactory;
 
     QPoint tripleClick;
     QBasicTimer tripleClickTimer;
