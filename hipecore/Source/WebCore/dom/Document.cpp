@@ -1733,6 +1733,30 @@ void Document::recalcStyle(Style::Change change)
     // to check if any other elements ended up under the mouse pointer due to re-layout.
     if (m_hoveredElement && !m_hoveredElement->renderer())
         frameView.frame().mainFrame().eventHandler().dispatchFakeMouseMoveEventSoon();
+
+    // A focused element that is no longer rendered (e.g. display:none) or can no longer take focus (e.g. disabled)
+    // loses the focus, so keys stop going to an element the user can't see or use. It's checked again and blurred
+    // after the current task, with layout up to date: blurring runs event handling that mustn't happen mid-update.
+    if (m_focusedElement && (!m_focusedElement->renderer() || m_focusedElement->renderer()->style().visibility() != VISIBLE
+        || !m_focusedElement->supportsFocus())) {
+        postTask([] (ScriptExecutionContext& context) {
+            Document& document = downcast<Document>(context);
+            RefPtr<Element> focused = document.focusedElement();
+            if (!focused)
+                return;
+            document.updateLayoutIgnorePendingStylesheets();
+            if (document.focusedElement() != focused || focused->isFocusable())
+                return;
+            // As when the focused element is removed: blur it without touching a selection elsewhere in the
+            // document (e.g. a find match), but drop a selection inside it, which typing would otherwise go on editing.
+            if (Frame* frame = document.frame()) {
+                Node* start = frame->selection().selection().start().deprecatedNode();
+                if (start && focused->containsIncludingShadowDOM(start))
+                    frame->selection().clear();
+            }
+            document.setFocusedElement(nullptr);
+        });
+    }
 }
 
 void Document::updateStyleIfNeeded()
