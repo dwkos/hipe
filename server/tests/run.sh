@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs hiped's tests on a private display and hiped (Xephyr, own socket and keyfile), against the hiped and
 # libhipe built in this tree. Needs Xephyr and xdotool. Build first: make in api/ and server/.
-#   server/tests/run.sh               the location, markup, text and CSS tests
+#   server/tests/run.sh               the location, markup, text, CSS and instruction tests
 #   server/tests/run.sh memory        hiped's memory over repeated rebuilds of a 500-line group (must stay flat)
 #   server/tests/run.sh bench [n]     APPEND_TAG and mode 3 timings, n instructions each (default 20000)
 # TEST_DISPLAY picks the display (default :95). Exit status is non-zero if a test failed.
@@ -12,7 +12,7 @@ work=$(mktemp -d /tmp/hipe-tests-XXXXXX)
 mode=${1:-tests}
 
 if [ -e "/tmp/.X11-unix/X${disp#:}" ]; then echo "display $disp is in use; set TEST_DISPLAY" >&2; exit 2; fi
-for t in locations markup text css bench; do
+for t in locations markup text css instructions bench; do
     cc -Wall -O2 "$here/$t.c" -o "$work/$t" -I"$root/api/src" "$root/api/build/libhipe.a" -lpthread || exit 2
 done
 
@@ -34,6 +34,7 @@ tests)
     "$work/markup" || status=1
     "$work/text" || status=1
     "$work/css" || status=1
+    "$work/instructions" || status=1
     ;;
 memory)
     "$work/locations" 600 > "$work/memory.log" 2>&1 &
