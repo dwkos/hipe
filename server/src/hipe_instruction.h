@@ -238,7 +238,12 @@ extern "C" {
  */
 
 #define HIPE_OP_SET_FOCUS          33
-/* Keyboard-focuses the element at location */
+/* Keyboard-focuses the element at location (an <iframe>: the element focused last inside it). A text field or
+ * editable element gets back the caret/selection it had when it last lost focus; the first time, it gets the one
+ * CARAT_POSITION set, or else the caret goes at the end of a text input's value and at the start of a textarea or
+ * editable element. Does nothing for an element that can't take focus (hidden, disabled, not focusable). Works while
+ * the window is inactive: the element has the focus when the window is activated. A focused element that is hidden or
+ * disabled loses the focus (a blur event). */
 
 #define HIPE_OP_SET_STYLE_SRC 34
 /* Applies a background image or other property to the element at location.
