@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2006, 2007, 2013 Apple Inc. All rights reserved.
  * Copyright (C) 2008 Nuanti Ltd.
+ * Copyright (C) 2026 General Development Systems
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +31,7 @@
 #include "AXObjectCache.h"
 #include "Chrome.h"
 #include "Document.h"
+#include "EditableRootSelection.h"
 #include "Editor.h"
 #include "EditorClient.h"
 #include "Element.h"
@@ -645,6 +647,10 @@ bool FocusController::setFocusedElement(Element* element, PassRefPtr<Frame> newF
         return false;
 
     m_page.editorClient().willSetInputMethodState();
+
+    // An editable root losing the focus keeps its selection for when it is focused again (before it's cleared below).
+    if (oldFocusedElement)
+        rememberEditableRootSelection(*oldFocusedElement);
 
     clearSelectionIfNeeded(oldFocusedFrame.get(), newFocusedFrame.get(), element);
 

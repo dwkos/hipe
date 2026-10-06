@@ -891,8 +891,10 @@ void QWebElement::setFocus()
             restoreFrame = nullptr;
     }
 
-    //This produces correct behaviour for Hipe:
-    m_element->focus(false, FocusDirectionNone);
+    // Restore the selection the element had when it last had focus (a text field, or an editable root, gets its
+    // caret back instead of having all its text selected or the caret moved to the start). The first focus of a
+    // text field selects its text; of a textarea or editable root, puts the caret at the start.
+    m_element->focus(true, FocusDirectionNone);
 
     if (restoreFrame && m_element->document().page())
         m_element->document().page()->focusController().setFocusedFrame(restoreFrame);

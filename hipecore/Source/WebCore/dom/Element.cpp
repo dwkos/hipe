@@ -6,6 +6,7 @@
  *           (C) 2007 David Smith (catfish.man@gmail.com)
  * Copyright (C) 2004-2015 Apple Inc. All rights reserved.
  *           (C) 2007 Eric Seidel (eric@webkit.org)
+ * Copyright (C) 2026 General Development Systems
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -46,6 +47,7 @@
 #include "FlowThreadController.h"
 #include "FocusController.h"
 #include "FocusEvent.h"
+#include "EditableRootSelection.h"
 #include "FrameSelection.h"
 #include "FrameView.h"
 #include "HTMLCanvasElement.h"
@@ -163,6 +165,8 @@ Element::Element(const QualifiedName& tagName, Document& document, ConstructionT
 
 Element::~Element()
 {
+    forgetEditableRootSelection(*this);
+
 #ifndef NDEBUG
     if (document().hasLivingRenderTree()) {
         // When the document is not destroyed, an element that was part of a named flow
@@ -2152,7 +2156,7 @@ void Element::updateFocusAppearanceAfterAttachIfNeeded()
     data->setNeedsFocusAppearanceUpdateSoonAfterAttach(false);
 }
 
-void Element::updateFocusAppearance(SelectionRestorationMode, SelectionRevealMode revealMode)
+void Element::updateFocusAppearance(SelectionRestorationMode restorationMode, SelectionRevealMode revealMode)
 {
     if (isRootEditableElement()) {
         // Keep frame alive in this method, since setSelection() may release the last reference to |frame|.
@@ -2164,8 +2168,19 @@ void Element::updateFocusAppearance(SelectionRestorationMode, SelectionRevealMod
         if (this == frame->selection().selection().rootEditableElement())
             return;
 
-        // FIXME: We should restore the previous selection if there is one.
+        // Restore the selection the element had when it last lost focus, if there is one; otherwise a caret at the start.
         VisibleSelection newSelection = VisibleSelection(firstPositionInOrBeforeNode(this), DOWNSTREAM);
+        int start, end;
+        bool backward;
+        if (restorationMode == SelectionRestorationMode::Restore && savedEditableRootSelection(*this, start, end, backward)) {
+            int length = TextIterator::rangeLength(rangeOfContents(*this).ptr());
+            start = std::min(start, length);
+            end = std::min(std::max(end, start), length);
+            if (RefPtr<Range> range = TextIterator::rangeFromLocationAndLength(this, start, end - start)) {
+                Position first = range->startPosition(), last = range->endPosition();
+                newSelection = backward ? VisibleSelection(last, first, DOWNSTREAM) : VisibleSelection(first, last, DOWNSTREAM);
+            }
+        }
         
         if (frame->selection().shouldChangeSelection(newSelection)) {
             frame->selection().setSelection(newSelection, FrameSelection::defaultSetSelectionOptions(), Element::defaultFocusTextStateChangeIntent());
@@ -2209,8 +2224,54 @@ void Element::dispatchFocusEvent(RefPtr<Element>&& oldFocusedElement, FocusDirec
     EventDispatcher::dispatchEvent(this, FocusEvent::create(eventNames().focusEvent, false, false, document().defaultView(), 0, WTFMove(oldFocusedElement)));
 }
 
+struct SavedEditableRootSelection {
+    int start;
+    int end;
+    bool backward;
+};
+
+static HashMap<const Element*, SavedEditableRootSelection>& savedEditableRootSelections()
+{
+    static NeverDestroyed<HashMap<const Element*, SavedEditableRootSelection>> map;
+    return map;
+}
+
+void rememberEditableRootSelection(Element& element)
+{
+    Frame* frame = element.document().frame();
+    if (!frame || !element.isRootEditableElement())
+        return;
+    const VisibleSelection& selection = frame->selection().selection();
+    if (selection.isNone() || selection.rootEditableElement() != &element)
+        return;
+    Position first = firstPositionInNode(&element);
+    int start = TextIterator::rangeLength(Range::create(element.document(), first, selection.start()).ptr());
+    int end = TextIterator::rangeLength(Range::create(element.document(), first, selection.end()).ptr());
+    savedEditableRootSelections().set(&element, SavedEditableRootSelection { start, end, !selection.isBaseFirst() });
+}
+
+bool savedEditableRootSelection(const Element& element, int& start, int& end, bool& backward)
+{
+    auto it = savedEditableRootSelections().find(&element);
+    if (it == savedEditableRootSelections().end())
+        return false;
+    start = it->value.start;
+    end = it->value.end;
+    backward = it->value.backward;
+    return true;
+}
+
+void forgetEditableRootSelection(const Element& element)
+{
+    if (!savedEditableRootSelections().isEmpty())
+        savedEditableRootSelections().remove(&element);
+}
+
 void Element::dispatchBlurEvent(RefPtr<Element>&& newFocusedElement)
 {
+    // (FocusController saves it first, before it clears the selection; this covers blurs that don't go through it.)
+    rememberEditableRootSelection(*this);
+
     if (document().page())
         document().page()->chrome().client().elementDidBlur(this);
 
