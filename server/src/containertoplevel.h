@@ -53,6 +53,10 @@ public:
     
 protected:
     void resizeEvent(QResizeEvent* event);
+    void focusInEvent(QFocusEvent* event) override;
+    bool viewportEvent(QEvent* event) override;
+private:
+    void keepItemFocus();
 };
 
 class WebWindow : public QMainWindow {

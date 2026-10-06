@@ -457,6 +457,26 @@ bool WebView::focusNextPrevChild(bool next) {
     return true;
 }
 
+void WebGraphicsView::keepItemFocus() {
+    //The web item is the only item in the scene and must always be its focus item, or key events stop at the scene.
+    //A click into an inactive window (on Wayland) gives the view focus before the window is activated: the scene
+    //can't hand focus to an item while it is inactive, and once activated it had no focus item left to restore.
+    if(scene->isActive() && hasFocus() && scene->focusItem() != webItem)
+        webItem->setFocus(Qt::ActiveWindowFocusReason);
+}
+
+void WebGraphicsView::focusInEvent(QFocusEvent* event) {
+    QGraphicsView::focusInEvent(event);
+    keepItemFocus();
+}
+
+bool WebGraphicsView::viewportEvent(QEvent* event) {
+    bool r = QGraphicsView::viewportEvent(event); //(passes WindowActivate on to the scene)
+    if(event->type() == QEvent::WindowActivate)
+        keepItemFocus();
+    return r;
+}
+
 void WebGraphicsView::resizeEvent(QResizeEvent* event)
 {
     QGraphicsView::resizeEvent(event);
