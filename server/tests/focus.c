@@ -134,11 +134,23 @@ static void click(hipe_loc l) { int x, y; geometry(l, &x, &y); clickAt(x + 8, y 
 
 /* ---- the framed child, in a forked process, driven over a pipe ---- */
 static int toChild[2], fromChild[2]; static FILE* childIn;
+/* a client framed by the child (a grandchild): it focuses its input and waits until its frame goes */
+static void grandchildMain(const char* key) {
+    hipe_session gs = hipe_open_session(key, 0, 0, "focus-grandchild");
+    if(!gs) _exit(1);
+    hipe_send(gs, HIPE_OP_APPEND_TAG, 0, 0, 4, "input", "", "", "");
+    hipe_send(gs, HIPE_OP_SET_FOCUS, 0, hipe_newest_location(), 0);
+    hipe_instruction in; hipe_instruction_init(&in);
+    while(hipe_next_instruction(gs, &in, 1)) hipe_instruction_clear(&in);
+    _exit(0);
+}
+
 static void childMain(const char* key) {
     hipe_session cs = hipe_open_session(key, 0, 0, "focus-child");
     if(!cs) { write(fromChild[1], "nosession\n", 10); _exit(1); }
+    signal(SIGCHLD, SIG_IGN);
     hipe_send(cs, HIPE_OP_APPEND_TAG, 0, 0, 4, "input", "", "", "");
-    hipe_loc ci = hipe_newest_location();
+    hipe_loc ci = hipe_newest_location(), gf = 0;
     char line[64]; FILE* in = fdopen(toChild[0], "r");
     write(fromChild[1], "ready\n", 6);
     while(fgets(line, sizeof line, in)) {
@@ -153,7 +165,27 @@ static void childMain(const char* key) {
             hipe_send(cs, HIPE_OP_GET_GEOMETRY, 0, ci, 0);
             hipe_await_instruction(cs, &r, HIPE_OP_GEOMETRY_RETURN);
             snprintf(out, sizeof out, "%.*s %.*s", (int)r.arg_length[0], r.arg[0], (int)r.arg_length[1], r.arg[1]);
-        } else if(!strncmp(line, "quit", 4)) break;
+        } else if(!strncmp(line, "nest", 4)) { /* host a grandchild client in an <iframe> */
+            hipe_send(cs, HIPE_OP_APPEND_TAG, 0, 0, 4, "iframe", "", "", "");
+            gf = hipe_newest_location();
+            hipe_send(cs, HIPE_OP_GET_FRAME_KEY, 0, gf, 0);
+            hipe_await_instruction(cs, &r, HIPE_OP_KEY_RETURN);
+            char gkey[256]; snprintf(gkey, sizeof gkey, "%.*s", (int)r.arg_length[0], r.arg[0]);
+            hipe_send(cs, HIPE_OP_EVENT_REQUEST, 0, gf, 1, "keydown");
+            if(!fork()) grandchildMain(gkey);
+            usleep(800000);
+        } else if(!strncmp(line, "gfocus", 6)) hipe_send(cs, HIPE_OP_SET_FOCUS, 0, gf, 0);
+        else if(!strncmp(line, "framekeys", 9)) { /* keydowns in the grandchild's frame since last asked */
+            hipe_send(cs, HIPE_OP_GET_ATTRIBUTE, 0, 0, 1, "x");
+            hipe_await_instruction(cs, &r, HIPE_OP_ATTRIBUTE_RETURN);
+            int n = 0; hipe_instruction e; hipe_instruction_init(&e);
+            while(hipe_next_instruction(cs, &e, 0)) {
+                if(e.opcode == HIPE_OP_EVENT && e.location == gf) n++;
+                hipe_instruction_clear(&e);
+            }
+            snprintf(out, sizeof out, "%d", n);
+        } else if(!strncmp(line, "unnest", 6)) hipe_send(cs, HIPE_OP_DELETE, 0, gf, 0);
+        else if(!strncmp(line, "quit", 4)) break;
         hipe_instruction_clear(&r);
         strcat(out, "\n"); write(fromChild[1], out, strlen(out));
     }
@@ -437,6 +469,13 @@ int main() {
         style(fr, "display", "block"); settle(200);
         focus(fr); settle(300); type("q"); child("val");
         CHECK("H1 its request applies once the frame is shown and focused", strlen(v) == strlen(before) + 1); reset();
+        /* the child hosts its own client; the frame with the focus is removed (e.g. a tab whose load failed) */
+        child("nest"); focus(fr); settle(300); child("gfocus"); settle(300); child("framekeys");
+        type("r"); child("framekeys"); CHECK("N1 a framed client focusing its own <iframe> gives its client the keys", atoi(v) >= 1);
+        child("unnest"); settle(300); child("val"); snprintf(before, sizeof before, "%s", v);
+        child("focus"); settle(300); type("s"); child("val");
+        CHECK("N2 after removing the frame that had the focus, the framed client can focus its own element", strlen(v) == strlen(before) + 1);
+        reset();
         write(toChild[1], "quit\n", 5); waitpid(pid, 0, 0);
     }
 

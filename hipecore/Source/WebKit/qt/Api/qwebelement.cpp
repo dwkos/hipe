@@ -884,13 +884,15 @@ void QWebElement::setFocus()
     if (!page || !frame)
         return;
 
-    // A framed client can't take the focus from outside its own frame (from the framing manager or another client).
-    // While the focus is elsewhere, or its frame is hidden (e.g. an inactive tab), the element is remembered, and
-    // gets the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>).
+    // A framed client can't take the focus from another frame (the framing manager's or another client's). While the
+    // focus is in one, or the client's frame is hidden (e.g. an inactive tab), the element is remembered, and gets
+    // the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>). If no frame has the
+    // focus (e.g. the one that had it was removed: none, or one no longer in the page), nobody loses it, and the
+    // element is focused at once.
     if (frame->tree().parent()) { // (not the top-level client)
         Frame* focused = page->focusController().focusedFrame();
-        bool focusInside = focused && (focused == frame || focused->tree().isDescendantOf(frame));
-        if (!focusInside || FocusController::isInHiddenFrame(*frame)) {
+        bool fromAnotherFrame = focused && focused->page() == page && focused != frame && !focused->tree().isDescendantOf(frame);
+        if (fromAnotherFrame || FocusController::isInHiddenFrame(*frame)) {
             page->focusController().rememberFocusedElement(*m_element);
             if (QWebPageAdapter* adapter = QWebPageAdapter::kit(page))
                 adapter->noteFocusedFrame(frame);
@@ -908,6 +910,14 @@ void QWebElement::setFocus()
             restoreFrame = adapter->lastFocusedFrameWithin(contentFrame);
         if (restoreFrame == contentFrame)
             restoreFrame = nullptr;
+    }
+
+    // Already its document's focused element while the focus is outside its frame (or nowhere): focus() would do
+    // nothing, so give the focus to its frame. (Not when the focus is inside a frame within it, e.g. this <iframe>'s.)
+    if (m_element->document().focusedElement() == m_element) {
+        Frame* focused = page->focusController().focusedFrame();
+        if (!focused || focused->page() != page || (focused != frame && !focused->tree().isDescendantOf(frame)))
+            page->focusController().setFocusedFrame(frame);
     }
 
     // Restore the selection the element had when it last had focus (a text field, or an editable root, gets its
