@@ -390,9 +390,12 @@ int main() {
         pid_t pid = fork();
         if(!pid) childMain(key);
         { char b[64]; FILE* f0 = fdopen(fromChild[0], "r"); if(!fgets(b, sizeof b, f0)) b[0] = 0; childIn = f0; }
-        focus(i1); settle(300); reset();
+        focus(i1); settle(300); value(i1); char p0[sizeof v]; snprintf(p0, sizeof p0, "%s", v); reset();
         child("focus"); settle(300);
-        type("f"); child("val"); CHECK("F1 the child's SET_FOCUS takes the keys", !strcmp(v, "f"));
+        type("f"); child("val"); int childGot = strcmp(v, "") != 0;
+        value(i1); CHECK("F1 a child's SET_FOCUS doesn't take the keys from the parent", !childGot && !has("blur@i1") && strlen(v) == strlen(p0) + 1);
+        focus(fr); settle(300); type("e"); child("val");
+        CHECK("F1 the parent focusing the iframe gives the keys to the element the child asked for", !strcmp(v, "e"));
         reset();
         focus(i1); settle(200); value(i1); char before[sizeof v]; snprintf(before, sizeof before, "%s", v);
         type("g"); value(i1); CHECK("F2 parent SET_FOCUS i1 takes keys back from the child", ends("g"));
@@ -419,6 +422,21 @@ int main() {
         activate(); type("l"); child("val"); int okc = strlen(v) == strlen(before) + 1;
         value(i1); CHECK("F6 child, parent i1, iframe while inactive: keys go back to the child's input", okc && !strcmp(v, p1));
         reset();
+        /* a hidden frame, as a framing manager hides an inactive tab */
+        focus(fr); settle(200); child("val"); snprintf(before, sizeof before, "%s", v); reset();
+        style(fr, "display", "none"); settle(300);
+        type("n"); child("val");
+        CHECK("H2 hiding the frame that has the focus moves the focus out of it", !strcmp(v, before) && has("keydown@body:78") && !has("keydown@frame"));
+        style(fr, "display", "block"); settle(200);
+        focus(fr); settle(300); type("o"); child("val");
+        CHECK("H2 focusing the frame again gives the keys back to its element", strlen(v) == strlen(before) + 1); reset();
+        focus(i1); settle(200); style(fr, "display", "none"); settle(200);
+        value(i1); snprintf(p1, sizeof p1, "%s", v); child("val"); snprintf(before, sizeof before, "%s", v);
+        child("focus"); settle(300); type("p"); child("val"); int hiddenGot = strcmp(v, before) != 0;
+        value(i1); CHECK("H1 a client in a hidden frame can't take the focus", !hiddenGot && strlen(v) == strlen(p1) + 1);
+        style(fr, "display", "block"); settle(200);
+        focus(fr); settle(300); type("q"); child("val");
+        CHECK("H1 its request applies once the frame is shown and focused", strlen(v) == strlen(before) + 1); reset();
         write(toChild[1], "quit\n", 5); waitpid(pid, 0, 0);
     }
 

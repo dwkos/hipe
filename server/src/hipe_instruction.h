@@ -243,7 +243,9 @@ extern "C" {
  * CARAT_POSITION set, or else the caret goes at the end of a text input's value and at the start of a textarea or
  * editable element. Does nothing for an element that can't take focus (hidden, disabled, not focusable). Works while
  * the window is inactive: the element has the focus when the window is activated. A focused element that is hidden or
- * disabled loses the focus (a blur event). */
+ * disabled loses the focus (a blur event). A framed client can't take the focus from outside its frame: while the focus
+ * is elsewhere (in the framing manager or another client) or its frame is hidden, the element is remembered, and gets
+ * the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>). */
 
 #define HIPE_OP_SET_STYLE_SRC 34
 /* Applies a background image or other property to the element at location.
