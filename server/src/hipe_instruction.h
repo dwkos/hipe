@@ -562,6 +562,14 @@ extern "C" {
      "m" -- move/rename the entry to the name in arg[2]. Fails if anything already has that name.
      "M" -- as "m", but a file that already has the new name is replaced, in a single step.
      "d" -- delete a file or an empty directory.
+
+ * Role swap, access mode "s" (never the minimal mode): a client that lists it in HIPE_OP_FIFO_GET_PEER
+   may, once the host has granted it and before any transfer, send HIPE_OP_FIFO_OPEN with arg[1] == "s"
+   and arg[2] == the modes granted to the new client, from its point of view (e.g. "rw"). No FIFO is
+   opened; the host answers with HIPE_OP_FIFO_CLOSE (arg[1] empty if accepted, otherwise why not). Once
+   accepted, the former host is the client for the rest of the relationship and the only end that sends
+   HIPE_OP_FIFO_OPEN. Only once per relationship. The FIFO is still created and removed by the end that
+   sent HIPE_OP_FIFO_RESPONSE.
  */
 
 #define HIPE_OP_OPEN_LINK 69
