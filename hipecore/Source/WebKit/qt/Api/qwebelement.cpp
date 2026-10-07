@@ -879,25 +879,43 @@ void QWebElement::setFocus()
     /*if (m_element->isFocusable())
         m_element->document().setFocusedElement(m_element);*/
 
+    Page* page = m_element->document().page();
+    Frame* frame = m_element->document().frame();
+    if (!page || !frame)
+        return;
+
+    // A framed client can't take the focus from outside its own frame (from the framing manager or another client).
+    // While the focus is elsewhere, or its frame is hidden (e.g. an inactive tab), the element is remembered, and
+    // gets the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>).
+    if (frame->tree().parent()) { // (not the top-level client)
+        Frame* focused = page->focusController().focusedFrame();
+        bool focusInside = focused && (focused == frame || focused->tree().isDescendantOf(frame));
+        if (!focusInside || FocusController::isInHiddenFrame(*frame)) {
+            page->focusController().rememberFocusedElement(*m_element);
+            if (QWebPageAdapter* adapter = QWebPageAdapter::kit(page))
+                adapter->noteFocusedFrame(frame);
+            return;
+        }
+    }
+
     // Focusing an <iframe> gives focus to its content frame. If focus was last in a frame nested deeper
     // inside it (e.g. a client hosting its own child client), put it back there, so keys reach the
     // element that had focus. Look it up first: focusing the <iframe> updates the record.
     Frame* restoreFrame = nullptr;
-    if (is<HTMLFrameOwnerElement>(*m_element) && m_element->document().page()) {
+    if (is<HTMLFrameOwnerElement>(*m_element)) {
         Frame* contentFrame = downcast<HTMLFrameOwnerElement>(*m_element).contentFrame();
-        if (QWebPageAdapter* adapter = QWebPageAdapter::kit(m_element->document().page()))
+        if (QWebPageAdapter* adapter = QWebPageAdapter::kit(page))
             restoreFrame = adapter->lastFocusedFrameWithin(contentFrame);
         if (restoreFrame == contentFrame)
             restoreFrame = nullptr;
     }
 
     // Restore the selection the element had when it last had focus (a text field, or an editable root, gets its
-    // caret back instead of having all its text selected or the caret moved to the start). The first focus of a
-    // text field selects its text; of a textarea or editable root, puts the caret at the start.
+    // caret back instead of having all its text selected or the caret moved to the start).
     m_element->focus(true, FocusDirectionNone);
 
     if (restoreFrame && m_element->document().page())
-        m_element->document().page()->focusController().setFocusedFrame(restoreFrame);
+        page->focusController().setFocusedFrameRestoringElement(restoreFrame);
 }
 
 

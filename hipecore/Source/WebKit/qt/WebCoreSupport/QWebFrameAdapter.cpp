@@ -612,7 +612,7 @@ bool QWebFrameAdapter::hasFocus() const
 
 void QWebFrameAdapter::setFocus()
 {
-    frame->page()->focusController().setFocusedFrame(frame);
+    frame->page()->focusController().setFocusedFrameRestoringElement(frame);
 }
 
 void QWebFrameAdapter::setScrollBarPolicy(Qt::Orientation orientation, Qt::ScrollBarPolicy policy)

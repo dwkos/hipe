@@ -186,7 +186,7 @@ void HTMLFrameElementBase::setFocus(bool received)
     HTMLFrameOwnerElement::setFocus(received);
     if (Page* page = document().page()) {
         if (received)
-            page->focusController().setFocusedFrame(contentFrame());
+            page->focusController().setFocusedFrameRestoringElement(contentFrame());
         else if (page->focusController().focusedFrame() == contentFrame()) // Focus may have already been given to another frame, don't take it away.
             page->focusController().setFocusedFrame(0);
     }

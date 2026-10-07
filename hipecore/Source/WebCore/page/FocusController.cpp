@@ -44,6 +44,7 @@
 #include "FrameTree.h"
 #include "FrameView.h"
 #include "HTMLAreaElement.h"
+#include "HTMLFrameOwnerElement.h"
 #include "HTMLImageElement.h"
 #include "HTMLInputElement.h"
 #include "HTMLNames.h"
@@ -655,8 +656,11 @@ bool FocusController::setFocusedElement(Element* element, PassRefPtr<Frame> newF
     clearSelectionIfNeeded(oldFocusedFrame.get(), newFocusedFrame.get(), element);
 
     if (!element) {
-        if (oldDocument)
+        if (oldDocument) {
+            if (newFocusedFrame && newFocusedFrame->document() != oldDocument)
+                rememberCurrentFocusedElement(*oldDocument);
             oldDocument->setFocusedElement(nullptr);
+        }
         m_page.editorClient().setInputMethodState(false);
         return true;
     }
@@ -668,8 +672,11 @@ bool FocusController::setFocusedElement(Element* element, PassRefPtr<Frame> newF
         return true;
     }
     
-    if (oldDocument && oldDocument != newDocument.ptr())
+    if (oldDocument && oldDocument != newDocument.ptr()) {
+        rememberCurrentFocusedElement(*oldDocument);
         oldDocument->setFocusedElement(nullptr);
+    }
+    m_rememberedFocusedElements.remove(newDocument.ptr()); // superseded by element
 
     if (newFocusedFrame && !newFocusedFrame->page()) {
         setFocusedFrame(nullptr);
@@ -690,6 +697,75 @@ bool FocusController::setFocusedElement(Element* element, PassRefPtr<Frame> newF
     m_focusRepaintTimer.stop();
 
     return true;
+}
+
+void FocusController::rememberCurrentFocusedElement(Document& document)
+{
+    if (Element* element = document.focusedElement())
+        m_rememberedFocusedElements.set(&document, element);
+}
+
+void FocusController::rememberFocusedElement(Element& element)
+{
+    m_rememberedFocusedElements.set(&element.document(), &element);
+}
+
+void FocusController::forgetRememberedFocusedElement(Document& document)
+{
+    m_rememberedFocusedElements.remove(&document);
+}
+
+void FocusController::setFocusedFrameRestoringElement(Frame* frame)
+{
+    setFocusedFrame(frame);
+    if (frame && m_focusedFrame == frame)
+        restoreRememberedFocusedElement(*frame);
+}
+
+void FocusController::restoreRememberedFocusedElement(Frame& frame)
+{
+    Document* document = frame.document();
+    if (!document)
+        return;
+    RefPtr<Element> element = m_rememberedFocusedElements.take(document);
+    if (!element || document->focusedElement() == element || !element->inDocument() || &element->document() != document)
+        return;
+    element->focus(true); // (gets back its caret, too)
+}
+
+static bool isHiddenFrameOwner(HTMLFrameOwnerElement& owner)
+{
+    RenderObject* renderer = owner.renderer();
+    return !renderer || renderer->style().visibility() != VISIBLE;
+}
+
+bool FocusController::isInHiddenFrame(Frame& frame)
+{
+    for (Frame* f = &frame; f; f = f->tree().parent()) {
+        if (HTMLFrameOwnerElement* owner = f->ownerElement()) {
+            if (isHiddenFrameOwner(*owner))
+                return true;
+        }
+    }
+    return false;
+}
+
+bool FocusController::focusIsInFrameHiddenBy(Document& document) const
+{
+    for (Frame* f = m_focusedFrame.get(); f && f != document.frame(); f = f->tree().parent()) {
+        HTMLFrameOwnerElement* owner = f->ownerElement();
+        if (owner && &owner->document() == &document && isHiddenFrameOwner(*owner))
+            return true;
+    }
+    return false;
+}
+
+void FocusController::moveFocusOutOfFramesHiddenBy(Document& document)
+{
+    if (!document.frame() || !focusIsInFrameHiddenBy(document))
+        return;
+    setFocusedElement(nullptr, document.frame()); // (blurs and remembers the hidden frame's focused element)
+    setFocusedFrame(document.frame());
 }
 
 void FocusController::setViewState(ViewState::Flags viewState)

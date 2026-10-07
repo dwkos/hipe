@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006, 2007 Apple Inc. All rights reserved.
+ * Copyright (C) 2026 General Development Systems
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +32,7 @@
 #include "Timer.h"
 #include "ViewState.h"
 #include <wtf/Forward.h>
+#include <wtf/HashMap.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/RefPtr.h>
 
@@ -74,6 +76,20 @@ public:
     bool advanceFocus(FocusDirection, KeyboardEvent*, bool initialFocus = false);
 
     WEBCORE_EXPORT bool setFocusedElement(Element*, PassRefPtr<Frame>, FocusDirection = FocusDirectionNone);
+
+    // A frame's document remembers its focused element when the focus leaves it for another document, or the element
+    // a client asked to focus while its frame didn't have the focus (rememberFocusedElement()). Giving the frame the
+    // focus explicitly (focusing its <iframe>, QWebFrame::setFocus()) focuses that element again.
+    WEBCORE_EXPORT void setFocusedFrameRestoringElement(Frame*);
+    WEBCORE_EXPORT void rememberFocusedElement(Element&);
+    void forgetRememberedFocusedElement(Document&);
+
+    // True if frame is inside a frame whose owner element isn't rendered or is invisible (e.g. a hidden tab).
+    WEBCORE_EXPORT static bool isInHiddenFrame(Frame&);
+    // True if the focused frame is inside a frame whose owner element in document is hidden.
+    bool focusIsInFrameHiddenBy(Document&) const;
+    // If so, moves the focus to document's frame, remembering the hidden frame's focused element.
+    void moveFocusOutOfFramesHiddenBy(Document&);
 
     void setViewState(ViewState::Flags);
 
@@ -122,6 +138,9 @@ private:
 
     void focusRepaintTimerFired();
 
+    void rememberCurrentFocusedElement(Document&);
+    void restoreRememberedFocusedElement(Frame&);
+
     Page& m_page;
     RefPtr<Frame> m_focusedFrame;
     bool m_isChangingFocusedFrame;
@@ -129,6 +148,8 @@ private:
 
     Timer m_focusRepaintTimer;
     double m_focusSetTime;
+
+    HashMap<Document*, RefPtr<Element>> m_rememberedFocusedElements;
 };
 
 } // namespace WebCore

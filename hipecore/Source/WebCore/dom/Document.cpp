@@ -1735,17 +1735,19 @@ void Document::recalcStyle(Style::Change change)
         frameView.frame().mainFrame().eventHandler().dispatchFakeMouseMoveEventSoon();
 
     // A focused element that is no longer rendered (e.g. display:none) or can no longer take focus (e.g. disabled)
-    // loses the focus, so keys stop going to an element the user can't see or use. It's checked again and blurred
-    // after the current task, with layout up to date: blurring runs event handling that mustn't happen mid-update.
-    if (m_focusedElement && (!m_focusedElement->renderer() || m_focusedElement->renderer()->style().visibility() != VISIBLE
-        || !m_focusedElement->supportsFocus())) {
+    // loses the focus, so keys stop going to an element the user can't see or use; so does a frame hidden while it
+    // has the focus (e.g. an inactive tab), the focus moving to this document. It's checked again and done after the
+    // current task, with layout up to date: blurring runs event handling that mustn't happen mid-update.
+    bool focusInHiddenFrame = page() && page()->focusController().focusIsInFrameHiddenBy(*this);
+    if (focusInHiddenFrame || (m_focusedElement && (!m_focusedElement->renderer()
+        || m_focusedElement->renderer()->style().visibility() != VISIBLE || !m_focusedElement->supportsFocus()))) {
         postTask([] (ScriptExecutionContext& context) {
             Document& document = downcast<Document>(context);
-            RefPtr<Element> focused = document.focusedElement();
-            if (!focused)
-                return;
             document.updateLayoutIgnorePendingStylesheets();
-            if (document.focusedElement() != focused || focused->isFocusable())
+            if (Page* page = document.page())
+                page->focusController().moveFocusOutOfFramesHiddenBy(document);
+            RefPtr<Element> focused = document.focusedElement();
+            if (!focused || focused->isFocusable())
                 return;
             // As when the focused element is removed: blur it without touching a selection elsewhere in the
             // document (e.g. a find match), but drop a selection inside it, which typing would otherwise go on editing.
@@ -2161,6 +2163,8 @@ void Document::prepareForDestruction()
     disconnectDescendantFrames();
     if (m_domWindow && m_frame)
         m_domWindow->willDetachDocumentFromFrame();
+    if (Page* page = this->page())
+        page->focusController().forgetRememberedFocusedElement(*this);
 
     if (hasLivingRenderTree())
         destroyRenderTree();
