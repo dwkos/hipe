@@ -222,6 +222,7 @@ void initInstructionMap() {
     handlerInfo[HIPE_OP_FIFO_RESPONSE].ptrtype.withargs = handle_MESSAGE;
     handlerInfo[HIPE_OP_FIFO_DROP_PEER].ptrtype.withargs = handle_MESSAGE;
     handlerInfo[HIPE_OP_FIFO_GET_PEER].ptrtype.withargs = handle_MESSAGE;
+    handlerInfo[HIPE_OP_FIFO_INFO].ptrtype.withargs = handle_MESSAGE;
     handlerInfo[HIPE_OP_OPEN_LINK].ptrtype.withargs = handle_MESSAGE;
     handlerInfo[HIPE_OP_EDIT_CONTEXT_REQUEST].ptrtype.withargs = handle_MESSAGE;
     handlerInfo[HIPE_OP_MESSAGE].numargs = 4;
@@ -232,6 +233,7 @@ void initInstructionMap() {
     handlerInfo[HIPE_OP_FIFO_RESPONSE].numargs = 4;
     handlerInfo[HIPE_OP_FIFO_DROP_PEER].numargs = 4;
     handlerInfo[HIPE_OP_FIFO_GET_PEER].numargs = 4;
+    handlerInfo[HIPE_OP_FIFO_INFO].numargs = 4;
     handlerInfo[HIPE_OP_OPEN_LINK].numargs = 4;
     handlerInfo[HIPE_OP_EDIT_CONTEXT_REQUEST].numargs = 4;
 
@@ -1322,7 +1324,7 @@ void handle_DIALOG(Container* c, hipe_instruction* instruction, bool, QWebElemen
         }
     } else { //relay to parent frame.
         target->receiveMessage(instruction->opcode, instruction->requestor, 
-                {arg[0],arg[1],arg[2],arg[3]}, c->webElement.webFrame(), false);
+                {arg[0],arg[1],arg[2],arg[3]}, c->frame, false);
         //this sends the instruction to the parent's client.
     }
 }
@@ -1440,7 +1442,7 @@ void handle_MESSAGE(Container* c, hipe_instruction* instruction, bool locationSp
         if(tc) target = tc->container;
     } else { //send to parent element
         target = c->getParent();
-        sourceframe = c->webElement.webFrame();
+        sourceframe = c->frame; //not webElement.webFrame(): a framed client has no body element until it adds content
     }
     if(target) { //send the instruction to the destination. (at top level, target is nullptr)
         target->receiveMessage(instruction->opcode, instruction->requestor,

@@ -734,6 +734,17 @@ extern "C" {
  * no element in it. arg[0] is the message.
  */
 
+#define HIPE_OP_FIFO_INFO 87
+/* Properties of a FIFO relationship, relayed like the other FIFO instructions. arg[0] == the resource path;
+ * arg[1] == properties stated by the framing manager; arg[2] == properties the application at the other end stated
+ * about itself; arg[3] reserved. Properties are "key=value" lines; a message carries only keys that changed, an
+ * empty value means no longer known, unknown keys are ignored. The framing manager sends arg[1] to both ends after a
+ * successful HIPE_OP_FIFO_RESPONSE and when its properties change, relays an application's arg[2] to the other end
+ * (never copying it into arg[1]), and answers a message with arg[1] and arg[2] both empty with its arg[1] to the
+ * sender only. Keys from the framing manager: "ability" (the name of the ability the user chose), "peer-title" (the
+ * other end's title as shown to the user).
+ */
+
 #define HIPE_PROTOCOL_VERSION "3"
 /* Sent by the client library in arg[3] of HIPE_OP_REQUEST_CONTAINER. The server refuses a missing or older version.
  */
