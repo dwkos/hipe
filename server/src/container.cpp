@@ -212,6 +212,43 @@ void Container::keyEventOnChildFrame(QWebFrame* origin, bool keyUp, QString keyc
 }
 
 
+void Container::mouseEventOnChildFrame(QWebFrame* origin, const QString& eventName, const QString& button, int x, int y,
+                                       const QString& modifiers) {
+    FrameData* sf = lookupSubFrame(origin);
+    if(!sf || !frame) return;
+
+    //the child's viewport sits at its frame's rectangle, which is in this frame's page coordinates.
+    QRect r = origin->geometry();
+    int pageX = r.x() + x, pageY = r.y() + y;
+
+    //report it on the <iframe> if the client asked. offsetX/offsetY as for any mouse event on the element.
+    hipe_loc location = getIndexOfElement(sf->we);
+    if(location && sf->we.handlesEvent(eventName)) {
+        QString detail = QString("%1,%2,%3,%4,%5,%6").arg(button).arg(pageX).arg(pageY)
+                .arg(pageX - sf->we.offsetLeft()).arg(pageY - sf->we.offsetTop()).arg(modifiers);
+        client->sendInstruction(HIPE_OP_EVENT, eventName == "mousedown" ? sf->mouseDownRequestor : sf->mouseUpRequestor,
+                                location, {eventName.toStdString(), detail.toStdString()});
+    }
+
+    //pass it on to our own parent, at its position in our viewport.
+    if(getParent()) {
+        QPoint scroll = frame->scrollPosition();
+        getParent()->mouseEventOnChildFrame(frame, eventName, button, pageX - scroll.x(), pageY - scroll.y(), modifiers);
+    }
+}
+
+void Container::_receiveMouseEventOnDocument(const QString& eventName, void* containerPtr, uint64_t, uint64_t,
+                                             const QString& eventDetails) {
+    Container* _this = (Container*) containerPtr;
+    if(!_this->getParent() || !_this->frame) return;
+    QStringList d = eventDetails.split(','); //which,pageX,pageY,offsetX,offsetY,modifiers
+    if(d.size() < 6) return;
+    QPoint scroll = _this->frame->scrollPosition();
+    _this->getParent()->mouseEventOnChildFrame(_this->frame, eventName, d[0], d[1].toInt() - scroll.x(),
+                                               d[2].toInt() - scroll.y(), d[5]);
+}
+
+
 char Container::editActionStatus(char action) {
 //for a particular action (e.g. 'x' is cut, 'i' is italic toggle, etc.
 //returns a char to indicate the status of that action:

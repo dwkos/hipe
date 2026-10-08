@@ -55,6 +55,8 @@ public:
     uint64_t keyDownRequestor; //requstors for keyup and keydown events have to be
     //stored separately for iframes, since the event is generated artificially
     //by the container and not by the client application itself.
+    uint64_t mouseDownRequestor = 0;
+    uint64_t mouseUpRequestor = 0; //likewise for mousedown and mouseup anywhere in the frame.
     std::string clientName;
     std::string title;
     pid_t pid; //client process ID. pid_t defined in <types.h>
@@ -123,6 +125,12 @@ public:
     //It should also trigger a simulated event on the frame to this client,
     //if this client has requested keydown/keyup events on this frame.
 
+    void mouseEventOnChildFrame(QWebFrame* origin, const QString& eventName, const QString& button, int x, int y,
+                                const QString& modifiers);
+    //Called from a child container when the user presses or releases a mouse button anywhere in its frame (or in a
+    //frame nested in it). x,y is the position in the child frame's viewport. Reports the event on the <iframe> if this
+    //client requested mousedown/mouseup on it, in this frame's page coordinates, and passes it on to our parent.
+
     virtual Container* getParent()=0; //returns the parent container, or nullptr if it's a top level container.
 
     char editActionStatus(char action);
@@ -181,6 +189,10 @@ protected:
     //into a pointer to the corresponding QAction object with methods to trigger that
     //action and check its toggle state.
 
+    static void _receiveMouseEventOnDocument(const QString& eventName, void* containerPtr, uint64_t, uint64_t,
+                                             const QString& eventDetails);
+    //hiped's own mousedown/mouseup listener on a framed client's <html> element (which the client can't address,
+    //so its own requests and cancellations never touch it); passes the press on to the parent.
     static void _receiveKeyEventOnBody(const QString& eventName, void* containerPtr, uint64_t isKeyUp,
                                         uint64_t requestor, const QString& eventDetails);
 

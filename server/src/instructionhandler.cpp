@@ -763,13 +763,16 @@ void handle_SET_STYLE(Container* c, hipe_instruction*, bool locationSpecified, Q
 void handle_EVENT_REQUEST(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location, std::string arg[]) {
     arg[0] = Sanitation::toLower(arg[0].c_str(), arg[0].size()); //sanitise against user overriding event attributes with uppercase equivalents.
 
-    //special case: iframes need the requestor value to be stored separately for keydown/keyup events.
-    if(locationSpecified && (arg[0] == "keydown" || arg[0] == "keyup")) {
+    //special case: iframes need the requestor value to be stored separately for keydown/keyup and mousedown/mouseup
+    //events, which hiped reports for the whole frame (see Container::keyEventOnChildFrame/mouseEventOnChildFrame).
+    if(locationSpecified && (arg[0] == "keydown" || arg[0] == "keyup" || arg[0] == "mousedown" || arg[0] == "mouseup")) {
         //check if the location is an iframe. If so, store the requestor values in the frame data.
         FrameData* fd = c->lookupSubFrame(location);
         if(fd) { //if this is a subframe, store the requestor values in the frame data.
             if(arg[0] == "keydown") fd->keyDownRequestor = instruction->requestor;
             else if(arg[0] == "keyup") fd->keyUpRequestor = instruction->requestor;
+            else if(arg[0] == "mousedown") fd->mouseDownRequestor = instruction->requestor;
+            else fd->mouseUpRequestor = instruction->requestor;
         }
     }
 

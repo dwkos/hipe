@@ -101,6 +101,9 @@ extern "C" {
  * Ctrl+wheel, "*" = every event. "-" cancels nothing. The rules replace any from an earlier request for the event
  * there. Empty cancels nothing, except for "contextmenu", whose default (the framing manager's edit menu) is
  * cancelled unless arg[1] is "-".
+ * On a child <iframe>, keydown/keyup report keys typed anywhere inside that frame, and mousedown/mouseup presses
+ * anywhere inside it (nested frames included), with pageX/pageY/offsetX/offsetY in the requesting client's own
+ * coordinates, as if on the iframe element.
  * */
 
 #define HIPE_OP_FREE_LOCATION      10

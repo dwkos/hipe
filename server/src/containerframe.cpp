@@ -72,6 +72,11 @@ void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
         webElement.requestEvent("keyup", (void*)this, 1, 0, _receiveKeyEventOnBody, false);
         webElement.requestEvent("keydown", (void*)this, 0, 0, _receiveKeyEventOnBody, false);
         webElement.requestEvent("dragstart", 0,0,0, _receiveDragStartEvent, true); //catch the event to override default dragging behaviour.
+        //Presses anywhere in the frame bubble up to <html>, which clients can't address, so their own requests for
+        //and cancellations of mouse events never touch these. (setHtml("") in the destructor removes them.)
+        QWebElement html = frame->documentElement();
+        html.requestEvent("mousedown", (void*)this, 0, 0, _receiveMouseEventOnDocument, false);
+        html.requestEvent("mouseup", (void*)this, 0, 0, _receiveMouseEventOnDocument, false);
     }
     if(overwrite) webElement.setInnerXml(newBodyHtml.c_str());
     else webElement.appendInside(newBodyHtml.c_str()); //c_str() conversion is adequate since any binary data will be in safe base64 encoding.
