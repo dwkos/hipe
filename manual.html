@@ -205,6 +205,27 @@ hr {
     color: inherit;
     text-decoration: underline;
 }
+
+table {
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+th, td {
+    border: 1px solid #a0d0d0;
+    padding: 0.35em 0.8em;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background-color: #e8f6f6;
+    color: #004040;
+}
+
+td:first-child tt {
+    white-space: nowrap;
+}
     </style>
     <style type="text/css">
         .unrolltoc { margin-bottom: 3em; }
@@ -408,66 +429,49 @@ and leaves hardware, input devices and drivers to the platform beneath it.</p>
 <div class="unrollsection unrollsection1">
 <h1>Installing Hipe</h1>
 
-<p>Installing Hipe is easy once you have the required dependencies. However,
-exactly how you configure Hipe to run on your target system will differ
-depending on your requirements. (For example, if you are building an embedded
-device that uses Hipe for its entire user interface, you would configure Hipe
-to run your entire desktop environment. If you are installing Hipe on an
-Ubuntu desktop to develop software on, you might prefer to run Hipe within
-your existing desktop environment.)</p>
-
-<p>The steps are as follows:</p>
+<p>Hipe is built from source, in this order:</p>
 
 <ol>
   <li>Install the dependencies.</li>
   <li>Build and install <em>hipecore</em>, the display engine.</li>
-  <li>Build and install the display server program, known as
-<tt>hiped</tt>.</li>
-  <li>Build and install the display server program, known as
-<tt>hiped</tt>.</li>
+  <li>Build and install <tt>hiped</tt>, the display server.</li>
   <li>Configure <tt>hiped</tt> to start automatically.</li>
-  <li>Install the API. This is not required for running applications built for
-Hipe, but is necessary for developing such applications. You will need the API
-to build the test applications. These will allow you to make sure that everything
-is working correctly.</li>
-  <li>Build and install the test applications if desired.</li>
+  <li>Build and install the client library, <tt>libhipe</tt>, and the sample applications. Running Hipe
+applications doesn't need the library; building them does.</li>
 </ol>
 
-
-<p>These instructions assume you have downloaded the Hipe distribution into
-some directory called hipe. You will not need superuser privileges except 
-for certain steps where stated.</p>
-
-<p>A <tt>$</tt> prompt in these instructions means you type the command as a normal
-user, while a <tt>#</tt> means you type the command with superuser privileges (or by
-prefixing it with <tt>sudo</tt> if your OS distribution allows it). Please don't
-literally type those prompt characters.</p>
+<p>The instructions assume you have the Hipe source in a directory named <tt>hipe</tt> (see
+<a href="http://hipe.generaldevelopment.net/?l1=download">Download</a>), and start each step from that directory. A <tt>$</tt> prompt means a
+command run as a normal user, and <tt>#</tt> one run as root (for example with <tt>sudo</tt>). Don't type
+the prompt itself.</p>
 
 <hr/>
 
 <h2>Install the dependencies</h2>
 
-<p>We assume you have a working X installation. You will also need the
-development files for Qt 5.15. Earlier Qt 5 releases are not supported, and Qt 6 is not supported yet.
-Qt must be built with STL support as Hipe requires it.</p>
+<p>You need the development files for Qt 5.15. Earlier Qt 5 releases are not supported, and Qt 6 is not
+supported yet. To use Hipe within a desktop, you also need an X11 or Wayland session.</p>
 
 <p>You don't need your distribution's QtWebKit packages (such as <tt>libqt5webkit5-dev</tt>): hipecore,
-built in the next step, takes their place. See the <a href="http://hipe.generaldevelopment.net/?l1=status&l2=Status">Status</a> page.</p>
+built in the next step, takes their place.</p>
 
 <h2>Build and install hipecore</h2>
 
 <p><em>hipecore</em> is Hipe's display engine: a leaner, modified WebKit engine purpose-built for Hipe.
-The display server requires it. It is in the <tt>hipecore</tt> subdirectory of the hipe distribution:</p>
+The display server requires it.</p>
 
 <pre>
-<span style="color:grey">$</span> cd hipe/hipecore/
-<span style="color:grey">$</span> mkdir build && cd build
+<span style="color:grey">$</span> cd hipecore
+<span style="color:grey">$</span> mkdir build &amp;&amp; cd build
 <span style="color:grey">$</span> cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
 <span style="color:grey">$</span> ninja
 <span style="color:grey">#</span> ninja install
 </pre>
 
-<p>Building hipecore has its own set of dependencies (CMake, Ninja, a C++17-capable compiler, Qt5 development packages, and a handful of image/XML/multimedia libraries), which vary somewhat by distribution &mdash; if the <tt>cmake</tt> step fails, its output will generally tell you which package is missing. See <tt>hipecore/README.md</tt> for its build instructions and list of dependencies.</p>
+<p>hipecore has its own build dependencies: CMake, Ninja, a C++17 compiler, the Qt 5 development packages
+and a handful of image, XML and multimedia libraries. <tt>hipecore/README.md</tt> lists them for
+Debian-based systems; elsewhere, if the <tt>cmake</tt> step fails, its output says which package is
+missing.</p>
 
 <p>This installs the libraries <tt>libHipeCore</tt> and <tt>libHipeCoreWidgets</tt>, and their headers in
 <tt>/usr/include/HipeCore</tt>.</p>
@@ -475,240 +479,105 @@ The display server requires it. It is in the <tt>hipecore</tt> subdirectory of t
 <p>This is a large build. On a machine with little memory, limit the number of parallel jobs, e.g.
 <tt>ninja -j2</tt>.</p>
 
-<h2>Dependencies of the display server</h2>
+<h2>Build and install <tt>hiped</tt></h2>
 
-<p>The display server itself needs the Qt 5.15 development files, including the Qt SVG
-module. On a Debian-based system:</p>
-
-<pre>
-<span style="color:grey">$</span> sudo apt install qtbase5-dev libqt5svg5-dev
-</pre>
-
-<p>If a module is missing, <tt>qmake</tt> stops in the next section with a message such as
-<tt>Unknown module(s) in QT: svg</tt>. Hipe requires Qt version 5.15. On a system that also has another
-version of Qt installed, <tt>qmake</tt> may belong to that version; in that case try
-<tt>qmake -qt=5</tt> or <tt>qmake-qt5</tt> in its place.</p>
-
-<p>If in doubt, the following command will tell you which version of Qt is set
-up as the current default version:</p>
-
-<pre>
-<span style="color:grey">$</span> qmake --version
-</pre>
-
-<p>You may also need to install other Qt development packages if you don't
-already have them. If the server refuses to compile in the
-following step, it means you're missing one or more Qt components.</p>
-
-
-<h2>Build <tt>hiped</tt></h2>
-
-<p>hiped is the display server itself. If you have Qt Creator (a graphical IDE
-developed by the Qt people), you can open the hiped project file and build
-hiped in the graphical environment.</p>
-
-<p>The following instructions don't require Qt Creator, and assume you will be
-building it from the terminal, the old-fashioned way.
-
-<p>First, enter the <tt>server</tt> subdirectory of the hipe distribution.</p>
-
-<pre>
-<span style="color:grey">$</span> cd hipe/server/
-</pre>
-
-<p>Now use <tt>qmake</tt> to configure and build the Makefile for your
+<p>The display server needs the Qt 5.15 development files, including the Qt SVG module. On a Debian-based
 system:</p>
 
 <pre>
-<span style="color:grey">$</span> qmake -makefile ./src/hiped.pro
+<span style="color:grey">#</span> apt install qtbase5-dev libqt5svg5-dev
 </pre>
 
-<p>Then run the following command to build the hiped executable from
-source:</p>
+<p>Then build it:</p>
 
 <pre>
+<span style="color:grey">$</span> cd server
+<span style="color:grey">$</span> qmake -makefile ./src/hiped.pro
 <span style="color:grey">$</span> make
 </pre>
 
-<p>An executable file,
-<tt>hiped</tt> should now be present in the current directory.
-The Hipe display server can now be run directly using the <tt>hiped</tt>
-executable if desired, however it is often more convenient to install it in a permanent location.</p>
+<p>If a Qt module is missing, <tt>qmake</tt> stops with a message such as
+<tt>Unknown module(s) in QT: svg</tt>. On a system that also has another version of Qt installed,
+<tt>qmake</tt> may belong to that version (check with <tt>qmake --version</tt>); use <tt>qmake -qt=5</tt>
+or <tt>qmake-qt5</tt> in its place.</p>
 
-<h2>Install the compiled display server</h2>
+<p>This produces the <tt>hiped</tt> executable in <tt>server/</tt>. It can be run from there, but it is
+usually installed for all users:</p>
 
-<p>Running make will produce the <tt>hiped</tt> executable but will not
-install it. The following describes a typical installation. In some cases your requirements may differ, and it is quite OK to modify your deployment accordingly. (Experiment as needed!)</p>
-
-<p>First, it is recommended to copy the
-<tt>hiped</tt> executable file into your system's <tt>/usr/local/bin/</tt> directory.
-It is recommended to check the file permissions to ensure that all users have permission to execute <tt>hiped</tt>.
-</p>
-
-<p>Now you will need to configure your system to run <tt>hiped</tt>
-automatically so that applications that depend on Hipe can find the running
-display server.</p>
+<pre>
+<span style="color:grey">#</span> cp hiped /usr/local/bin/
+</pre>
 
 <h2>Configure <tt>hiped</tt></h2>
 
-<h3>Running on an existing desktop environment</h3>
+<h3>Within an existing desktop environment</h3>
 
-<p>Unless you're preparing <tt>hiped</tt> to run in its own standalone display
-environment, <tt>hiped</tt> needs to be started within a graphical environment
-compatible with Qt applications (such as X11 or Wayland).</p>
-
-<p><strong>Configure the following command to run on user login, within the user's graphical
-desktop environment:</strong></p>
-
-<pre>hiped &</pre>
-
-<p>For example, the command could be added to the appropriate session startup
-script (e.g. Xsession or .xprofile). The exact script to modify will differ depending on your OS distribution, or your OS distro may provide another way to configure applications to run on startup.</p>
-
-<p>Now the Hipe display server is available from the moment the user logs in. The <tt>hiped</tt> background process is lightweight and consumes only minimal CPU and RAM resources until it is actually required.</p>
-
-
-<h3>Running as the entire desktop</h3>
-
-<p>To make Hipe the whole desktop, whether on a workstation or an embedded device, start a bare X11 session
-(with no window manager or desktop environment) and run <tt>hiped</tt> with the <tt>--fill</tt> option. A
-bare X11 session is the simplest base and has the widest driver support. <tt>hiped</tt> can also run
-directly on the graphics hardware through EGLFS, if hipecore is built for it.</p>
-<p>The <tt>--fill</tt> option makes top-level applications fill the entire screen.</p>
+<p>Start <tt>hiped</tt> when the user logs in to their desktop, for example by adding this line to the
+session's startup script (such as <tt>.xprofile</tt>) or to the desktop's autostart settings:</p>
 
 <pre>
-<span style="color:grey">$</span> hiped --fill &
+<span style="color:grey">$</span> hiped &amp;
 </pre>
 
-<p>The <tt>server/start_hipe_standalone_x11</tt> script (which must be run from a
-virtual console TTY in Linux) gives a rudimentary
-example of how to start Hipe as a standalone display environment on a bare X11 session.</p>
+<p><tt>hiped</tt> uses very little CPU or memory until an application connects.</p>
 
-<p>If more than one application will run, the first top-level application should be a framing manager
-that hosts the others; the <tt>hipe-quadrant</tt> sample is a very simple one. See
-<a href="#documentation-running-hiped">Running hiped</a> for how to give applications keys to
-frames inside it.</p>
+<h3>As the entire desktop</h3>
 
-<p>You can also try running</p>
+<p>Where Hipe is the whole desktop, on a workstation or an embedded device, start a bare X11 session (with
+no window manager or desktop environment) and run <tt>hiped</tt> with <tt>--fill</tt>, which makes top-level
+applications fill the screen. <tt>hiped</tt> can also run directly on the graphics hardware through EGLFS,
+if hipecore is built for it.</p>
 
 <pre>
-<span style="color:grey">$</span> hiped --help
+<span style="color:grey">$</span> hiped --fill &amp;
 </pre>
 
-<p>as well as browsing the <a href="#documentation-running-hiped">Running hiped</a> page for various other configuration options, including how to choose Qt's graphics platform
-(X11, Wayland or EGLFS). Refer to the official Qt documentation for details of the platforms. (Hipe has no
-affiliation with the Qt project or Qt developers.)</p>
+<p>The <tt>server/start_hipe_standalone_x11</tt> script, run from a text console, shows one way to do this.
+The first top-level application is normally a framing manager that hosts the others; the
+<tt>hipe-quadrant</tt> sample is a very simple one.</p>
 
+<p>See <a href="#documentation-running-hiped">Running hiped</a> for the other options, including
+choosing Qt's graphics platform and giving applications keys to frames inside your framing manager, or run
+<tt>hiped --help</tt>.</p>
 
 <hr/>
 
-<h2>Compile and install the client API</h2>
-
-<p>So you've installed and configured the Hipe display server. Well, you won't be
-able to do anything interesting with Hipe without some Hipe client apps to run on it, so read on and install the API.</p>
-
-<p>Leave the <tt>server</tt> directory and enter the <tt>api</tt> directory
-instead.</p>
+<h2>Build and install the client library and samples</h2>
 
 <pre>
-<span style="color:grey">$</span> cd ..
-<span style="color:grey">$</span> cd api/
-</pre>
-
-<p>Build the Hipe API library, <tt>libhipe</tt>, by running <tt>make</tt>.
-
-<pre>
+<span style="color:grey">$</span> cd api
 <span style="color:grey">$</span> make
-</pre>
-
-<p>Now it's time to install the <tt>libhipe</tt> library so that <tt>hipe</tt>
-applications can be compiled and linked to it. To see what will happen, have a quick look at the
-<tt>Makefile</tt>, under the <tt>install:</tt> heading.
-
-<pre>
-<span style="color:grey">$</span> cat Makefile
-</pre>
-
-<p>By default, library files will be installed into your <tt>/usr/local/lib/</tt> and
-<tt>/usr/local/include/</tt> directories. This is sensible for most GNU/Linux
-distributions. For certain other system distributions or installation
-requirements, you may need to edit the Makefile to change these paths.</p>
-
-<p>Now install <tt>libhipe</tt> with superuser privileges:</p>
-<pre>
 <span style="color:grey">#</span> make install
-</pre>
-
-<p>And now you can build the test applications.</p>
-
-<pre>
 <span style="color:grey">$</span> make testing
 </pre>
 
-<p>The test applications are now available inside the <tt>api/test/</tt>
-subdirectory.</p>
+<p><tt>make</tt> builds <tt>libhipe</tt>, and <tt>make install</tt> installs it, with its headers, in
+<tt>/usr/local/lib/</tt> and <tt>/usr/local/include/</tt>; edit the paths in the <tt>Makefile</tt> to
+install it elsewhere. <tt>make testing</tt> then builds the sample applications in <tt>api/test/</tt>
+against the installed library.</p>
 
 <h2>Try it</h2>
 
 <p>Start the display server if it isn't already running. From your desktop environment, run it in the
-background from the <tt>server</tt> directory:</p>
+background:</p>
 
 <pre>
-<span style="color:grey">$</span> cd ../server/
-<span style="color:grey">$</span> ./hiped &amp;
+<span style="color:grey">$</span> hiped &amp;
 </pre>
 
 <p>Nothing appears yet: <tt>hiped</tt> shows nothing until an application connects. Now run one of the
 test applications from the same terminal:</p>
 
 <pre>
-<span style="color:grey">$</span> ../api/test/hipe-clock
+<span style="color:grey">$</span> api/test/hipe-clock
 </pre>
 
 <p>A window with a digital clock should open. The application found the display server by itself,
-through the socket and key files that <tt>hiped</tt> creates (see <i>Running hiped</i>). Other test
+through the socket and key files that <tt>hiped</tt> creates (see
+<a href="#documentation-running-hiped">Running hiped</a>). Other test
 applications worth trying are <tt>hipe-calc</tt> (a calculator), <tt>hipe-slider</tt> (range sliders)
 and <tt>hipe-canvas</tt> (a small paint program). Their source code, in <tt>api/test/</tt>, is the
 quickest way to see how a Hipe application is written, and may be copied freely into your own.</p>
-
-<hr/>
-
-<!--<h2>Testing Hipe</h2>
-
-<p>Start the Hipe display server. You can either run <tt>server/hiped</tt>
-directly from within your favourite X-based desktop environment (you won't see
-any visual feedback until you run one of the test applications in
-<tt>api/test/</tt>), or you can run it as a quasi-standalone display server as
-follows:</p>
-
-<p>Switch to a text-only virtual terminal (e.g. press
-<tt>Ctrl+Alt+F2</tt> for the second virtual terminal, etc.). This step is
-necessary as the minimal X environment we need won't start from within another X environment.</p>
-
-<p>Now enter the <tt>hipe/server</tt> subdirectory and run the rudimentary
-shell script.</p>
-
-<pre>
-<span style="color:grey">$</span> cd hipe/server/
-<span style="color:grey">$</span> ./start_hipe_standalone_x11
-</pre>
-
-If all goes well, you'll get a black screen on the virtual terminal at
-<tt>Ctrl+Alt+F8</tt> (the exact position of this virtual terminal will vary
-depending on your system distribution. Try all of the <tt>Ctrl+Alt+F&hellip;</tt>key combinations!)</p>
-
-<p>To begin seeing stuff on the screen, switch to another virtual terminal,
-start one of the test applications in <tt>hipe/api/test/</tt>, and switch back
-to the terminal running <tt>hiped</tt>. By default, applications start at the
-top level, which means they will fill the screen. <tt>quadrant</tt> is a
-sample framing manager that allows you to (manually) run applications below
-the top level.</p>
-
-<p>When you run the test applications, they will connect to the running
-<tt>hiped</tt> session and appear on the screen or framebuffer device where
-<tt>hiped</tt> is running.</p>
-
--->
 </div>
 <h2 id="documentation-running-hiped" class="unrollheading unrollheading1">Running hiped</h2>
 <div class="unrollsection unrollsection1">
