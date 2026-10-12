@@ -363,7 +363,11 @@ void handle_SET_FOCUS(Container*, hipe_instruction*, bool, QWebElement location)
     location.setFocus();
 }
 
-void handle_GET_GEOMETRY(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
+void handle_GET_GEOMETRY(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location) {
+    if(!locationSpecified) {
+        if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
+        location = c->webElement;
+    }
     std::string left = std::to_string(location.offsetLeft());
     std::string top = std::to_string(location.offsetTop());
     std::string width = std::to_string(location.offsetWidth());
@@ -372,7 +376,11 @@ void handle_GET_GEOMETRY(Container* c, hipe_instruction* instruction, bool, QWeb
                             {left, top, width, height});
 }
 
-void handle_GET_SCROLL_GEOMETRY(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
+void handle_GET_SCROLL_GEOMETRY(Container* c, hipe_instruction* instruction, bool locationSpecified, QWebElement location) {
+    if(!locationSpecified) {
+        if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
+        location = c->webElement;
+    }
     std::string left = std::to_string(location.scrollLeft());
     std::string top = std::to_string(location.scrollTop());
     std::string width = std::to_string(location.scrollWidth());

@@ -14,10 +14,10 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/* Instructions not covered by the other tests: tree navigation, CLEAR/DELETE, classes and attributes, caret and
- * selection, FIND_TEXT, MEASURE_TEXT, GET_RANGE_GEOMETRY, GET_SRC, scrolling, EDIT_STATUS/EDIT_ACTION and a click
- * event. Run by run.sh against a private hiped, as the top-level client; the click uses xdotool on $DISPLAY.
- * Prints PASS/FAIL lines and exits non-zero if anything failed. */
+/* Instructions not covered by the other tests: GET_GEOMETRY before any content, tree navigation, CLEAR/DELETE,
+ * classes and attributes, caret and selection, FIND_TEXT, MEASURE_TEXT, GET_RANGE_GEOMETRY, GET_SRC, scrolling,
+ * EDIT_STATUS/EDIT_ACTION and a click event. Run by run.sh against a private hiped, as the top-level client; the click
+ * uses xdotool on $DISPLAY. Prints PASS/FAIL lines and exits non-zero if anything failed. */
 
 #include <hipe.h>
 #include <stdio.h>
@@ -65,6 +65,11 @@ int main() {
     s = hipe_open_session(0, 0, 0, "instructions");
     if(!s) return 2;
     hipe_instruction_init(&last);
+
+    /* geometry of the body as the very first instruction, before any content */
+    ask(0, HIPE_OP_GET_GEOMETRY, HIPE_OP_GEOMETRY_RETURN, 0, "", ""); argOf(2);
+    CHECK("GET_GEOMETRY of the body before any content", atoi(v) > 0);
+
     hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "div", "font: 20px monospace; line-height: 30px; margin: 0; padding: 0; border: 0");
 
     /* tree navigation */

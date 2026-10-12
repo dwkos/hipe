@@ -62,7 +62,7 @@ static void focus(hipe_loc l) { hipe_send(s, HIPE_OP_SET_FOCUS, 0, l, 0); }
 
 static void drain() {
     hipe_instruction in; hipe_instruction_init(&in);
-    while(hipe_next_instruction(s, &in, 0)) {
+    while(hipe_next_instruction(s, &in, 0) > 0) {
         if(in.opcode == HIPE_OP_EVENT) {
             char e[96]; snprintf(e, sizeof e, "%.*s@%s%s%.*s ", (int)in.arg_length[0], in.arg[0], nameOf(in.location),
                 in.arg_length[1] ? ":" : "", (int)(in.arg_length[1] > 12 ? 12 : in.arg_length[1]), in.arg[1] ? in.arg[1] : "");
@@ -141,7 +141,7 @@ static void grandchildMain(const char* key) {
     hipe_send(gs, HIPE_OP_APPEND_TAG, 0, 0, 4, "input", "", "", "");
     hipe_send(gs, HIPE_OP_SET_FOCUS, 0, hipe_newest_location(), 0);
     hipe_instruction in; hipe_instruction_init(&in);
-    while(hipe_next_instruction(gs, &in, 1)) hipe_instruction_clear(&in);
+    while(hipe_next_instruction(gs, &in, 1) > 0) hipe_instruction_clear(&in);
     _exit(0);
 }
 
@@ -179,7 +179,7 @@ static void childMain(const char* key) {
             hipe_send(cs, HIPE_OP_GET_ATTRIBUTE, 0, 0, 1, "x");
             hipe_await_instruction(cs, &r, HIPE_OP_ATTRIBUTE_RETURN);
             int n = 0; hipe_instruction e; hipe_instruction_init(&e);
-            while(hipe_next_instruction(cs, &e, 0)) {
+            while(hipe_next_instruction(cs, &e, 0) > 0) {
                 if(e.opcode == HIPE_OP_EVENT && e.location == gf) n++;
                 hipe_instruction_clear(&e);
             }
@@ -204,7 +204,7 @@ static void decoyMain() {
     if(!d) _exit(1);
     hipe_send(d, HIPE_OP_APPEND_TAG, 0, 0, 4, "div", "", "", "decoy window");
     hipe_instruction in; hipe_instruction_init(&in);
-    while(hipe_next_instruction(d, &in, 1)) hipe_instruction_clear(&in);
+    while(hipe_next_instruction(d, &in, 1) > 0) hipe_instruction_clear(&in);
     _exit(0);
 }
 static char* readKey() {
