@@ -24,8 +24,8 @@ This is one project with three parts, side by side:
 The parts talk to each other only at two seams: clients and server over the socket protocol, and server
 and engine through the `QWeb*` C++ API. There is no shared build system.
 
-**Version 3.0 alpha.** The tree starts from Hipe 2.12 and hipecore 0.6 beta ("classic" Hipe), which were
-separate projects. Classic Hipe could also be built against stock Qt5WebKit; 3.0 cannot. The server's
+**Version 3.1 beta.** The tree starts from Hipe 2.12 and hipecore 0.6 beta ("classic" Hipe), which were
+separate projects. Classic Hipe could also be built against stock Qt5WebKit; Hipe 3 cannot. The server's
 stock-Qt5WebKit code paths (the `HAVE_HIPECORE` guards and their `evaluateJavaScript` fallbacks) have been
 removed, and the macro itself is gone: don't add new ones. hipecore is the only engine, and JavaScript is not available to the server.
 
@@ -113,7 +113,7 @@ Defined in `server/src/hipe_instruction.h` (shared with the API via symlink). A 
 fixed-shape struct: an opcode byte (`HIPE_OP_*`), a `location` (an opaque handle to a DOM node), a
 `requestor` id, and up to four variable-length arguments. Each opcode's arguments are documented next to
 its `#define` in that header and, more fully, in the manual on the project website
-(`manual.html` here is an archived copy from 2.12). The header and the manual should agree; when changing
+(`manual.html` here is a copy made with the release, by `~/Desktop/make_hipe_manual.py`). The header and the manual should agree; when changing
 an instruction, update both.
 
 ### Client side (`api/`)

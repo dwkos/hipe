@@ -8,7 +8,7 @@ send pages: they connect over a local socket and build their interface as a live
 HTML elements and CSS styles, which the display server lays out and renders. See `ABOUT.txt`
 for the idea behind it.
 
-Version 3.0 alpha.
+Version 3.1 beta.
 
 What is here
 ------------
@@ -26,21 +26,21 @@ Getting started
 library and samples.
 
 The manual, including the reference for every instruction an application can send, is at
-http://hipe.generaldevelopment.net. `manual.html` in this directory is an archived copy from
-version 2.12, for reading without a network connection.
+http://hipe.generaldevelopment.net. `manual.html` in this directory is a copy of it as of this
+version, for reading without a network connection.
 
 Status of this version
 ----------------------
 
-3.0 is the first version in which the client library, the server and the display engine are
+Hipe 3 is the first version in which the client library, the server and the display engine are
 one project. It starts from Hipe 2.12 and hipecore 0.6 beta, which were published separately
 and remain available from the website's Download page as "classic" Hipe.
 
-Classic Hipe could also be built against stock Qt5WebKit. Version 3.0 cannot: hipecore is
+Classic Hipe could also be built against stock Qt5WebKit. Hipe 3 cannot: hipecore is
 Hipe's display engine, and the server needs it.
 
-3.0 uses version 3 of the protocol, and the server refuses clients built with the 2.x client
-library. Rebuild applications against the 3.0 library.
+Hipe 3 uses version 3 of the protocol, and the server refuses clients built with the 2.x client
+library. Rebuild applications against the version 3 library.
 
 Licensing
 ---------
