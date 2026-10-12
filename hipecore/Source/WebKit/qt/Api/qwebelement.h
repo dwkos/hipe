@@ -77,6 +77,12 @@ public:
     void setOuterXml(const QString& markup);
     QString toOuterXml() const;
 
+    // Set (setText) or append (appendText) text without parsing it: every character is kept as given, except that
+    // "\r\n" and "\r" become "\n", as the HTML parser would store them. Long text is split into text nodes as the
+    // parser splits it. Void HTML elements (input, img, br...) ignore it. In a <style> element the text is the CSS.
+    void setText(const QString& text);
+    void appendText(const QString& text);
+
     void setInnerXml(const QString& markup);
     // Markup insertion and Hipe location attributes: setInnerXml(), appendInside() and prependOutside() remove the
     // hipe-loc attribute from every element the markup creates, before inserting it. These overloads also list each

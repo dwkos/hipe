@@ -14,10 +14,10 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/* Instructions not covered by the other tests: GET_GEOMETRY before any content, tree navigation, CLEAR/DELETE,
- * classes and attributes, caret and selection, FIND_TEXT, MEASURE_TEXT, GET_RANGE_GEOMETRY, GET_SRC, scrolling,
- * EDIT_STATUS/EDIT_ACTION and a click event. Run by run.sh against a private hiped, as the top-level client; the click
- * uses xdotool on $DISPLAY. Prints PASS/FAIL lines and exits non-zero if anything failed. */
+/* Instructions not covered by the other tests: GET_GEOMETRY before any content, text mode 0, tree navigation,
+ * CLEAR/DELETE, classes and attributes, caret and selection, FIND_TEXT, MEASURE_TEXT, GET_RANGE_GEOMETRY, GET_SRC,
+ * scrolling, EDIT_STATUS/EDIT_ACTION and a click event. Run by run.sh against a private hiped, as the top-level client;
+ * the click uses xdotool on $DISPLAY. Prints PASS/FAIL lines and exits non-zero if anything failed. */
 
 #include <hipe.h>
 #include <stdio.h>
@@ -69,6 +69,8 @@ int main() {
     /* geometry of the body as the very first instruction, before any content */
     ask(0, HIPE_OP_GET_GEOMETRY, HIPE_OP_GEOMETRY_RETURN, 0, "", ""); argOf(2);
     CHECK("GET_GEOMETRY of the body before any content", atoi(v) > 0);
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, 0, 2, "a<b> & 'c'", "0");
+    CHECK("SET_TEXT mode 0 on the body", !strcmp(content(0, "0"), "a<b> & 'c'"));
 
     hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "div", "font: 20px monospace; line-height: 30px; margin: 0; padding: 0; border: 0");
 
@@ -190,6 +192,35 @@ int main() {
     hipe_send(s, HIPE_OP_SCROLL_TO, 0, sc, 3, "", "100", "%");
     ask(sc, HIPE_OP_GET_SCROLL_GEOMETRY, HIPE_OP_GEOMETRY_RETURN, 0, "", ""); argOf(1);
     CHECK("SCROLL_TO 100% reaches the end", atoi(v) == 900);
+
+    /* text mode 0: set without parsing */
+    hipe_send(s, HIPE_OP_CLEAR, 0, 0, 0);
+    hipe_loc t0 = tag(0, "pre", "", "", "");
+    const char* typed = "if(a < b && c > d) s = \"<b>&amp;</b>\"; // 'x'";
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, t0, 2, typed, "0");
+    CHECK("SET_TEXT mode 0 reads back as sent", !strcmp(content(t0, "0"), typed));
+    hipe_send(s, HIPE_OP_APPEND_TEXT, 0, t0, 2, " <i>&lt;", "0");
+    CHECK("APPEND_TEXT mode 0 reads back as sent", !strcmp(content(t0, "0") + strlen(typed), " <i>&lt;"));
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, t0, 2, "\na\r\nb\rc", "0");
+    CHECK("mode 0: leading newline kept, CR and CRLF stored as a newline", !strcmp(content(t0, "0"), "\na\nb\nc"));
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, t0, 2, "", "0");
+    CHECK("SET_TEXT mode 0 with empty text empties the element", !strcmp(content(t0, "1"), ""));
+    {   /* long text: more than one of the engine's text nodes */
+        static char big[300001]; for(int i = 0; i < 300000; i++) big[i] = (i % 80 == 79) ? '\n' : "<a&b>"[i % 5];
+        hipe_send(s, HIPE_OP_SET_TEXT, 0, t0, 2, big, "0"); content(t0, "0");
+        CHECK("SET_TEXT mode 0, 300 kB", last.arg_length[0] == 300000 && !memcmp(last.arg[0], big, 300000));
+        hipe_send(s, HIPE_OP_APPEND_TEXT, 0, t0, 2, big, "0"); content(t0, "0");
+        CHECK("APPEND_TEXT mode 0, 300 kB more", last.arg_length[0] == 600000 && !memcmp(last.arg[0] + 300000, big, 300000));
+    }
+    hipe_loc in0 = tag(0, "input", "", "", "");
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, in0, 2, "x", "0");
+    CHECK("SET_TEXT mode 0 on an input does nothing", !strcmp(content(in0, "0"), ""));
+    hipe_loc css0 = tag(0, "style", "", "", "");
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, css0, 2, "#m0 > b[title=\"a&b\"] { display: block; width: 77px }", "0");
+    hipe_loc m0 = tag(0, "div", "m0", "", ""), m0b = tag(m0, "b", "", "", "x");
+    hipe_send(s, HIPE_OP_SET_ATTRIBUTE, 0, m0b, 2, "title", "a&b");
+    ask(m0b, HIPE_OP_GET_GEOMETRY, HIPE_OP_GEOMETRY_RETURN, 0, "", ""); argOf(2);
+    CHECK("SET_TEXT mode 0 on a style element: the text is the CSS", atoi(v) == 77);
 
     /* a click event */
     hipe_send(s, HIPE_OP_CLEAR, 0, 0, 0);

@@ -38,7 +38,8 @@ public:
     //Call this before using any of the sanitisation functions in this class.
 
     enum TextMode { //values are the text mode numbers clients pass (see HIPE_OP_SET_TEXT).
-        SHOWN_AS_TYPED = 0,   //'&' is escaped and nothing is converted: reading the element's text back returns the input.
+        SHOWN_AS_TYPED = 0,   //nothing is converted: the engine adds the text without parsing it (QWebElement::setText()).
+                              //Reading the element's text back returns the input. sanitisePlainText() is not used for it.
         LAYOUT_CONVERTED = 1, //'&' is escaped; newlines, carriage returns and tabs are converted to markup.
         ENTITIES_DECODED = 2, //'&' is left alone, so character entities (e.g. "&times;") become symbols.
         MARKUP = 3            //the text is HTML and is inserted as written.

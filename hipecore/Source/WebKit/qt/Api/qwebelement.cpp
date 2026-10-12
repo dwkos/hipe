@@ -85,6 +85,7 @@
 #include "TextIterator.h"
 #include "TextRun.h"
 #include "markup.h"
+#include <limits>
 #include <wtf/Vector.h>
 #include <wtf/text/CString.h>
 #include <wtf/text/StringBuilder.h>
@@ -3550,6 +3551,41 @@ static bool isVoidHTMLElement(const Element& element)
     return false;
 }
 
+// Text as the HTML parser stores it: "\r\n" and "\r" become "\n".
+static String normalisedText(const QString& text)
+{
+    QString normalised = text;
+    normalised.replace(QLatin1String("\r\n"), QLatin1String("\n")).replace(QLatin1Char('\r'), QLatin1Char('\n'));
+    return normalised;
+}
+
+// The longest text node the HTML parser makes in container (as HTMLConstructionSite's shouldUseLengthLimit()).
+static unsigned textLengthLimit(const ContainerNode& container)
+{
+    if (is<Element>(container)) {
+        const Element& element = downcast<Element>(container);
+        const QualifiedName& svgScript = SVGNames::scriptTag;
+        if (element.hasTagName(HTMLNames::scriptTag) || element.hasTagName(HTMLNames::styleTag)
+            || element.hasTagName(svgScript))
+            return std::numeric_limits<unsigned>::max();
+    }
+    return Text::defaultLengthLimit;
+}
+
+// Appends text to container as text nodes of at most lengthLimit characters, split where the parser would split it
+// (HTMLConstructionSite::insertTextNode()).
+static void appendTextNodes(ContainerNode& container, const String& text, unsigned lengthLimit)
+{
+    ExceptionCode exception = 0;
+    for (unsigned position = 0; position < text.length() && !exception; ) {
+        Ref<Text> node = Text::createWithLengthLimit(container.document(), text, position, lengthLimit);
+        if (!node->length()) // a run with nowhere to break: one longer node is the lesser evil, as in the parser
+            node = Text::create(container.document(), text.substring(position));
+        position += node->length();
+        container.appendChild(WTFMove(node), exception);
+    }
+}
+
 static RefPtr<Element> createDirectly(Element& parent, const QString& tag, const QString& id, const QString& classes,
     const QString& text)
 {
@@ -3564,12 +3600,47 @@ static RefPtr<Element> createDirectly(Element& parent, const QString& tag, const
         element->setAttribute(HTMLNames::idAttr, id);
     if (!classes.isEmpty())
         element->setAttribute(HTMLNames::classAttr, classes);
-    if (!text.isEmpty() && !isVoidHTMLElement(*element)) {
-        QString normalised = text;
-        normalised.replace(QLatin1String("\r\n"), QLatin1String("\n")).replace(QLatin1Char('\r'), QLatin1Char('\n'));
-        element->setTextContent(normalised, exception);
-    }
+    if (!text.isEmpty() && !isVoidHTMLElement(*element))
+        element->setTextContent(normalisedText(text), exception);
     return element;
+}
+
+void QWebElement::setText(const QString& text)
+{
+    if (!m_element || isVoidHTMLElement(*m_element))
+        return;
+    ContainerNode* container = m_element;
+#if ENABLE(TEMPLATE_ELEMENT)
+    if (is<HTMLTemplateElement>(*m_element))
+        container = downcast<HTMLTemplateElement>(*m_element).content();
+#endif
+    String normalised = normalisedText(text);
+    unsigned lengthLimit = textLengthLimit(*container);
+    if (normalised.isEmpty())
+        container->removeChildren();
+    else if (normalised.length() <= lengthLimit) {
+        ExceptionCode exception = 0;
+        replaceChildrenWithText(*container, normalised, exception); // reuses a lone text node
+    } else {
+        container->removeChildren();
+        appendTextNodes(*container, normalised, lengthLimit);
+    }
+}
+
+void QWebElement::appendText(const QString& text)
+{
+    if (!m_element || isVoidHTMLElement(*m_element) || text.isEmpty())
+        return;
+    String normalised = normalisedText(text);
+    unsigned lengthLimit = textLengthLimit(*m_element);
+    // Added to a text node it follows, as appendInside() does, so that appending to the same element again and again
+    // doesn't make a node per append (each inserted node makes WebCore step back over its text node siblings).
+    Node* last = m_element->lastChild();
+    if (is<Text>(last) && downcast<Text>(*last).length() < lengthLimit && normalised.length() <= lengthLimit) {
+        downcast<Text>(*last).appendData(normalised);
+        return;
+    }
+    appendTextNodes(*m_element, normalised, lengthLimit);
 }
 
 QWebElement QWebElement::appendNewElement(const QString& tag, const QString& id, const QString& classes, const QString& text)

@@ -677,6 +677,14 @@ void handle_SET_TEXT(Container* c, hipe_instruction*, bool locationSpecified, QW
         insertMarkup(c, locationSpecified, location, arg, false);
         return;
     }
+    if(mode == Sanitation::SHOWN_AS_TYPED) { //the engine adds the text as it is, without parsing it
+        if(!locationSpecified) {
+            if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
+            location = c->webElement;
+        }
+        location.setText(arg[0].c_str()); //(the text ends at its first NUL character, as it always has)
+        return;
+    }
     arg[0] = Sanitation::sanitisePlainText(arg[0], mode);
     if(!locationSpecified) c->setBody(arg[0]);
     else location.setInnerXml(arg[0].c_str());
@@ -688,6 +696,14 @@ void handle_APPEND_TEXT(Container* c, hipe_instruction*, bool locationSpecified,
     Sanitation::TextMode mode = Sanitation::textModeFromArg(arg[1]);
     if(mode == Sanitation::MARKUP) {
         insertMarkup(c, locationSpecified, location, arg, true);
+        return;
+    }
+    if(mode == Sanitation::SHOWN_AS_TYPED) { //the engine adds the text as it is, without parsing it
+        if(!locationSpecified) {
+            if(c->webElement.isNull()) c->setBody("", false); //the body must exist first
+            location = c->webElement;
+        }
+        location.appendText(arg[0].c_str()); //(the text ends at its first NUL character, as it always has)
         return;
     }
     arg[0] = Sanitation::sanitisePlainText(arg[0], mode);

@@ -67,9 +67,7 @@ std::string Sanitation::sanitisePlainText(std::string input, TextMode mode)
 //equivalent nonfunctional representations, like &lt;. This is used to prevent
 //HTML injection attacks.
 //
-//SHOWN_AS_TYPED escapes '&' too and converts nothing, so reading the element's
-//text back returns the input (e.g. source code in a <pre>). The HTML parser itself
-//still stores a carriage return, with or without a following newline, as one newline.
+//(SHOWN_AS_TYPED text is not parsed, so it needs nothing from here: see QWebElement::setText().)
 //
 //LAYOUT_CONVERTED is for showing text with its layout in any element:
 // - '&' is escaped too, so character entities are shown as typed.
