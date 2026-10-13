@@ -1,7 +1,7 @@
 HIPE INSTALLATION SUMMARY
 
 The three parts are built in this order. Each directory has fuller notes, and the
-Installation section of the manual (http://hipe.generaldevelopment.net, or the archived
+Installation section of the manual (https://hipe.generaldevelopment.net, or the archived
 copy in manual.html) explains how to set Hipe up to run.
 
 Hipe needs Qt 5.15, for both the display engine and the display server. Earlier Qt 5

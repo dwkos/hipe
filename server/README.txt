@@ -16,7 +16,7 @@ BUILD INSTRUCTIONS:
 
 ****
 ****PLEASE REFER TO THE INSTALLATION SECTION OF manual.html IN THE TOP DIRECTORY
-****(ALSO ONLINE AT http://hipe.generaldevelopment.net) FOR FULLER INSTRUCTIONS.
+****(ALSO ONLINE AT https://hipe.generaldevelopment.net) FOR FULLER INSTRUCTIONS.
 ****(It also explains how to set up environment variables for non-default settings.)
 
 

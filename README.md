@@ -26,7 +26,7 @@ Getting started
 library and samples.
 
 The manual, including the reference for every instruction an application can send, is at
-http://hipe.generaldevelopment.net. `manual.html` in this directory is a copy of it as of this
+https://hipe.generaldevelopment.net. `manual.html` in this directory is a copy of it as of this
 version, for reading without a network connection.
 
 Status of this version

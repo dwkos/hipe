@@ -578,7 +578,7 @@ extern "C" {
 #define HIPE_OP_OPEN_LINK 69
 /* Used to communicate a hyperlink to the framing manager to be made available to the user
  * Same internal logic as HIPE_OP_MESSAGE.
- * arg[0] is the fully qualified link, e.g. "http://hipe.generaldevelopment.net". arg[1] is reserved.
+ * arg[0] is the fully qualified link, e.g. "https://hipe.generaldevelopment.net". arg[1] is reserved.
  */
 
 #define HIPE_OP_INSERT_TAG 70
