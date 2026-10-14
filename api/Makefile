@@ -28,5 +28,6 @@ testing:
 	(cd test && $(CC) bigtable.c -o hipe-bigtable -lhipe)
 	(cd test && $(CC) biglist.c -o hipe-biglist -lhipe)
 	(cd test && $(CC) slider.c -o hipe-slider -lhipe)
+	(cd test && $(CC) showcase.c -o hipe-showcase -lhipe -lm)
 install-tests:
 	cp test/hipe-* /usr/local/bin

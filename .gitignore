@@ -28,6 +28,7 @@ api/test/hipe-bigtable
 api/test/hipe-biglist
 api/test/hipe-slider
 api/test/hipe-progressiveimg
+api/test/hipe-showcase
 *.swp
 /README
 .claude/local-notes.md
