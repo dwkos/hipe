@@ -141,6 +141,7 @@ public:
     QWebHitTestResultPrivate* hitTestContent(const QPoint&) const;
     QWebElement documentElement() const;
     QWebElement ownerElement() const;
+    void appendStyleSheetText(const QString&);
     QString title() const;
     void clearCoreFrame();
     QUrl baseUrl() const;

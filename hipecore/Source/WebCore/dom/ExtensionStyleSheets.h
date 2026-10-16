@@ -58,14 +58,17 @@ public:
     const Vector<RefPtr<CSSStyleSheet>>& documentUserStyleSheets() const { return m_userStyleSheets; }
     const Vector<RefPtr<CSSStyleSheet>>& injectedUserStyleSheets() const;
     const Vector<RefPtr<CSSStyleSheet>>& injectedAuthorStyleSheets() const;
-    const Vector<RefPtr<CSSStyleSheet>>& authorStyleSheetsForTesting() const { return m_authorStyleSheetsForTesting; }
+    const Vector<RefPtr<CSSStyleSheet>>& appendedAuthorStyleSheets() const { return m_appendedAuthorStyleSheets; }
 
     void invalidateInjectedStyleSheetCache();
     void updateInjectedStyleSheetCache() const;
 
     WEBCORE_EXPORT void addUserStyleSheet(Ref<StyleSheetContents>&&);
 
-    WEBCORE_EXPORT void addAuthorStyleSheetForTesting(Ref<StyleSheetContents>&&);
+    // Appends CSS text to the document's own author style, which comes before the document's <style> elements in
+    // the cascade. Each call's text is parsed on its own, into sheets added after the previous ones, so the style
+    // resolver can add their rules and restyle only what they match, instead of being rebuilt.
+    WEBCORE_EXPORT void appendAuthorStyleText(const String&);
 
 #if ENABLE(CONTENT_EXTENSIONS)
     void addDisplayNoneSelector(const String& identifier, const String& selector, uint32_t selectorID);
@@ -84,7 +87,7 @@ private:
     mutable bool m_injectedStyleSheetCacheValid { false };
 
     Vector<RefPtr<CSSStyleSheet>> m_userStyleSheets;
-    Vector<RefPtr<CSSStyleSheet>> m_authorStyleSheetsForTesting;
+    Vector<RefPtr<CSSStyleSheet>> m_appendedAuthorStyleSheets;
 
 #if ENABLE(CONTENT_EXTENSIONS)
     HashMap<String, RefPtr<CSSStyleSheet>> m_contentExtensionSheets;

@@ -27,6 +27,7 @@
 #include "CSSComputedStyleDeclaration.h"
 
 #include "AnimationController.h"
+#include "AuthorStyleSheets.h"
 #include "BasicShapeFunctions.h"
 #include "BasicShapes.h"
 #include "CSSAnimationTriggerScrollValue.h"
@@ -2270,7 +2271,9 @@ static inline bool nodeOrItsAncestorNeedsStyleRecalc(const Node& node)
 static inline bool updateStyleIfNeededForNode(const Node& node)
 {
     Document& document = node.document();
-    if (!document.hasPendingForcedStyleRecalc() && !(document.childNeedsStyleRecalc() && nodeOrItsAncestorNeedsStyleRecalc(node)))
+    // A pending style sheet update (rules added to a sheet the resolver hasn't taken in) can change any node's style.
+    if (!document.hasPendingForcedStyleRecalc() && !document.authorStyleSheets().hasPendingUpdate()
+        && !(document.childNeedsStyleRecalc() && nodeOrItsAncestorNeedsStyleRecalc(node)))
         return false;
     document.updateStyleIfNeeded();
     return true;

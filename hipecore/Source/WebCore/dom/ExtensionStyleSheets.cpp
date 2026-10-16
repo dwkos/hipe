@@ -29,6 +29,7 @@
 #include "config.h"
 #include "ExtensionStyleSheets.h"
 
+#include "AuthorStyleSheets.h"
 #include "CSSStyleSheet.h"
 #include "Element.h"
 #include "HTMLIFrameElement.h"
@@ -127,11 +128,22 @@ void ExtensionStyleSheets::addUserStyleSheet(Ref<StyleSheetContents>&& userSheet
     m_document.styleResolverChanged(RecalcStyleImmediately);
 }
 
-void ExtensionStyleSheets::addAuthorStyleSheetForTesting(Ref<StyleSheetContents>&& authorSheet)
+void ExtensionStyleSheets::appendAuthorStyleText(const String& text)
 {
-    ASSERT(!authorSheet.get().isUserStyleSheet());
-    m_authorStyleSheetsForTesting.append(CSSStyleSheet::create(WTFMove(authorSheet), &m_document));
-    m_document.styleResolverChanged(RecalcStyleImmediately);
+    // Text sent before the style resolver has taken in the newest sheet joins that sheet, so a burst of rules
+    // becomes one sheet. The parser appends to the rules already there.
+    if (!m_appendedAuthorStyleSheets.isEmpty() && !m_document.authorStyleSheets().activeStyleSheetsContains(m_appendedAuthorStyleSheets.last().get()))
+        m_appendedAuthorStyleSheets.last()->contents().parseString(text);
+    else {
+        Ref<StyleSheetContents> contents = StyleSheetContents::create(CSSParserContext(m_document));
+        contents->parseString(text);
+        if (!contents->ruleCount())
+            return;
+        m_appendedAuthorStyleSheets.append(CSSStyleSheet::create(WTFMove(contents), &m_document));
+    }
+    // Like a rule inserted into a sheet the resolver hasn't taken in yet: the resolver adds the new sheet's rules
+    // (rather than being rebuilt) before style is next needed.
+    m_document.scheduleOptimizedStyleSheetUpdate();
 }
 
 #if ENABLE(CONTENT_EXTENSIONS)
@@ -174,7 +186,7 @@ void ExtensionStyleSheets::detachFromDocument()
         sheet->detachFromDocument();
     for (auto& sheet : m_userStyleSheets)
         sheet->detachFromDocument();
-    for (auto& sheet : m_authorStyleSheetsForTesting)
+    for (auto& sheet : m_appendedAuthorStyleSheets)
         sheet->detachFromDocument();
 }
 

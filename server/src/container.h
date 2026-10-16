@@ -90,10 +90,9 @@ public:
     // for drawing secondary details like embedded mouse cursor.
 
     void applyStylesheet();
-    //apply stylesheet after changes. If <body> was not opened yet (!initYet)
-    //then this is a no-op as styling gets applied when setBody is called.
-    //Otherwise, this call causes a <style> tag to be appended inside the
-    //<body> tag; which is not technically valid HTML but should do the trick.
+    //adds the rules in `stylesheet` to the frame's document, outside its elements (so replacing the body's content
+    //leaves them in place). Until the document exists (!initYet) the rules wait in `stylesheet`, after the theme,
+    //and setBody adds them.
 
     void containerClosed();
 
@@ -170,7 +169,7 @@ public:
 
     Connection* client;
     QWebElement webElement;
-    std::string stylesheet; //build up the stylesheet before we apply it.
+    std::string stylesheet; //style rules not yet added to the frame's document (see applyStylesheet).
 
     QWebElement currentCanvas; //the <canvas> element most recently selected by
     //HIPE_OP_USE_CANVAS, acted on by later HIPE_OP_CANVAS_ACTION/CANVAS_SET_PROPERTY

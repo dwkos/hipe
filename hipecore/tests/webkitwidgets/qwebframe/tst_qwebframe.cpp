@@ -1,5 +1,6 @@
 /*
     Copyright (C) 2008,2009 Nokia Corporation and/or its subsidiary(-ies)
+    Copyright (C) 2025-2026 General Development Systems
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -62,6 +63,7 @@ private Q_SLOTS:
     void scrollbarsOff();
     void setContent_data();
     void setContent();
+    void appendStyleSheetText();
 
 private:
     QWebView* m_view { nullptr };
@@ -525,6 +527,35 @@ void tst_QWebFrame::setContent()
     QCOMPARE(expected , mainFrame->toPlainText());
 }
 
+
+void tst_QWebFrame::appendStyleSheetText()
+{
+    QWebFrame* frame = m_page->mainFrame();
+    frame->setHtml("<html><head><style>.b { color: rgb(0, 0, 2) }</style></head><body><p class=\"a b\">x</p></body></html>");
+    frame->appendStyleSheetText(".a { color: rgb(0, 0, 1) } .c { color: rgb(0, 0, 3)");
+    frame->appendStyleSheetText(".d { color: rgb(0, 0, 4) }");
+    auto color = [frame](const QString& selector) {
+        return frame->findFirstElement(selector).styleProperty("color", QWebElement::ComputedStyle);
+    };
+
+    // The document's own <style> comes later in the cascade, so it wins a tie.
+    QCOMPARE(color("p"), QString("rgb(0, 0, 2)"));
+    QVERIFY(!frame->toHtml().contains("rgb(0, 0, 1)"));
+
+    // Replacing the body's content keeps the rules; the unterminated rule ended with its own text.
+    frame->findFirstElement("body").setInnerXml("<p class=\"a\">y</p><p class=\"c\">z</p><p class=\"d\">w</p>");
+    QCOMPARE(color("p.a"), QString("rgb(0, 0, 1)"));
+    QCOMPARE(color("p.c"), QString("rgb(0, 0, 3)"));
+    QCOMPARE(color("p.d"), QString("rgb(0, 0, 4)"));
+
+    // Later text wins a tie within the sheet.
+    frame->appendStyleSheetText(".a { color: rgb(0, 0, 5) }");
+    QCOMPARE(color("p.a"), QString("rgb(0, 0, 5)"));
+
+    // A new document starts with an empty sheet.
+    frame->setHtml("<html><body><p class=\"a\">x</p></body></html>");
+    QVERIFY(color("p.a") != QString("rgb(0, 0, 5)"));
+}
 
 QTEST_MAIN(tst_QWebFrame)
 #include "tst_qwebframe.moc"

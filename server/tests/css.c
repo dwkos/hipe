@@ -14,7 +14,8 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-/* Standard CSS names: properties (with their old -webkit- names still accepted), keywords, :is() and image-set().
+/* Standard CSS names: properties (with their old -webkit- names still accepted), keywords, :is() and image-set();
+ * style rules added after the body exists (kept when the body is replaced, not part of its content).
  * Run by run.sh against a private hiped. Prints PASS/FAIL lines and exits non-zero if anything failed. */
 
 #include <hipe.h>
@@ -38,6 +39,20 @@ static const char* get(hipe_loc l, char op, char ret, int nargs, const char* a, 
 }
 #define computed(l, p) get(l, HIPE_OP_GET_STYLE, HIPE_OP_STYLE_RETURN, 1, p, 1)
 static int width(hipe_loc l) { return atoi(get(l, HIPE_OP_GET_GEOMETRY, HIPE_OP_GEOMETRY_RETURN, 0, "", 2)); }
+
+static hipe_loc lastChild(hipe_loc l) {
+    hipe_instruction in; hipe_instruction_init(&in);
+    hipe_send(s, HIPE_OP_GET_LAST_CHILD, 0, l, 0);
+    hipe_await_instruction(s, &in, HIPE_OP_LOCATION_RETURN);
+    hipe_loc r = in.location;
+    hipe_instruction_clear(&in);
+    return r;
+}
+
+static hipe_loc para(const char* cls) {
+    hipe_send(s, HIPE_OP_APPEND_TAG, 0, 0, 4, "p", "", cls, "x");
+    return hipe_newest_location();
+}
 
 static hipe_loc box(const char* text, const char* style) {
     hipe_send(s, HIPE_OP_APPEND_TAG, 0, 0, 4, "div", "", "", text);
@@ -81,6 +96,40 @@ int main() {
 
     a = box("x", "background-image: image-set(url(\"data:image/png;base64,iVBORw0KGgo=\") 1x)");
     computed(a, "background-image");     CHECK("image-set()", !strncmp(v, "image-set(", 10));
+
+    /* style rules added after the body exists */
+    hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, ".r1", "color: rgb(4, 5, 6)");
+    a = para("r1");
+    computed(a, "color");                CHECK("a rule added after the body exists", !strcmp(v, "rgb(4, 5, 6)"));
+    hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, ".r0", "color: rgb(4, 4, 4)");
+    CHECK("a rule is not a child of the body", lastChild(0) == a);
+    get(0, HIPE_OP_GET_CONTENT, HIPE_OP_CONTENT_RETURN, 1, "1", 0);
+    CHECK("the rules are not in the body's content", !strstr(v, "<style") && !strstr(v, "rgb(4, 5, 6)"));
+    hipe_send(s, HIPE_OP_CLEAR, 0, 0, 0);
+    a = para("r1");
+    computed(a, "color");                CHECK("CLEAR on the body keeps the rules", !strcmp(v, "rgb(4, 5, 6)"));
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, 0, 2, "replaced", "0");
+    a = para("r1");
+    computed(a, "color");                CHECK("SET_TEXT mode 0 on the body keeps the rules", !strcmp(v, "rgb(4, 5, 6)"));
+    hipe_send(s, HIPE_OP_SET_TEXT, 0, 0, 3, "<b>replaced</b>", "3", "");
+    a = para("r1");
+    computed(a, "color");                CHECK("SET_TEXT mode 3 on the body keeps the rules", !strcmp(v, "rgb(4, 5, 6)"));
+
+    hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, ".r2", "} @media screen { .r2 { color: rgb(7, 7, 7)");
+    hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, ".r3", "color: rgb(8, 8, 8)");
+    a = para("r2");
+    computed(a, "color");                CHECK("an unterminated rule ends with its instruction", !strcmp(v, "rgb(7, 7, 7)"));
+    a = para("r3");
+    computed(a, "color");                CHECK("the next rule still applies", !strcmp(v, "rgb(8, 8, 8)"));
+    hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "p[title=\"</style>\"]", "color: rgb(9, 9, 9)");
+    a = para("");
+    hipe_send(s, HIPE_OP_SET_ATTRIBUTE, 0, a, 2, "title", "</style>");
+    computed(a, "color");                CHECK("a rule may contain </", !strcmp(v, "rgb(9, 9, 9)"));
+
+    hipe_send(s, HIPE_OP_APPEND_TEXT, 0, 0, 3, "<style>.r4 { color: rgb(10, 10, 10) }</style>", "3", "");
+    hipe_send(s, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, ".r4", "color: rgb(11, 11, 11)");
+    a = para("r4");
+    computed(a, "color");                CHECK("a <style> element in the content wins a tie", !strcmp(v, "rgb(10, 10, 10)"));
 
     if(fails) printf("%d FAILED\n", fails);
     hipe_close_session(s);

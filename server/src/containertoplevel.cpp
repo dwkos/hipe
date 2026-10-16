@@ -87,12 +87,10 @@ void ContainerTopLevel::setTitle(std::string newTitle) {
 
 void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
     if(!initYet) {
-        webElement = w->initBoilerplate(
-            std::string("<html><head><style>")
-            + stylesheet
-            + "</style></head><body></body></html>"
-        ); //initialiser. If ommitted, resource images won't display (!)
+        webElement = w->initBoilerplate("<html><head></head><body></body></html>");
+        //initialiser. If ommitted, resource images won't display (!)
         initYet = true;
+        applyStylesheet(); //the theme and any rules sent so far
         webElement.removeAllChildren();
 
         //obtain the initial colour scheme
@@ -112,8 +110,6 @@ void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
     if(overwrite) {
         webElement.setInnerXml(newBodyHtml.c_str());
         //remove any existing body as the user wishes to overwrite it.
-        //c_str() conversion is adequate here since any binary data in the
-        //stylesheet will be expressed in base64 anyway.
     } else {
         webElement.appendInside(newBodyHtml.c_str());
     }

@@ -57,13 +57,9 @@ Container::~Container()
 }
 
 void Container::applyStylesheet() {
-
-    if(!initYet) return;
-    //no-op. Styles will be applied in the <head> when setBody is called.
-
-    //appending new style rules after </head> is not supposed to be valid, but we might get away with it.
-    webElement.appendInside(QString("<style>") + stylesheet.c_str() + "</style>");
-    stylesheet = ""; //clear after application.
+    if(!initYet || !frame) return; //setBody applies the rules collected so far when it creates the document.
+    frame->appendStyleSheetText(QString::fromUtf8(stylesheet.data(), stylesheet.size()));
+    stylesheet.clear();
 }
 
 

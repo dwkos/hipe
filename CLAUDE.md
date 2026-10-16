@@ -139,11 +139,11 @@ against unrelated events. The client allocates the location of each tag it creat
   number of arguments to pre-convert to strings.
 - `KeyList` generates and consumes the single-use keys; `mKeyList` / `mActiveConnections` make it and the
   connection table thread-safe.
-- `Sanitation` keeps client-supplied strings from breaking the markup hiped builds: the tag-name check,
-  the stylesheet-text check (no `</`) and the text modes that escape markup. It no longer whitelists
-  tags or attributes: the engine itself makes content inert (no scripts, no navigation, only `data:`
-  loads), so new safety rules belong in hipecore, not in a hiped whitelist. Dedicated instructions
-  (`TOGGLE_CLASS`, `SET_STYLE`, `SET_SRC`...) add to what plain attributes do; they don't gatekeep them.
+- `Sanitation` keeps client-supplied text from breaking the markup hiped builds: the text modes that escape
+  markup. It no longer whitelists tags or attributes: the engine itself makes content inert (no scripts, no
+  navigation, only `data:` loads), so new safety rules belong in hipecore, not in a hiped whitelist.
+  Dedicated instructions (`TOGGLE_CLASS`, `SET_STYLE`, `SET_SRC`...) add to what plain attributes do; they
+  don't gatekeep them.
   What hiped accepts is described for users on the manual's "Tags, attributes and styles" page;
   keep the two in step.
 - `MouseCursor` draws cursors (including Unicode-symbol cursors, `HIPE_OP_SET_CURSOR`) where a regular OS

@@ -307,7 +307,7 @@ bool AuthorStyleSheets::updateActiveStyleSheets(UpdateFlag updateFlag)
 
     Vector<RefPtr<CSSStyleSheet>> activeCSSStyleSheets;
     activeCSSStyleSheets.appendVector(m_document.extensionStyleSheets().injectedAuthorStyleSheets());
-    activeCSSStyleSheets.appendVector(m_document.extensionStyleSheets().authorStyleSheetsForTesting());
+    activeCSSStyleSheets.appendVector(m_document.extensionStyleSheets().appendedAuthorStyleSheets());
     filterEnabledNonemptyCSSStyleSheets(activeCSSStyleSheets, activeStyleSheets);
 
     bool requiresFullStyleRecalc;
@@ -364,7 +364,7 @@ const Vector<RefPtr<CSSStyleSheet>> AuthorStyleSheets::activeStyleSheetsForInspe
     Vector<RefPtr<CSSStyleSheet>> result;
 
     result.appendVector(m_document.extensionStyleSheets().injectedAuthorStyleSheets());
-    result.appendVector(m_document.extensionStyleSheets().authorStyleSheetsForTesting());
+    result.appendVector(m_document.extensionStyleSheets().appendedAuthorStyleSheets());
 
     for (auto& styleSheet : m_styleSheetsForStyleSheetList) {
         if (!is<CSSStyleSheet>(*styleSheet))

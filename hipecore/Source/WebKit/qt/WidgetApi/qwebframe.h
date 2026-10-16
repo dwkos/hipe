@@ -188,6 +188,7 @@ public:
     QWebElement ownerElement() const;
     QWebElementCollection findAllElements(const QString &selectorQuery) const;
     QWebElement findFirstElement(const QString &selectorQuery) const;
+    void appendStyleSheetText(const QString &css);
 
     QWebHitTestResult hitTestContent(const QPoint &pos) const;
 

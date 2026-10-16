@@ -697,6 +697,18 @@ QWebElement QWebFrame::ownerElement() const
 }
 
 /*!
+    Adds the style rules in \a css to the frame's current document, after any added before.
+
+    The rules are not an element of the document: changing or replacing its content leaves them in place, and
+    they come before the document's own \c{<style>} elements in the cascade. Each call's text is parsed on
+    its own, so a rule left unterminated ends with that text. Loading a new document starts without them.
+*/
+void QWebFrame::appendStyleSheetText(const QString &css)
+{
+    d->appendStyleSheetText(css);
+}
+
+/*!
     \since 4.6
     Returns a new list of elements matching the given CSS selector \a selectorQuery.
     If there are no matching elements, an empty list is returned.

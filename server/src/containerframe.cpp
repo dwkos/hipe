@@ -51,10 +51,10 @@ void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
 {
     if(!parent || !frame) return;
     if(!initYet) {
-        frame->setHtml(QString("<html><head><style>") + stylesheet.c_str() + "</style></head><body></body></html>");
-        stylesheet = ""; //clear already-applied stylesheet data.
+        frame->setHtml("<html><head></head><body></body></html>");
         webElement = frame->documentElement().lastChild();
         initYet = true;
+        applyStylesheet(); //the theme and any rules sent so far
 
         //alert parent of fg/bg colour scheme
         //(computed styles are worked out when asked for, so these are ready straight away.)

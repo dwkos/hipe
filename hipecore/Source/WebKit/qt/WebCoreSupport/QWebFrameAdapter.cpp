@@ -26,6 +26,7 @@
 #include "ChromeClientQt.h"
 #include "DocumentLoader.h"
 #include "EventHandler.h"
+#include "ExtensionStyleSheets.h"
 #include "FocusController.h"
 #include "FrameLoadRequest.h"
 #include "FrameLoaderClientQt.h"
@@ -295,6 +296,12 @@ QWebElement QWebFrameAdapter::documentElement() const
 QWebElement QWebFrameAdapter::ownerElement() const
 {
     return QWebElement(frame->ownerElement());
+}
+
+void QWebFrameAdapter::appendStyleSheetText(const QString& css)
+{
+    if (Document* document = frame->document())
+        document->extensionStyleSheets().appendAuthorStyleText(css);
 }
 
 QString QWebFrameAdapter::title() const

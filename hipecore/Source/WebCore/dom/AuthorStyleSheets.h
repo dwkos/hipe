@@ -71,6 +71,8 @@ public:
             m_pendingUpdateType = updateType;
     }
 
+    bool hasPendingUpdate() const { return m_pendingUpdateType != NoUpdate; }
+
     void flushPendingUpdates()
     {
         if (m_pendingUpdateType != NoUpdate)

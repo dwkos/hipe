@@ -547,8 +547,7 @@ void handle_ADD_STYLE_RULE_SRC(Container* c, hipe_instruction* instruction, bool
     if(!mimetype.size()) mimetype="image/png";
     std::string dataURI = std::string("data:") + mimetype + ";base64," + Sanitation::toBase64(instruction->arg[1], instruction->arg_length[1]);
 
-    if(Sanitation::isAllowedCSS(css_specifier))
-        c->stylesheet += css_specifier + "{background-image:url(\"" + dataURI + "\");}\n";
+    c->stylesheet += css_specifier + "{background-image:url(\"" + dataURI + "\");}\n";
     c->applyStylesheet();
 }
 
@@ -721,8 +720,7 @@ void handle_GET_BY_ID(Container* c, hipe_instruction* instruction, bool, QWebEle
 
 //REQUIRES 2 ARGS
 void handle_ADD_STYLE_RULE(Container* c, hipe_instruction*, bool, QWebElement, std::string arg[]) {
-    if(Sanitation::isAllowedCSS(arg[0]) && Sanitation::isAllowedCSS(arg[1]))
-        c->stylesheet += arg[0] + "{" + arg[1] + "}\n";
+    c->stylesheet += arg[0] + "{" + arg[1] + "}\n";
     c->applyStylesheet();
 }
 
@@ -731,11 +729,10 @@ void handle_ADD_STYLE_RULE(Container* c, hipe_instruction*, bool, QWebElement, s
 //the larger size of its contents.
 void handle_ADD_FONT(Container* c, hipe_instruction* instruction, bool, QWebElement, std::string arg[]) {
 //arg[0] is font family name, arg[1] is mime type, arg[2] is raw data.
-    if(Sanitation::isAllowedCSS(arg[0]) && Sanitation::isAllowedCSS(arg[1]))
-        c->stylesheet += "@font-face {font-family:\"" + arg[0] + "\"; src:url(\"data:"
-                + arg[1] + ";base64,"
-                + Sanitation::toBase64(instruction->arg[2],instruction->arg_length[2])
-                + "\");}\n";
+    c->stylesheet += "@font-face {font-family:\"" + arg[0] + "\"; src:url(\"data:"
+            + arg[1] + ";base64,"
+            + Sanitation::toBase64(instruction->arg[2],instruction->arg_length[2])
+            + "\");}\n";
     c->applyStylesheet();
 }
 

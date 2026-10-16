@@ -126,13 +126,6 @@ std::string Sanitation::toLower(const char* text, size_t length) {
 }
 
 
-bool Sanitation::isAllowedCSS(std::string input)
-//Text added to a <style> element is raw text up to the next "</style", so "</" is the only sequence that could
-//end the stylesheet early and start markup.
-{
-    return input.find("</") == std::string::npos;
-}
-
 QWebPage::WebAction Sanitation::editCodeLookup(char code) {
     try {
         return editCodeMap.at(code);
