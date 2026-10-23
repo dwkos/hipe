@@ -12,7 +12,6 @@ include_directories(SYSTEM
 )
 
 add_definitions(
-    -DROOT_BUILD_DIR="${CMAKE_BINARY_DIR}"
     -DQT_NO_CAST_FROM_ASCII
 )
 
