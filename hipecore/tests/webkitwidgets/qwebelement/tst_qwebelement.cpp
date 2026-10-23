@@ -296,7 +296,7 @@ void tst_QWebElement::iteration()
     QList<QWebElement> referenceList = paras.toList();
 
     QList<QWebElement> foreachList;
-    foreach(QWebElement p, paras) {
+    for (QWebElement p : paras) {
        foreachList.append(p);
     }
     QVERIFY(foreachList.count() == 2);
@@ -358,7 +358,7 @@ void tst_QWebElement::foreachManipulation()
     m_mainFrame->setHtml(html);
     QWebElement body = m_mainFrame->documentElement();
 
-    foreach(QWebElement p, body.findAll("p")) {
+    for (QWebElement p : body.findAll("p")) {
         p.setInnerXml("<div>foo</div><div>bar</div>");
     }
 

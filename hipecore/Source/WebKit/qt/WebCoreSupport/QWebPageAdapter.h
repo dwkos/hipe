@@ -258,7 +258,7 @@ public:
 
     bool findText(const QString& subString, FindFlag options);
 
-    void adjustPointForClicking(QMouseEvent*);
+    QPointF adjustPointForClicking(const QPointF& position);
 
     void mouseMoveEvent(QMouseEvent*);
     void mousePressEvent(QMouseEvent*);

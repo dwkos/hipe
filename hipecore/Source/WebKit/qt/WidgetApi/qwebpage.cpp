@@ -582,11 +582,28 @@ void QWebPagePrivate::keyReleaseEvent(QKeyEvent *ev)
     ev->setAccepted(handled);
 }
 
+// Where a drag is, for widget and graphics-scene drag events alike.
+static QPoint dragPosition(const QDropEvent* ev)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return ev->position().toPoint();
+#else
+    return ev->pos();
+#endif
+}
+
+#if !defined(QT_NO_GRAPHICSVIEW)
+static QPoint dragPosition(const QGraphicsSceneDragDropEvent* ev)
+{
+    return ev->pos().toPoint();
+}
+#endif
+
 template<class T>
 void QWebPagePrivate::dragEnterEvent(T* ev)
 {
 #if ENABLE(DRAG_SUPPORT)
-    Qt::DropAction action = dragEntered(ev->mimeData(), QPointF(ev->pos()).toPoint(), ev->possibleActions());
+    Qt::DropAction action = dragEntered(ev->mimeData(), dragPosition(ev), ev->possibleActions());
     ev->setDropAction(action);
     ev->acceptProposedAction();
 #endif
@@ -596,7 +613,7 @@ template<class T>
 void QWebPagePrivate::dragMoveEvent(T *ev)
 {
 #if ENABLE(DRAG_SUPPORT)
-    m_lastDropAction = dragUpdated(ev->mimeData(), QPointF(ev->pos()).toPoint(), ev->possibleActions());
+    m_lastDropAction = dragUpdated(ev->mimeData(), dragPosition(ev), ev->possibleActions());
     ev->setDropAction(m_lastDropAction);
     if (m_lastDropAction != Qt::IgnoreAction)
         ev->accept();
@@ -607,7 +624,7 @@ template<class T>
 void QWebPagePrivate::dropEvent(T *ev)
 {
 #if ENABLE(DRAG_SUPPORT)
-    if (performDrag(ev->mimeData(), QPointF(ev->pos()).toPoint(), ev->possibleActions())) {
+    if (performDrag(ev->mimeData(), dragPosition(ev), ev->possibleActions())) {
         ev->setDropAction(m_lastDropAction);
         ev->accept();
     }
@@ -1752,24 +1769,21 @@ bool QWebPage::event(QEvent *ev)
     }
     case QEvent::GraphicsSceneMouseRelease: {
         QGraphicsSceneMouseEvent *gsEv = static_cast<QGraphicsSceneMouseEvent*>(ev);
-        QMouseEvent dummyEvent(QEvent::MouseButtonRelease, gsEv->pos(), gsEv->screenPos(), gsEv->button(), gsEv->buttons(), gsEv->modifiers());
-        d->adjustPointForClicking(&dummyEvent);
+        QMouseEvent dummyEvent(QEvent::MouseButtonRelease, d->adjustPointForClicking(gsEv->pos()), gsEv->screenPos(), gsEv->button(), gsEv->buttons(), gsEv->modifiers());
         d->mouseReleaseEvent(&dummyEvent);
         ev->setAccepted(dummyEvent.isAccepted());
         break;
     }
     case QEvent::GraphicsSceneMousePress: {
         QGraphicsSceneMouseEvent *gsEv = static_cast<QGraphicsSceneMouseEvent*>(ev);
-        QMouseEvent dummyEvent(QEvent::MouseButtonPress, gsEv->pos(), gsEv->screenPos(), gsEv->button(), gsEv->buttons(), gsEv->modifiers());
-        d->adjustPointForClicking(&dummyEvent);
+        QMouseEvent dummyEvent(QEvent::MouseButtonPress, d->adjustPointForClicking(gsEv->pos()), gsEv->screenPos(), gsEv->button(), gsEv->buttons(), gsEv->modifiers());
         d->mousePressEvent(&dummyEvent);
         ev->setAccepted(dummyEvent.isAccepted());
         break;
     }
     case QEvent::GraphicsSceneMouseDoubleClick: {
         QGraphicsSceneMouseEvent *gsEv = static_cast<QGraphicsSceneMouseEvent*>(ev);
-        QMouseEvent dummyEvent(QEvent::MouseButtonDblClick, gsEv->pos(), gsEv->screenPos(), gsEv->button(), gsEv->buttons(), gsEv->modifiers());
-        d->adjustPointForClicking(&dummyEvent);
+        QMouseEvent dummyEvent(QEvent::MouseButtonDblClick, d->adjustPointForClicking(gsEv->pos()), gsEv->screenPos(), gsEv->button(), gsEv->buttons(), gsEv->modifiers());
         d->mouseDoubleClickEvent(&dummyEvent);
         ev->setAccepted(dummyEvent.isAccepted());
         break;

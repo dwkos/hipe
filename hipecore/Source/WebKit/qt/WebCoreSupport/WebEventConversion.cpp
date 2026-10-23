@@ -108,7 +108,11 @@ WebKitPlatformMouseEvent::WebKitPlatformMouseEvent(QInputEvent* event, int click
 
         m_type = type;
         m_position = IntPoint(mouseEvent->pos());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        m_globalPosition = IntPoint(mouseEvent->globalPosition().toPoint());
+#else
         m_globalPosition = IntPoint(mouseEvent->globalPos());
+#endif
     }
 
     m_clickCount = clickCount;
@@ -181,7 +185,11 @@ WebKitPlatformTouchEvent::WebKitPlatformTouchEvent(QTouchEvent* event)
         break;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QList<QTouchEvent::TouchPoint>& points = event->points();
+#else
     const QList<QTouchEvent::TouchPoint>& points = event->touchPoints();
+#endif
     for (int i = 0; i < points.count(); ++i) {
         PlatformTouchPoint::State state = PlatformTouchPoint::TouchStateEnd;
 
@@ -218,8 +226,13 @@ WebKitPlatformTouchPoint::WebKitPlatformTouchPoint(const QTouchEvent::TouchPoint
     // The QTouchEvent::TouchPoint API states that ids will be >= 0.
     m_id = point.id();
     m_state = state;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    m_screenPos = point.globalPosition().toPoint();
+    m_pos = point.position().toPoint();
+#else
     m_screenPos = point.screenPos().toPoint();
     m_pos = point.pos().toPoint();
+#endif
     QSizeF diameters = point.ellipseDiameters();
     if (!diameters.isEmpty()) {
         m_radiusX = diameters.width() / 2;

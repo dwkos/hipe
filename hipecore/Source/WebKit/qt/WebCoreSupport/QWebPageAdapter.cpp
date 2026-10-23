@@ -389,13 +389,13 @@ bool QWebPageAdapter::findText(const QString& subString, FindFlag options)
     return page->findString(subString, webCoreFindOptions);
 }
 
-void QWebPageAdapter::adjustPointForClicking(QMouseEvent* ev)
+QPointF QWebPageAdapter::adjustPointForClicking(const QPointF& position)
 {
 #if ENABLE(TOUCH_ADJUSTMENT)
     QtPlatformPlugin platformPlugin;
     std::unique_ptr<QWebTouchModifier> touchModifier = platformPlugin.createTouchModifier();
     if (!touchModifier)
-        return;
+        return position;
 
     unsigned topPadding = touchModifier->hitTestPaddingForTouch(QWebTouchModifier::Up);
     unsigned rightPadding = touchModifier->hitTestPaddingForTouch(QWebTouchModifier::Right);
@@ -405,23 +405,23 @@ void QWebPageAdapter::adjustPointForClicking(QMouseEvent* ev)
     touchModifier = nullptr;
 
     if (!topPadding && !rightPadding && !bottomPadding && !leftPadding)
-        return;
+        return position;
 
     FrameView* view = page->mainFrame().view();
     ASSERT(view);
-    if (view->scrollbarAtPoint(ev->pos()))
-        return;
+    if (view->scrollbarAtPoint(position.toPoint()))
+        return position;
 
-    IntRect touchRect(ev->pos().x() - leftPadding, ev->pos().y() - topPadding, leftPadding + rightPadding, topPadding + bottomPadding);
+    IntRect touchRect(position.toPoint().x() - leftPadding, position.toPoint().y() - topPadding, leftPadding + rightPadding, topPadding + bottomPadding);
     IntPoint adjustedPoint;
     Node* adjustedNode;
     bool foundClickableNode = page->mainFrame().eventHandler().bestClickableNodeForTouchPoint(touchRect.center(), touchRect.size(), adjustedPoint, adjustedNode);
     if (!foundClickableNode)
-        return;
+        return position;
 
-    *ev = QMouseEvent(ev->type(), QPoint(adjustedPoint), ev->globalPos(), ev->button(), ev->buttons(), ev->modifiers());
+    return QPoint(adjustedPoint);
 #else
-    Q_UNUSED(ev);
+    return position;
 #endif
 }
 

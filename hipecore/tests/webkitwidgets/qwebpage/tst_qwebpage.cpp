@@ -25,7 +25,6 @@
 #include <QDir>
 #include <QMainWindow>
 #include <QMenu>
-#include <QRegExp>
 #include <QStyle>
 #include <QtTest/QtTest>
 #include <QTextCharFormat>

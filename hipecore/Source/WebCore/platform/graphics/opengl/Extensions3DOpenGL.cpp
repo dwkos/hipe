@@ -52,14 +52,20 @@ Extensions3DOpenGL::Extensions3DOpenGL(GraphicsContext3D* context)
 {
 #if PLATFORM(QT)
     context->makeContextCurrent();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    m_vaoFunctions = QOpenGLVertexArrayObjectHelper::vertexArrayObjectHelperForContext(context->platformGraphicsContext3D());
+#else
     m_vaoFunctions = new QOpenGLVertexArrayObjectHelper(context->platformGraphicsContext3D());
+#endif
 #endif
 }
 
 Extensions3DOpenGL::~Extensions3DOpenGL()
 {
 #if PLATFORM(QT)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     delete m_vaoFunctions;
+#endif
     m_vaoFunctions = 0;
 #endif
 }

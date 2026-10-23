@@ -27,7 +27,8 @@ void addQtWebProcessToPath()
 {
     // Since tests won't find ./QtWebProcess, add it to PATH (at the end to prevent surprises).
     // ROOT_BUILD_DIR should be defined by qmake.
-    qputenv("PATH", qgetenv("PATH") + QByteArray(":" ROOT_BUILD_DIR "/bin"));
+    const QByteArray path = qgetenv("PATH") + ":" ROOT_BUILD_DIR "/bin";
+    qputenv("PATH", path);
 }
 
 void messageHandler(QtMsgType type, const QMessageLogContext&, const QString& message)

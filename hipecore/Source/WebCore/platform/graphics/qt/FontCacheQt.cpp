@@ -78,8 +78,12 @@ Vector<String> FontCache::systemFontFamilies()
     // When several foundries supply a family, Qt lists it once per foundry as "Family [Foundry]".
     // Such a family is listed once here, under the name a font-family property uses.
     QStringList families;
-    QFontDatabase db;
-    for (QString family : db.families()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QStringList installed = QFontDatabase::families();
+#else
+    const QStringList installed = QFontDatabase().families();
+#endif
+    for (QString family : installed) {
         int foundry = family.indexOf(QLatin1String(" ["));
         if (foundry > 0 && family.endsWith(QLatin1Char(']')))
             family.truncate(foundry);
@@ -110,8 +114,11 @@ Vector<FontTraitsMask> FontCache::getTraitsInFamily(const AtomicString&)
 
 std::unique_ptr<FontPlatformData> FontCache::createFontPlatformData(const FontDescription& fontDescription, const AtomicString& familyName, const FontFeatureSettings*, const FontVariantSettings*)
 {
-    QFontDatabase db;
-    if (!db.hasFamily(familyName))
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (!QFontDatabase::hasFamily(familyName))
+#else
+    if (!QFontDatabase().hasFamily(familyName))
+#endif
         return nullptr;
     return std::make_unique<FontPlatformData>(fontDescription, familyName);
 }

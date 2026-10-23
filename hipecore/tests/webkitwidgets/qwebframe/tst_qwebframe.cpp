@@ -30,7 +30,6 @@
 #include <QComboBox>
 #include <QPaintEngine>
 #include <QPicture>
-#include <QTextCodec>
 #include "../util.h"
 
 class tst_QWebFrame : public QObject
@@ -507,9 +506,11 @@ void tst_QWebFrame::setContent_data()
     QString str = QString::fromUtf8("ὕαλον ϕαγεῖν δύναμαι· τοῦτο οὔ με βλάπτει");
     QTest::newRow("UTF-8 plain text") << "text/plain; charset=utf-8" << str.toUtf8() << str;
 
-    QTextCodec *utf16 = QTextCodec::codecForName("UTF-16");
-    if (utf16)
-        QTest::newRow("UTF-16 plain text") << "text/plain; charset=utf-16" << utf16->fromUnicode(str) << str;
+    // UTF-16 in this machine's byte order, with a byte order mark.
+    const char16_t byteOrderMark = 0xFEFF;
+    QByteArray utf16(reinterpret_cast<const char*>(&byteOrderMark), sizeof(byteOrderMark));
+    utf16.append(reinterpret_cast<const char*>(str.utf16()), str.size() * sizeof(char16_t));
+    QTest::newRow("UTF-16 plain text") << "text/plain; charset=utf-16" << utf16 << str;
 
     str = QString::fromUtf8("Une chaîne de caractères à sa façon.");
     QTest::newRow("latin-1 plain text") << "text/plain; charset=iso-8859-1" << str.toLatin1() << str;
