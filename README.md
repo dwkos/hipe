@@ -8,7 +8,7 @@ send pages: they connect over a local socket and build their interface as a live
 HTML elements and CSS styles, which the display server lays out and renders. See `ABOUT.txt`
 for the idea behind it.
 
-Version 3.1 beta.
+Version 3.2 beta.
 
 What is here
 ------------

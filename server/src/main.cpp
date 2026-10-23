@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     a.setApplicationName("Hipe display server");
-    a.setApplicationVersion("3.1 beta");
+    a.setApplicationVersion("3.2 beta");
 
     std::stringstream userid; userid << getuid();
     uid = userid.str();

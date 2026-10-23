@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Hipe 3.1 beta manual</title>
+    <title>Hipe 3.2 beta manual</title>
     <meta name="viewport" content="width=600, initial-scale=1.0" />
     <style type="text/css">
 body {
@@ -252,8 +252,8 @@ td:first-child tt {
 <body>
 
 <div id="content">
-<h1 class="unrolltitle">Hipe 3.1 beta manual</h1>
-<p style="text-align:center">A copy of the documentation at <a href="http://hipe.generaldevelopment.net/">http://hipe.generaldevelopment.net</a>, as of this release.</p>
+<h1 class="unrolltitle">Hipe 3.2 beta manual</h1>
+<p style="text-align:center">A copy of the documentation at <a href="https://hipe.generaldevelopment.net/">https://hipe.generaldevelopment.net</a>, as of this release.</p>
 <div class="unrolltoc">
 <ul>
 <li><a href="#documentation-how-hipe-works">How Hipe Works</a></li>
@@ -441,7 +441,7 @@ applications doesn't need the library; building them does.</li>
 </ol>
 
 <p>The instructions assume you have the Hipe source in a directory named <tt>hipe</tt> (see
-<a href="http://hipe.generaldevelopment.net/?l1=download">Download</a>), and start each step from that directory. A <tt>$</tt> prompt means a
+<a href="https://hipe.generaldevelopment.net/?l1=download">Download</a>), and start each step from that directory. A <tt>$</tt> prompt means a
 command run as a normal user, and <tt>#</tt> one run as root (for example with <tt>sudo</tt>). Don't type
 the prompt itself.</p>
 
@@ -449,8 +449,12 @@ the prompt itself.</p>
 
 <h2>Install the dependencies</h2>
 
-<p>You need the development files for Qt 5.15. Earlier Qt 5 releases are not supported, and Qt 6 is not
-supported yet. To use Hipe within a desktop, you also need an X11 or Wayland session.</p>
+<p>You need the development files for Qt 5.15 or Qt 6. Earlier Qt 5 releases are not supported. Build
+hipecore and <tt>hiped</tt> with the same Qt version. To use Hipe within a desktop, you also need an X11 or
+Wayland session.</p>
+
+<p>Qt 6 support is new. The test suites pass with Qt 6.8, but these have not been tried on Qt 6 yet:
+touch and mouse-wheel input from real devices, the clipboard, input methods, video playback, embedded X11 windows, high-DPI screens, and running natively under Wayland.</p>
 
 <p>You don't need your distribution's QtWebKit packages (such as <tt>libqt5webkit5-dev</tt>): hipecore,
 built in the next step, takes their place.</p>
@@ -468,25 +472,30 @@ The display server requires it.</p>
 <span style="color:grey">#</span> ninja install
 </pre>
 
-<p>hipecore has its own build dependencies: CMake, Ninja, a C++17 compiler, the Qt 5 development packages
+<p>For Qt 6, add <tt>-DHIPECORE_QT_MAJOR=6</tt> to the <tt>cmake</tt> command.</p>
+
+<p>hipecore has its own build dependencies: CMake, Ninja, a C++17 compiler, the Qt development packages
 and a handful of image, XML and multimedia libraries. <tt>hipecore/README.md</tt> lists them for
 Debian-based systems; elsewhere, if the <tt>cmake</tt> step fails, its output says which package is
 missing.</p>
 
 <p>This installs the libraries <tt>libHipeCore</tt> and <tt>libHipeCoreWidgets</tt>, and their headers in
-<tt>/usr/include/HipeCore</tt>.</p>
+<tt>/usr/include/HipeCore</tt>. A Qt 5 and a Qt 6 build install under the same names, so only one can be
+installed at a time.</p>
 
 <p>This is a large build. On a machine with little memory, limit the number of parallel jobs, e.g.
 <tt>ninja -j2</tt>.</p>
 
 <h2>Build and install <tt>hiped</tt></h2>
 
-<p>The display server needs the Qt 5.15 development files, including the Qt SVG module. On a Debian-based
+<p>The display server needs the Qt development files, including the Qt SVG module. On a Debian-based
 system:</p>
 
-<pre>
-<span style="color:grey">#</span> apt install qtbase5-dev libqt5svg5-dev
-</pre>
+<table>
+<tr><th>Qt</th><th>Packages</th><th>qmake command</th></tr>
+<tr><td>5.15</td><td><tt>qtbase5-dev libqt5svg5-dev</tt></td><td><tt>qmake</tt></td></tr>
+<tr><td>6</td><td><tt>qt6-base-dev qt6-svg-dev</tt></td><td><tt>qmake6</tt></td></tr>
+</table>
 
 <p>Then build it:</p>
 
@@ -498,8 +507,8 @@ system:</p>
 
 <p>If a Qt module is missing, <tt>qmake</tt> stops with a message such as
 <tt>Unknown module(s) in QT: svg</tt>. On a system that also has another version of Qt installed,
-<tt>qmake</tt> may belong to that version (check with <tt>qmake --version</tt>); use <tt>qmake -qt=5</tt>
-or <tt>qmake-qt5</tt> in its place.</p>
+<tt>qmake</tt> may belong to that version (check with <tt>qmake --version</tt>); for Qt 5 use
+<tt>qmake -qt=5</tt> or <tt>qmake-qt5</tt> in its place, and for Qt 6 use <tt>qmake6</tt>.</p>
 
 <p>This produces the <tt>hiped</tt> executable in <tt>server/</tt>. It can be run from there, but it is
 usually installed for all users:</p>
@@ -729,7 +738,7 @@ format, so any language that can write to a socket can talk to <tt>hiped</tt>.</
 
 <p><tt>libhipe</tt> is under the MIT licence, so it can be used in any application, open source or
 proprietary, and the sample applications are under 0BSD, so you can copy from them freely. See
-<a href="http://hipe.generaldevelopment.net/?l1=licenses">Licenses</a>.</p>
+<a href="https://hipe.generaldevelopment.net/?l1=licenses">Licenses</a>.</p>
 
 <h2>In this section</h2>
 
@@ -1612,7 +1621,6 @@ that location do nothing, and the location can be freed as usual.</p>
 <table><tbody>
 <tr><th>Tag</th><th>In a Hipe frame</th></tr>
 <tr><td><tt>script</tt></td><td>Never runs.</td></tr>
-<tr><td><tt>style</tt></td><td>Its rules apply, but text set with <tt>HIPE_OP_SET_TEXT</tt> has its quotes escaped. Use <tt>HIPE_OP_ADD_STYLE_RULE</tt>.</td></tr>
 <tr><td><tt>meta</tt> <tt>link</tt> <tt>base</tt> <tt>title</tt></td><td>No effect. The window title is set with <tt>HIPE_OP_SET_TITLE</tt>.</td></tr>
 <tr><td><tt>iframe</tt> <tt>frame</tt></td><td>Show only an application given the frame's key (<tt>HIPE_OP_GET_FRAME_KEY</tt>).</td></tr>
 </tbody></table>
@@ -1629,9 +1637,7 @@ document. See "Locations".</p>
 <h2>Styles</h2>
 
 <p>Any CSS property and value can be used with <tt>HIPE_OP_SET_STYLE</tt>, and any selector and
-properties with <tt>HIPE_OP_ADD_STYLE_RULE</tt>. <tt>HIPE_OP_ADD_STYLE_RULE</tt>,
-<tt>HIPE_OP_ADD_STYLE_RULE_SRC</tt> and <tt>HIPE_OP_ADD_FONT</tt> are ignored if their text contains
-<tt>&lt;/</tt>.</p>
+properties with <tt>HIPE_OP_ADD_STYLE_RULE</tt>.</p>
 
 <p>A <tt>url()</tt> in a style loads only <tt>data:</tt> URLs; any other address loads nothing. To use
 an image or a font without encoding it yourself, send its data with <tt>HIPE_OP_SET_STYLE_SRC</tt>,
@@ -1851,7 +1857,9 @@ rule.</p>
 
 <h3>Notes</h3>
 
-<p>The instruction is ignored if the selector or the properties contain <tt>&lt;/</tt>. See "Tags, attributes and styles".</p>
+<p>Rules stay in force when the body's content is replaced (<tt>HIPE_OP_CLEAR</tt> or <tt>HIPE_OP_SET_TEXT</tt>
+on location 0), and are not part of the content. Among rules of equal specificity a later rule wins, and a
+<tt>&lt;style&gt;</tt> element in the content (from <tt>HIPE_OP_SET_TEXT</tt> mode 3) wins over them all.</p>
 
 <p>For styling individual elements after you have created them, use the <tt>HIPE_OP_SET_STYLE</tt>
 instruction instead.</p>
@@ -2025,7 +2033,8 @@ See "Paragraph breaks" on the "Tags, attributes and styles" page.</p>
 <ul>
     <li><b>Mode 0</b> for most text, and for any text that will be read back or edited and must come
 back the same, such as a source file shown in a <tt>pre</tt> tag. To show a symbol, put the character
-itself in the text: arguments are UTF-8.</li>
+itself in the text: arguments are UTF-8. Also for the CSS of a <tt>style</tt> tag: modes 1
+and 2 would change it.</li>
     <li><b>Mode 1</b> for showing text you don't control, such as an error message or a command's
 output, in an ordinary element with its line breaks and tabs visible and no styling of your own.</li>
     <li><b>Mode 2</b> for text you write yourself, where you want symbols by name, such as a
@@ -4387,6 +4396,9 @@ instruction, containing the left and top position coordinates, as well as the
 width and height of the specified element.
 </p>
 
+<p>With <tt>location</tt> 0 it reports the body. This works even as the client's first instruction, before it
+has added any content.</p>
+
 <p>The left and top coordinates are in pixels, measured from the nearest containing element that is
 positioned (one whose <tt>position</tt> style is <tt>relative</tt>, <tt>absolute</tt> or
 <tt>fixed</tt>) or is a table or table cell, or from the top-left of the frame's content if there is none. They are not screen
@@ -4530,6 +4542,9 @@ instruction, containing the scroll position of the content inside the
 scrollable element at its left and top edge, as well as the total
 width and height of the scrollable content inside the element.
 </p>
+
+<p>With <tt>location</tt> 0 it reports the body. This works even as the client's first instruction, before it
+has added any content.</p>
 
 
 
@@ -4865,7 +4880,7 @@ from one client to another.</p>
 <ul>
     <li><tt>location</tt>: 0 if sending the link. If receiving this instruction (in the framing manager) the location corresponds to the frame that produced the open-link request.
     </li>
-    <li><tt>arg[0]</tt>: The fully qualified link string, e.g. "http://hipe.generaldevelopment.net".
+    <li><tt>arg[0]</tt>: The fully qualified link string, e.g. "https://hipe.generaldevelopment.net".
     </li>
     <li><tt>arg[1]</tt>: [reserved for future applications]
     </li>
@@ -5468,7 +5483,8 @@ See "Paragraph breaks" on the "Tags, attributes and styles" page.</p>
 <ul>
     <li><b>Mode 0</b> for most text, and for any text that will be read back or edited and must come
 back the same, such as a source file shown in a <tt>pre</tt> tag. To show a symbol, put the character
-itself in the text: arguments are UTF-8.</li>
+itself in the text: arguments are UTF-8. Also for the CSS of a <tt>style</tt> tag: modes 1
+and 2 would change it.</li>
     <li><b>Mode 1</b> for showing text you don't control, such as an error message or a command's
 output, in an ordinary element with its line breaks and tabs visible and no styling of your own.</li>
     <li><b>Mode 2</b> for text you write yourself, where you want symbols by name, such as a

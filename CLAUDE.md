@@ -24,7 +24,7 @@ This is one project with three parts, side by side:
 The parts talk to each other only at two seams: clients and server over the socket protocol, and server
 and engine through the `QWeb*` C++ API. There is no shared build system.
 
-**Version 3.1 beta.** The tree starts from Hipe 2.12 and hipecore 0.6 beta ("classic" Hipe), which were
+**Version 3.2 beta.** The tree starts from Hipe 2.12 and hipecore 0.6 beta ("classic" Hipe), which were
 separate projects. Classic Hipe could also be built against stock Qt5WebKit; Hipe 3 cannot. The server's
 stock-Qt5WebKit code paths (the `HAVE_HIPECORE` guards and their `evaluateJavaScript` fallbacks) have been
 removed, and the macro itself is gone: don't add new ones. hipecore is the only engine, and JavaScript is not available to the server.
