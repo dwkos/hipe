@@ -2,10 +2,11 @@ Source code for Hipe server process.
 
 DEPENDENCIES:
 
-You must have the development files for Qt 5.15 installed on the system
-(earlier Qt 5 releases are not supported, and Qt 6 is not supported yet).
-This includes the QtSvg module (Debian/Ubuntu: libqt5svg5-dev; Fedora:
-qt5-qtsvg-devel; Arch: qt5-svg) - hiped uses QSvgGenerator for the "svg"
+You must have the development files for Qt 5.15 or Qt 6 installed on the system
+(earlier Qt 5 releases are not supported). Use the same Qt version hipecore was
+built with. This includes the QtSvg module (Debian/Ubuntu: libqt5svg5-dev or
+qt6-svg-dev; Fedora: qt5-qtsvg-devel or qt6-qtsvg-devel; Arch: qt5-svg or
+qt6-svg) - hiped uses QSvgGenerator for the "svg"
 HIPE_OP_TAKE_SNAPSHOT format. Missing it shows up as
 "Project ERROR: Unknown module(s) in QT: svg" at qmake time.
 You must also have hipecore, Hipe's display engine, installed on the system:
@@ -26,6 +27,8 @@ Run the following commands from this directory.
 
 $ qmake -makefile ./src/hiped.pro
 $ make
+
+(For Qt 6, run qmake6 in place of qmake.)
 
 Then clean up the object files with:
 

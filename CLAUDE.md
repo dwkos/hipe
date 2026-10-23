@@ -15,7 +15,7 @@ This is one project with three parts, side by side:
 - **`api/`** — `libhipe`, a small dependency-light C library (`hipe.c`/`hipe.h`, plus a thin C++ wrapper
   `hipe.hpp`) that client applications link to open a session and send/receive instructions. Sample
   applications are in `api/test/`.
-- **`server/`** — `hiped`, the display server: a Qt5 application (qmake project) that embeds the display
+- **`server/`** — `hiped`, the display server: a Qt application (qmake project) that embeds the display
   engine and renders frames on screen.
 - **`hipecore/`** — the display engine: a cut-down fork of Qt5WebKit with no JavaScript, no networking and
   no browser features. It has its own `CLAUDE.md` with the engine's architecture and rules; read that
@@ -42,17 +42,18 @@ never move GPL server code into `api/`.
 
 Build in this order: engine, server, client library.
 
-**Engine** (`hipecore/`, CMake + Ninja, Qt 5.15; details and caveats in `hipecore/CLAUDE.md`):
+**Engine** (`hipecore/`, CMake + Ninja, Qt 5.15 or Qt 6; details and caveats in `hipecore/CLAUDE.md`):
 ```sh
 cd hipecore && mkdir build && cd build
 cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
 ninja
 sudo ninja install
 ```
-It installs as `libHipeCore` and `libHipeCoreWidgets`, with headers in `/usr/include/HipeCore`. The server
+For Qt 6 add `-DHIPECORE_QT_MAJOR=6` (the default is 5). It installs as `libHipeCore` and `libHipeCoreWidgets`,
+with headers in `/usr/include/HipeCore`, under the same names for either Qt, so only one can be installed. The server
 links the *installed* copy, so a change in `hipecore/` only reaches `hiped` after `sudo ninja install`.
 
-**Server** (`server/`, qmake + Qt 5.15; needs the Qt SVG module as well as the installed engine):
+**Server** (`server/`, qmake + Qt 5.15, or `qmake6` + Qt 6; needs the Qt SVG module as well as the installed engine):
 ```sh
 cd server
 qmake -makefile ./src/hiped.pro   # or run ./configure, a 1-line wrapper for the same command
@@ -64,6 +65,13 @@ Produces `./hiped` in `server/`. There is no `make install` for the server; copy
 as `<HipeCore/QWebElement>`, `<HipeCore/QWebFrame>` and so on. If the engine was installed under a prefix
 other than `/usr`, pass `HIPECORE_PREFIX=<prefix>` to qmake. The engine installs no qmake module files, so
 there is no `QT += ...` for it.
+
+**Both Qt versions** build from the same source. Where Qt 5.15 and Qt 6 have no common spelling, the code uses
+`#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)`; otherwise use calls that exist in both. The engine builds with
+`QT_DISABLE_DEPRECATED_BEFORE=0x060000`. To test a Qt version without replacing the installed engine, install the
+build with `DESTDIR=<dir> ninja install`, build hiped with `HIPECORE_PREFIX=<dir>/usr
+HIPECORE_LIBDIR=<dir>/usr/lib/<triplet>`, and run it (and `server/tests/run.sh`) with `LD_LIBRARY_PATH` set to that
+library directory. Not yet tried on Qt 6: touch and mouse-wheel input from real devices, the clipboard, input methods, video playback, embedded X11 windows, high-DPI screens, and running natively under Wayland.
 
 **Client library** (`api/`, plain Makefile, `gcc`/`ar`):
 ```sh
