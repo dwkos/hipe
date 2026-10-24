@@ -71,7 +71,7 @@ there is no `QT += ...` for it.
 `QT_DISABLE_DEPRECATED_BEFORE=0x060000`. To test a Qt version without replacing the installed engine, install the
 build with `DESTDIR=<dir> ninja install`, build hiped with `HIPECORE_PREFIX=<dir>/usr
 HIPECORE_LIBDIR=<dir>/usr/lib/<triplet>`, and run it (and `server/tests/run.sh`) with `LD_LIBRARY_PATH` set to that
-library directory. Not yet tried on Qt 6: touch and mouse-wheel input from real devices, the clipboard, input methods, video playback, embedded X11 windows, high-DPI screens, and running natively under Wayland.
+library directory. Not yet tried on Qt 6: touch and mouse-wheel input from real devices, the clipboard, input methods, embedded X11 windows, and high-DPI screens.
 
 **Client library** (`api/`, plain Makefile, `gcc`/`ar`):
 ```sh
