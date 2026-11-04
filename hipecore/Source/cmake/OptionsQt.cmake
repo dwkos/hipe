@@ -263,7 +263,9 @@ else ()
     set(ICU_LIBRARY_PREFIX "")
 endif ()
 
-if (UNIX AND TARGET ${HIPE_QT}::QXcbIntegrationPlugin AND NOT APPLE)
+# Qt 6 installs don't always define the xcb plugin target (Debian ships no Qt6GuiPlugins.cmake),
+# so also accept Qt 6's xcb feature flag.
+if (UNIX AND NOT APPLE AND (TARGET ${HIPE_QT}::QXcbIntegrationPlugin OR QT_FEATURE_xcb))
     set(ENABLE_X11_TARGET_DEFAULT ON)
 else ()
     set(ENABLE_X11_TARGET_DEFAULT OFF)
