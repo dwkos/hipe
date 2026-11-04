@@ -137,9 +137,9 @@ For Qt 6:
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
         qt6-base-dev qt6-base-private-dev
 
-Qt 6 support is new. The test suites pass with Qt 6.8, and it runs natively under Wayland with video
-playback, but these have not been tried on Qt 6 yet: touch and mouse-wheel input from real devices,
-the clipboard, input methods, embedded X11 windows, and high-DPI screens.
+Qt 6 support is new. The test suites pass with Qt 6.8, it runs natively under Wayland with video
+playback, and embedded X11 windows work, but these have not been tried on Qt 6 yet: touch and
+mouse-wheel input from real devices, the clipboard, input methods, and high-DPI screens.
 
 `sudo apt-get build-dep libqt5webkit5` pulls most of these. A failing configure/build names whatever is still missing.
 

@@ -8,9 +8,10 @@ Hipe builds with Qt 5.15 or Qt 6. Earlier Qt 5 releases are not supported. Build
 engine and the display server with the same Qt version: only one copy of the engine can be
 installed at a time.
 
-Qt 6 support is new. The test suites pass with Qt 6.8, and it runs natively under Wayland with
-video playback, but these have not been tried on Qt 6 yet: touch and mouse-wheel input from
-real devices, the clipboard, input methods, embedded X11 windows, and high-DPI screens.
+Qt 6 support is new. The test suites pass with Qt 6.8, it runs natively under Wayland with
+video playback, and embedded X11 windows work, but these have not been tried on Qt 6 yet:
+touch and mouse-wheel input from real devices, the clipboard, input methods, and high-DPI
+screens.
 
 
 1. BUILD AND INSTALL THE DISPLAY ENGINE (hipecore)
