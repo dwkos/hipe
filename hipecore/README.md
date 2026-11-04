@@ -124,14 +124,16 @@ Qt 5.15 or Qt 6 is required. Earlier Qt 5 releases are not supported.
 For Qt 5:
 
     sudo apt install cmake ninja-build pkgconf g++ bison gperf \
-        libjpeg-dev libpng-dev libicu-dev libxml2-dev libxslt1-dev libxcomposite-dev \
+        libjpeg-dev libpng-dev libicu-dev libxml2-dev libxslt1-dev \
+        libxcomposite-dev libxrender-dev \
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
         qtbase5-private-dev
 
 For Qt 6:
 
     sudo apt install cmake ninja-build pkgconf g++ bison gperf \
-        libjpeg-dev libpng-dev libicu-dev libxml2-dev libxslt1-dev libxcomposite-dev \
+        libjpeg-dev libpng-dev libicu-dev libxml2-dev libxslt1-dev \
+        libxcomposite-dev libxrender-dev \
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
         qt6-base-dev qt6-base-private-dev
 
