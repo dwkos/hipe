@@ -99,12 +99,21 @@ licence (`Source/WebCore/LICENSE-APPLE`), with bundled third-party code under
 Build
 -----
 
+For Qt 5:
+
     mkdir build && cd build
     cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
     ninja
     sudo ninja install
 
-`PORT=Qt` is required. Add `-DHIPECORE_QT_MAJOR=6` to build against Qt 6 (the default is Qt 5).
+For Qt 6:
+
+    mkdir build && cd build
+    cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release -DHIPECORE_QT_MAJOR=6 ..
+    ninja
+    sudo ninja install
+
+`PORT=Qt` is required.
 On the Raspberry Pi, build `-j2` until the AllInOne translation
 units clear, then `-j4` — a blanket `-j4` can exhaust memory.
 
@@ -112,11 +121,19 @@ units clear, then `-j4` — a blanket `-j4` can exhaust memory.
 
 Qt 5.15 or Qt 6 is required. Earlier Qt 5 releases are not supported.
 
-    ninja-build bison gperf libjpeg-dev libpng-dev libicu-dev libxml2-dev
-    libxslt1-dev qtbase5-private-dev libxcomposite-dev
-    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+For Qt 5:
 
-For Qt 6, use `qt6-base-dev qt6-base-private-dev` in place of `qtbase5-private-dev`.
+    sudo apt install cmake ninja-build pkgconf g++ bison gperf \
+        libjpeg-dev libpng-dev libicu-dev libxml2-dev libxslt1-dev libxcomposite-dev \
+        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+        qtbase5-private-dev
+
+For Qt 6:
+
+    sudo apt install cmake ninja-build pkgconf g++ bison gperf \
+        libjpeg-dev libpng-dev libicu-dev libxml2-dev libxslt1-dev libxcomposite-dev \
+        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+        qt6-base-dev qt6-base-private-dev
 
 Qt 6 support is new. The test suites pass with Qt 6.8, and it runs natively under Wayland with video
 playback, but these have not been tried on Qt 6 yet: touch and mouse-wheel input from real devices,

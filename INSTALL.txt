@@ -18,13 +18,21 @@ real devices, the clipboard, input methods, embedded X11 windows, and high-DPI s
 
 hipecore is built with CMake and Ninja. See hipecore/README.md for its dependencies.
 
+For Qt 5:
+
 $ cd hipecore
 $ mkdir build && cd build
 $ cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release ..
 $ ninja
 $ sudo ninja install
 
-For Qt 6, add -DHIPECORE_QT_MAJOR=6 to the cmake command.
+For Qt 6:
+
+$ cd hipecore
+$ mkdir build && cd build
+$ cmake -G Ninja -DPORT=Qt -DCMAKE_BUILD_TYPE=Release -DHIPECORE_QT_MAJOR=6 ..
+$ ninja
+$ sudo ninja install
 
 This installs the libraries libHipeCore and libHipeCoreWidgets, and their headers in
 /usr/include/HipeCore. hipecore has its own names, so it can be installed on a system
