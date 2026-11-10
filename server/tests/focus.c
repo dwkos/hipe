@@ -15,10 +15,11 @@
 */
 
 /* Keyboard focus: SET_FOCUS and typing into each kind of element, Tab, clicks, the focused element removed, hidden or
- * disabled, the caret kept across SET_FOCUS, SET_FOCUS while the window is inactive, and focus moving between a
- * client and a framed child. Run by run.sh against a private hiped with no window manager, as the top-level client;
- * typing, clicks and window activation use xdotool on $DISPLAY. A forked second top-level window ("focus-decoy")
- * takes the focus to make this one inactive, and a forked child client fills an <iframe>.
+ * disabled (and given back when enabled again), HAS_FOCUS, the caret kept across SET_FOCUS, SET_FOCUS while the
+ * window is inactive, and focus moving between a client and a framed child. Run by run.sh against a private hiped
+ * with no window manager, as the top-level client; typing, clicks and window activation use xdotool on $DISPLAY. A
+ * forked second top-level window ("focus-decoy") takes the focus to make this one inactive, and a forked child client
+ * fills an <iframe>.
  * Prints PASS/FAIL lines and exits non-zero if anything failed. */
 #include <hipe.h>
 #include <stdio.h>
@@ -99,6 +100,15 @@ static const char* text(hipe_loc l) {
     snprintf(v, sizeof v, "%.*s", (int)last.arg_length[0], last.arg[0] ? last.arg[0] : "");
     return v;
 }
+static int hasFocus(hipe_loc l) {
+    hipe_instruction_clear(&last);
+    hipe_send(s, HIPE_OP_HAS_FOCUS, 0, l, 0);
+    hipe_await_instruction(s, &last, HIPE_OP_FOCUS_RETURN);
+    drain();
+    snprintf(v, sizeof v, "%.*s", (int)last.arg_length[0], last.arg[0] ? last.arg[0] : "");
+    return last.location == l && !strcmp(v, "1");
+}
+static void caret(hipe_loc l, const char* at) { hipe_send(s, HIPE_OP_CARAT_POSITION, 0, l, 2, at, at); }
 static void geometry(hipe_loc l, int* x, int* y) {
     hipe_instruction_clear(&last);
     hipe_send(s, HIPE_OP_GET_GEOMETRY, 0, l, 0);
@@ -185,6 +195,13 @@ static void childMain(const char* key) {
             }
             snprintf(out, sizeof out, "%d", n);
         } else if(!strncmp(line, "unnest", 6)) hipe_send(cs, HIPE_OP_DELETE, 0, gf, 0);
+        else if(!strncmp(line, "hasfocus", 8)) {
+            hipe_send(cs, HIPE_OP_HAS_FOCUS, 0, ci, 0);
+            hipe_await_instruction(cs, &r, HIPE_OP_FOCUS_RETURN);
+            snprintf(out, sizeof out, "%.*s", (int)r.arg_length[0], r.arg[0] ? r.arg[0] : "");
+        }
+        else if(!strncmp(line, "disable", 7)) hipe_send(cs, HIPE_OP_SET_ATTRIBUTE, 0, ci, 2, "disabled", "disabled");
+        else if(!strncmp(line, "enable", 6)) hipe_send(cs, HIPE_OP_REMOVE_ATTRIBUTE, 0, ci, 1, "disabled");
         else if(!strncmp(line, "quit", 4)) break;
         hipe_instruction_clear(&r);
         strcat(out, "\n"); write(fromChild[1], out, strlen(out));
@@ -293,6 +310,28 @@ int main() {
         focus(i1); settle(100); style(i1, "visibility", "hidden"); settle(200); CHECK("T11c focused input made visibility:hidden is blurred", has("blur@i1"));
         style(i1, "visibility", "visible"); reset();
         focus(i1); settle(100); style(i1, "color", "red"); settle(200); CHECK("T11d an unrelated style change doesn't blur", !has("blur@i1")); reset();
+
+        /* HAS_FOCUS, and the focus given back to an element re-enabled (a disabled <fieldset> around it) */
+        hipe_loc fs = tag(box, "fieldset", "fs", 0), ri = tag(fs, "input", "ri", 0); listen(ri);
+        focus(ri); settle(100); type("ab"); caret(ri, "1"); reset();
+        CHECK("Q1 HAS_FOCUS: the focused input is focused", hasFocus(ri));
+        CHECK("Q1 HAS_FOCUS: another input isn't", !hasFocus(i1));
+        CHECK("Q1 HAS_FOCUS: location 0 isn't", !hasFocus(0) && !strcmp(v, "0"));
+        attr(fs, "disabled", "disabled"); settle(200);
+        CHECK("R1 disabling the fieldset blurs the input in it", has("blur@ri") && !hasFocus(ri)); reset();
+        hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, fs, 1, "disabled"); settle(200);
+        CHECK("R1 enabling the fieldset again gives the focus back", has("focus@ri") && hasFocus(ri));
+        type("x"); value(ri); CHECK("R1 with the caret where it was", !strcmp(v, "axb")); reset();
+        attr(ri, "disabled", "disabled"); settle(200); hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, ri, 1, "disabled"); settle(200);
+        CHECK("R2 the same for the input itself disabled and enabled", has("blur@ri") && has("focus@ri") && hasFocus(ri)); reset();
+        attr(fs, "disabled", "disabled"); settle(200); focus(i2); settle(100);
+        hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, fs, 1, "disabled"); settle(200);
+        CHECK("R3 if something else was focused meanwhile, it keeps the focus", !has("focus@ri") && hasFocus(i2) && !hasFocus(ri)); reset();
+        focus(ri); settle(100); reset(); style(ri, "display", "none"); settle(200); style(ri, "display", "inline-block"); settle(200);
+        CHECK("R4 an input hidden and shown again doesn't get the focus back", has("blur@ri") && !has("focus@ri") && !hasFocus(ri)); reset();
+        focus(ri); settle(100); attr(fs, "disabled", "disabled"); settle(200);
+        hipe_send(s, HIPE_OP_DELETE, 0, ri, 0); hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, fs, 1, "disabled"); settle(200);
+        type("q"); CHECK("R5 an input removed while disabled is forgotten: keys reach the body", has("keydown@body")); reset();
 
         hipe_loc tmp = tag(box, "input", "tmp", 0); listen(tmp); focus(tmp); settle(100); reset();
         hipe_send(s, HIPE_OP_DELETE, 0, tmp, 0); settle(200);
@@ -423,7 +462,10 @@ int main() {
         if(!pid) childMain(key);
         { char b[64]; FILE* f0 = fdopen(fromChild[0], "r"); if(!fgets(b, sizeof b, f0)) b[0] = 0; childIn = f0; }
         focus(i1); settle(300); value(i1); char p0[sizeof v]; snprintf(p0, sizeof p0, "%s", v); reset();
+        child("hasfocus"); CHECK("Q2 a framed client's input isn't focused before it asks", !strcmp(v, "0"));
         child("focus"); settle(300);
+        child("hasfocus"); CHECK("Q2 HAS_FOCUS: a framed client's SET_FOCUS waiting for its frame counts as focused", !strcmp(v, "1"));
+        CHECK("Q2 ...and the parent's input is still focused in the parent", hasFocus(i1));
         type("f"); child("val"); int childGot = strcmp(v, "") != 0;
         value(i1); CHECK("F1 a child's SET_FOCUS doesn't take the keys from the parent", !childGot && !has("blur@i1") && strlen(v) == strlen(p0) + 1);
         focus(fr); settle(300); type("e"); child("val");
@@ -431,6 +473,7 @@ int main() {
         reset();
         focus(i1); settle(200); value(i1); char before[sizeof v]; snprintf(before, sizeof before, "%s", v);
         type("g"); value(i1); CHECK("F2 parent SET_FOCUS i1 takes keys back from the child", ends("g"));
+        child("hasfocus"); CHECK("Q3 HAS_FOCUS: the child's input is still focused in its frame after the parent took the focus", !strcmp(v, "1"));
         child("val"); snprintf(before, sizeof before, "%s", v);
         focus(fr); settle(200); type("h"); child("val");
         CHECK("F3 SET_FOCUS on the iframe returns keys to the child's input", strlen(v) == strlen(before) + 1); reset();
@@ -469,6 +512,17 @@ int main() {
         style(fr, "display", "block"); settle(200);
         focus(fr); settle(300); type("q"); child("val");
         CHECK("H1 its request applies once the frame is shown and focused", strlen(v) == strlen(before) + 1); reset();
+        /* a framed client's focused input disabled and enabled */
+        focus(fr); settle(200); child("val"); snprintf(before, sizeof before, "%s", v);
+        child("disable"); settle(200); child("enable"); settle(200); type("t"); child("val");
+        CHECK("R6 a framed client's input disabled and enabled gets the keys back", strlen(v) == strlen(before) + 1);
+        child("disable"); settle(200); focus(i1); settle(200); child("enable"); settle(200);
+        value(i1); snprintf(p1, sizeof p1, "%s", v); child("val"); snprintf(before, sizeof before, "%s", v);
+        type("u"); child("val"); int stole = strcmp(v, before) != 0;
+        value(i1); CHECK("R7 enabled again while the parent has the focus, it doesn't take it back", !stole && strlen(v) == strlen(p1) + 1);
+        child("hasfocus"); CHECK("R7 ...but HAS_FOCUS reports it focused in its frame", !strcmp(v, "1"));
+        focus(fr); settle(300); child("val"); snprintf(before, sizeof before, "%s", v); type("w"); child("val");
+        CHECK("R7 focusing the frame gives it the keys", strlen(v) == strlen(before) + 1); reset();
         /* the child hosts its own client; the frame with the focus is removed (e.g. a tab whose load failed) */
         child("nest"); focus(fr); settle(300); child("gfocus"); settle(300); child("framekeys");
         type("r"); child("framekeys"); CHECK("N1 a framed client focusing its own <iframe> gives its client the keys", atoi(v) >= 1);

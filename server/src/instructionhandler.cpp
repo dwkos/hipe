@@ -104,6 +104,7 @@ void initInstructionMap() {
     handlerInfo[HIPE_OP_ADD_STYLE_RULE_SRC].ptrtype.noargs = handle_ADD_STYLE_RULE_SRC;
 
     handlerInfo[HIPE_OP_GET_CARAT_POSITION].ptrtype.noargs = handle_GET_CARAT_POSITION;
+    handlerInfo[HIPE_OP_HAS_FOCUS].ptrtype.noargs = handle_HAS_FOCUS;
 
     handlerInfo[HIPE_OP_GET_AUDIOVIDEO_STATE].ptrtype.noargs = handle_GET_AUDIOVIDEO_STATE;
     
@@ -562,6 +563,11 @@ void handle_GET_CARAT_POSITION(Container* c, hipe_instruction* instruction, bool
     }
     c->client->sendInstruction(HIPE_OP_CARAT_POSITION, instruction->requestor, 
             instruction->location, {selStart, selEnd});
+}
+
+void handle_HAS_FOCUS(Container* c, hipe_instruction* instruction, bool, QWebElement location) {
+    c->client->sendInstruction(HIPE_OP_FOCUS_RETURN, instruction->requestor, instruction->location,
+            {location.hasFocusInFrame() ? "1" : "0"});
 }
 
 

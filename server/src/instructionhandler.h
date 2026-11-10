@@ -66,6 +66,7 @@ void handle_SET_SRC         (Container*, hipe_instruction*, bool locationSpecifi
 void handle_SET_STYLE_SRC   (Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 void handle_ADD_STYLE_RULE_SRC(Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 void handle_GET_CARAT_POSITION(Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
+void handle_HAS_FOCUS(Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 void handle_GET_AUDIOVIDEO_STATE(Container*, hipe_instruction*, bool locationSpecified, QWebElement location);
 
 

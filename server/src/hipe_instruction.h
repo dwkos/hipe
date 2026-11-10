@@ -246,7 +246,8 @@ extern "C" {
  * CARAT_POSITION set, or else the caret goes at the end of a text input's value and at the start of a textarea or
  * editable element. Does nothing for an element that can't take focus (hidden, disabled, not focusable). Works while
  * the window is inactive: the element has the focus when the window is activated. A focused element that is hidden or
- * disabled loses the focus (a blur event). A framed client can't take the focus from outside its frame: while the focus
+ * disabled loses the focus (a blur event). One that lost it to being disabled (itself or e.g. a <fieldset> around it)
+ * gets it back, with its caret, when enabled again, unless something else in the document was focused meanwhile. A framed client can't take the focus from outside its frame: while the focus
  * is elsewhere (in the framing manager or another client) or its frame is hidden, the element is remembered, and gets
  * the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>). */
 
@@ -746,6 +747,16 @@ extern "C" {
  * (never copying it into arg[1]), and answers a message with arg[1] and arg[2] both empty with its arg[1] to the
  * sender only. Keys from the framing manager: "ability" (the name of the ability the user chose), "peer-title" (the
  * other end's title as shown to the user).
+ */
+
+#define HIPE_OP_HAS_FOCUS 88
+/* Asks whether the element at location is the focused element in the client's own document. The server replies with
+ * HIPE_OP_FOCUS_RETURN. For a framed client, the answer is about the focus inside its frame, whether or not the frame
+ * itself has the focus (an element a SET_FOCUS is waiting to focus counts as focused).
+ */
+
+#define HIPE_OP_FOCUS_RETURN 89
+/* Reply to HIPE_OP_HAS_FOCUS, with the same location and requestor. arg[0] == "1" if the element is focused, else "0".
  */
 
 #define HIPE_PROTOCOL_VERSION "3"
