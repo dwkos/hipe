@@ -146,6 +146,9 @@ public:
                                        const QString& classes = QString(), const QString& text = QString());
 
     bool hasFocus() const;
+    // True if this is the element focused in its own document, whether or not its frame has the focus: the
+    // document's focused element, or else the element its frame gives the focus to when it next gets it.
+    bool hasFocusInFrame() const;
     void setFocus();
 
     void setSelectionRange(int anchor, int focus, bool scrollIntoView = false);

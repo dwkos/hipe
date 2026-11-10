@@ -867,6 +867,16 @@ bool QWebElement::hasFocus() const
     return m_element == m_element->document().focusedElement();
 }
 
+bool QWebElement::hasFocusInFrame() const
+{
+    if (!m_element)
+        return false;
+    Document& document = m_element->document();
+    if (Page* page = document.page())
+        return m_element == page->focusController().focusedOrRememberedElement(document);
+    return m_element == document.focusedElement();
+}
+
 /*!
     Gives keyboard input focus to this element - original Qt function
 

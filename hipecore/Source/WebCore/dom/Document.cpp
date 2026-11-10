@@ -1757,7 +1757,26 @@ void Document::recalcStyle(Style::Change change)
                     frame->selection().clear();
             }
             document.setFocusedElement(nullptr);
+            // Disabled (e.g. a <fieldset> around it disabled for a moment): it gets the focus back when enabled again.
+            if (focused->isDisabledFormControl() && focused->inDocument()) {
+                if (Page* page = document.page())
+                    page->focusController().noteFocusLostToDisabling(*focused);
+            }
         });
+    }
+
+    // An element that lost the focus to being disabled, and may now be enabled again (see above).
+    if (!m_focusedElement) {
+        if (Page* page = this->page()) {
+            Element* lost = page->focusController().focusLostToDisabling(*this);
+            if (lost && lost->supportsFocus()) {
+                postTask([] (ScriptExecutionContext& context) {
+                    Document& document = downcast<Document>(context);
+                    if (Page* page = document.page())
+                        page->focusController().restoreFocusLostToDisabling(document);
+                });
+            }
+        }
     }
 }
 

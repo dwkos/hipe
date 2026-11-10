@@ -83,6 +83,15 @@ public:
     WEBCORE_EXPORT void setFocusedFrameRestoringElement(Frame*);
     WEBCORE_EXPORT void rememberFocusedElement(Element&);
     void forgetRememberedFocusedElement(Document&);
+    // The element focused in document if its frame had the focus: its focused element, or else the one remembered.
+    WEBCORE_EXPORT Element* focusedOrRememberedElement(Document&) const;
+
+    // An element that lost the focus because it (or an ancestor, e.g. a <fieldset>) was disabled gets it back when
+    // it can take focus again, unless something else in its document took the focus meanwhile. If its frame
+    // doesn't have the focus then, it is remembered instead, as rememberFocusedElement() does.
+    void noteFocusLostToDisabling(Element&);
+    Element* focusLostToDisabling(Document& document) const { return m_focusLostToDisabling.get(&document); }
+    void restoreFocusLostToDisabling(Document&);
 
     // True if frame is inside a frame whose owner element isn't rendered or is invisible (e.g. a hidden tab).
     WEBCORE_EXPORT static bool isInHiddenFrame(Frame&);
@@ -150,6 +159,7 @@ private:
     double m_focusSetTime;
 
     HashMap<Document*, RefPtr<Element>> m_rememberedFocusedElements;
+    HashMap<Document*, RefPtr<Element>> m_focusLostToDisabling;
 };
 
 } // namespace WebCore

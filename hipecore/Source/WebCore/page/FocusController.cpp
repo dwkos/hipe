@@ -677,6 +677,7 @@ bool FocusController::setFocusedElement(Element* element, PassRefPtr<Frame> newF
         oldDocument->setFocusedElement(nullptr);
     }
     m_rememberedFocusedElements.remove(newDocument.ptr()); // superseded by element
+    m_focusLostToDisabling.remove(newDocument.ptr()); // (something else took the focus)
 
     if (newFocusedFrame && !newFocusedFrame->page()) {
         setFocusedFrame(nullptr);
@@ -708,11 +709,51 @@ void FocusController::rememberCurrentFocusedElement(Document& document)
 void FocusController::rememberFocusedElement(Element& element)
 {
     m_rememberedFocusedElements.set(&element.document(), &element);
+    m_focusLostToDisabling.remove(&element.document()); // (something else is to take the focus)
 }
 
 void FocusController::forgetRememberedFocusedElement(Document& document)
 {
     m_rememberedFocusedElements.remove(&document);
+    m_focusLostToDisabling.remove(&document);
+}
+
+Element* FocusController::focusedOrRememberedElement(Document& document) const
+{
+    if (Element* element = document.focusedElement())
+        return element;
+    return m_rememberedFocusedElements.get(&document);
+}
+
+void FocusController::noteFocusLostToDisabling(Element& element)
+{
+    m_focusLostToDisabling.set(&element.document(), &element);
+}
+
+void FocusController::restoreFocusLostToDisabling(Document& document)
+{
+    RefPtr<Element> element = m_focusLostToDisabling.get(&document);
+    if (!element)
+        return;
+    if (!element->inDocument() || &element->document() != &document || focusedOrRememberedElement(document)) {
+        m_focusLostToDisabling.remove(&document);
+        return;
+    }
+    document.updateLayoutIgnorePendingStylesheets();
+    if (!element->isFocusable())
+        return; // (still disabled, or now hidden: keep waiting)
+    m_focusLostToDisabling.remove(&document);
+    Frame* frame = document.frame();
+    if (!frame)
+        return;
+    // As for a framed client's QWebElement::setFocus(), but without taking the focus from a frame inside this one.
+    Frame* focused = m_focusedFrame.get();
+    bool elsewhere = focused && focused->page() == &m_page && focused != frame;
+    if (elsewhere || isInHiddenFrame(*frame)) {
+        m_rememberedFocusedElements.set(&document, element);
+        return;
+    }
+    element->focus(true); // (gets back its caret, too)
 }
 
 void FocusController::setFocusedFrameRestoringElement(Frame* frame)
@@ -730,6 +771,10 @@ void FocusController::restoreRememberedFocusedElement(Frame& frame)
     RefPtr<Element> element = m_rememberedFocusedElements.take(document);
     if (!element || document->focusedElement() == element || !element->inDocument() || &element->document() != document)
         return;
+    if (element->isDisabledFormControl()) {
+        noteFocusLostToDisabling(*element); // (focused when it's enabled again)
+        return;
+    }
     element->focus(true); // (gets back its caret, too)
 }
 
