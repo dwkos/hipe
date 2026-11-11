@@ -828,6 +828,14 @@ void HTMLMediaElement::beginBinaryMediaData(const AtomicString& mimeType, long l
     // manual "if (!m_player) createMediaPlayer()" an earlier version of this had was redundant too.
     prepareForLoad();
 
+    // As loadResource() does before loading: the element's volume and muted state (including a muted attribute)
+    // apply to the new player, rather than its defaults.
+    if (!m_explicitlyMuted) {
+        m_explicitlyMuted = true;
+        m_muted = fastHasAttribute(mutedAttr);
+    }
+    updateVolume();
+
     m_pendingBinaryBuffer = MediaSampleBuffer::create();
 
     // A dummy, never-dereferenced URL -- the MediaPlayer needs *something* to hang the load off
