@@ -569,8 +569,12 @@ void HTMLMediaElement::parseAttribute(const QualifiedName& name, const AtomicStr
             clearMediaPlayer(LoadMediaResource);
             scheduleDelayedAction(LoadMediaResource);
         }
-    } else if (name == controlsAttr)
+    } else if (name == controlsAttr) {
+        // An <audio> has a renderer only while it shows controls (see rendererIsNeeded()).
+        if (!isVideo())
+            setNeedsStyleRecalc(ReconstructRenderTree);
         configureMediaControls();
+    }
     else if (name == loopAttr)
         updateSleepDisabling();
     else if (name == preloadAttr) {
@@ -2973,10 +2977,9 @@ void HTMLMediaElement::setLoop(bool b)
 
 bool HTMLMediaElement::controls() const
 {
-    // hipecore never executes script, so this always shows controls (matches the prior
-    // "always show controls when scripting is disabled" behavior, which was therefore
-    // always taken here).
-    return true;
+    // Follows the controls attribute. (Upstream always showed controls when scripting was disabled,
+    // since nothing else could start playback; hipe clients control playback through hiped.)
+    return fastHasAttribute(controlsAttr);
 }
 
 void HTMLMediaElement::setControls(bool b)
