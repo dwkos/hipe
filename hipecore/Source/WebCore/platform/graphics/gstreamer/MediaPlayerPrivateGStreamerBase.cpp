@@ -778,13 +778,10 @@ void MediaPlayerPrivateGStreamerBase::setStreamVolumeElement(GstStreamVolume* vo
     ASSERT(!m_volumeElement);
     m_volumeElement = volume;
 
-    // We don't set the initial volume because we trust the sink to keep it for us. See
-    // https://bugs.webkit.org/show_bug.cgi?id=118974 for more information.
-    if (!m_player->platformVolumeConfigurationRequired()) {
-        LOG_MEDIA_MESSAGE("Setting stream volume to %f", m_player->volume());
-        g_object_set(m_volumeElement.get(), "volume", m_player->volume(), NULL);
-    } else
-        LOG_MEDIA_MESSAGE("Not setting stream volume, trusting system one");
+    // Always start from the element's own volume (1 unless the client set one), never from a volume the system
+    // remembered for the application. Same scale as setVolume().
+    LOG_MEDIA_MESSAGE("Setting stream volume to %f", m_player->volume());
+    gst_stream_volume_set_volume(m_volumeElement.get(), GST_STREAM_VOLUME_FORMAT_CUBIC, static_cast<double>(m_player->volume()));
 
     LOG_MEDIA_MESSAGE("Setting stream muted %d",  m_player->muted());
     g_object_set(m_volumeElement.get(), "mute", m_player->muted(), NULL);

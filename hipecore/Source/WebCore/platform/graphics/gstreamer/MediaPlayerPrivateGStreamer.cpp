@@ -2550,7 +2550,6 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     // gst_element_factory_make() returns a floating reference so
     // we should not adopt.
     setPipeline(gst_element_factory_make("playbin", "play"));
-    setStreamVolumeElement(GST_STREAM_VOLUME(m_pipeline.get()));
 
     GRefPtr<GstBus> bus = adoptGRef(gst_pipeline_get_bus(GST_PIPELINE(m_pipeline.get())));
     gst_bus_set_sync_handler(bus.get(), [](GstBus*, GstMessage* message, gpointer userData) {
@@ -2567,8 +2566,6 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
         gst_message_unref(message);
         return GST_BUS_DROP;
     }, this, nullptr);
-
-    g_object_set(m_pipeline.get(), "mute", m_player->muted(), nullptr);
 
     g_signal_connect_swapped(m_pipeline.get(), "notify::source", G_CALLBACK(sourceChangedCallback), this);
     g_signal_connect_swapped(m_pipeline.get(), "video-changed", G_CALLBACK(videoChangedCallback), this);
@@ -2594,7 +2591,18 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     }
 #endif
 
-    g_object_set(m_pipeline.get(), "video-sink", createVideoSink(), "audio-sink", createAudioSink(), nullptr);
+    GstElement* audioSink = createAudioSink();
+    g_object_set(m_pipeline.get(), "video-sink", createVideoSink(), "audio-sink", audioSink, nullptr);
+
+    // Volume and mute apply to the software volume element in this element's own audio sink bin (see
+    // AudioSourceProviderGStreamer::configureAudioBin()), not through playbin, which would apply them to the system's
+    // stream volume. The system remembers that per application and gives it to every new stream, so one element's
+    // volume would become the starting volume of every later element in every client. playbin is only the fallback
+    // for a sink without that element.
+    GRefPtr<GstElement> volumeElement;
+    if (audioSink && GST_IS_BIN(audioSink))
+        volumeElement = adoptGRef(gst_bin_get_by_name(GST_BIN(audioSink), "volume"));
+    setStreamVolumeElement(volumeElement ? GST_STREAM_VOLUME(volumeElement.get()) : GST_STREAM_VOLUME(m_pipeline.get()));
 
     // On 1.4.2 and newer we use the audio-filter property instead.
     // See https://bugzilla.gnome.org/show_bug.cgi?id=735748 for
