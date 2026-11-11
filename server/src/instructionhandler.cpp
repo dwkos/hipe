@@ -421,7 +421,8 @@ void handle_SET_ICON(Container* c, hipe_instruction* instruction, bool, QWebElem
 
 // Sanity limits for chunked (arg[2]=="1", "more chunks follow") HIPE_OP_SET_SRC uploads. Two
 // thresholds per resource axis rather than one: a "modest" breach just fails that one upload
-// quietly (the location is banned -- further chunks for it are discarded, connection stays alive),
+// quietly (the location is banned -- further chunks for it are discarded, connection stays alive,
+// and the client's finishing call ends the ban as it would end a normal upload),
 // while an "absurd" breach means the client isn't behaving like any real producer and gets
 // disconnected. The gap between the two is deliberate grace room for an honestly oversized (or
 // numerous) legitimate transfer to fail quietly instead of losing the whole connection over it.
@@ -452,21 +453,28 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
 
     if (pendingIt != c->pendingBinaryUploads.end()) {
         // Continuing (or finishing) an upload already in progress for this location.
-        if (pendingIt->second.banned) {
-            // The client already broke this upload (or was refused a slot for it) and kept
-            // sending regardless -- that's no longer an honest mistake worth tolerating quietly.
-            c->fatalError("kept sending data to a refused SET_SRC upload");
-            return;
-        }
-
         size_t newTotal = pendingIt->second.bytesSoFar + instruction->arg_length[0];
         if (newTotal > SET_SRC_ABSURD_BYTES) {
             c->fatalError("SET_SRC upload exceeded the size limit");
             return;
         }
+        if (pendingIt->second.banned) {
+            // A refused upload. The client is never told, so it carries on as normal: discard its
+            // chunks (still counted against the absurd limit above), and let its finishing call
+            // close the upload so the element can take a new file afterwards.
+            if (moreComing)
+                pendingIt->second.bytesSoFar = newTotal;
+            else
+                c->pendingBinaryUploads.erase(pendingIt);
+            return;
+        }
         if (newTotal > SET_SRC_MODEST_BYTES) {
+            // Refuse the rest of this upload quietly; the connection stays alive.
+            pendingIt->second.bytesSoFar = newTotal;
             pendingIt->second.banned = true;
-            return; // discard this chunk and all future ones for this location; connection stays alive.
+            if (!moreComing)
+                c->pendingBinaryUploads.erase(pendingIt);
+            return;
         }
 
         pendingIt->second.bytesSoFar = newTotal;
@@ -505,7 +513,7 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
     }
     if (nonBannedCount >= SET_SRC_MODEST_CONCURRENT_UPLOADS) {
         // Reject just this new upload -- whatever's already in flight for other locations is untouched.
-        c->pendingBinaryUploads[instruction->location] = Container::PendingBinaryUpload{0, true};
+        c->pendingBinaryUploads[instruction->location] = Container::PendingBinaryUpload{instruction->arg_length[0], true};
         return;
     }
 

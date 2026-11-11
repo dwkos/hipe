@@ -177,6 +177,19 @@ int main() {
     ask(list, HIPE_OP_GET_SRC, HIPE_OP_SRC_RETURN, 0, "", ""); argOf(2);
     CHECK("GET_SRC of a div is an error", last.arg_length[0] == 0 && strlen(v) > 0);
 
+    /* SET_SRC: a quietly refused chunked upload (the 9th at once) can be carried on, finished and replaced */
+    hipe_loc up[9];
+    set.arg_length[0] = 20; set.arg[2] = "1"; set.arg_length[2] = 1;
+    for(int i = 0; i < 9; i++) { up[i] = tag(0, "img", "", "", ""); set.location = up[i]; hipe_send_instruction(s, set); }
+    set.location = up[8]; hipe_send_instruction(s, set); /* another chunk to the refused upload */
+    set.arg_length[0] = 0; set.arg_length[2] = 0;
+    for(int i = 0; i < 9; i++) { set.location = up[i]; hipe_send_instruction(s, set); } /* finishing calls */
+    set.location = up[8]; set.arg[0] = (char*)png; set.arg_length[0] = PNG_SIZE; set.arg[2] = 0;
+    hipe_send_instruction(s, set);
+    ask(up[8], HIPE_OP_GET_SRC, HIPE_OP_SRC_RETURN, 0, "", "");
+    snprintf(v, sizeof v, "%zu bytes", (size_t)last.arg_length[0]);
+    CHECK("SET_SRC after a refused chunked upload", last.arg_length[0] == PNG_SIZE && !memcmp(last.arg[0], png, PNG_SIZE));
+
     /* scrolling */
     hipe_loc sc = tag(0, "div", "", "", "");
     hipe_send(s, HIPE_OP_SET_ATTRIBUTE, 0, sc, 2, "style", "height: 100px; width: 200px; overflow: auto");
