@@ -469,7 +469,12 @@ void handle_SET_SRC(Container* c, hipe_instruction* instruction, bool, QWebEleme
             return;
         }
         if (newTotal > SET_SRC_MODEST_BYTES) {
-            // Refuse the rest of this upload quietly; the connection stays alive.
+            // Refuse the rest of this upload quietly; the connection stays alive. Finish what has
+            // arrived so far, so the element shows (or plays) the partial file instead of waiting.
+            if (isBinaryMediaTarget(location))
+                location.finishBinaryMediaData();
+            else
+                location.finishBinaryImageData();
             pendingIt->second.bytesSoFar = newTotal;
             pendingIt->second.banned = true;
             if (!moreComing)
