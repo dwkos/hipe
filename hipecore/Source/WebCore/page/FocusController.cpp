@@ -725,6 +725,18 @@ Element* FocusController::focusedOrRememberedElement(Document& document) const
     return m_rememberedFocusedElements.get(&document);
 }
 
+Element* FocusController::focusedRememberedOrDisabledElement(Document& document) const
+{
+    if (Element* element = focusedOrRememberedElement(document))
+        return element;
+    return m_focusLostToDisabling.get(&document);
+}
+
+void FocusController::forgetFocusLostToDisabling(Document& document)
+{
+    m_focusLostToDisabling.remove(&document);
+}
+
 void FocusController::noteFocusLostToDisabling(Element& element)
 {
     m_focusLostToDisabling.set(&element.document(), &element);

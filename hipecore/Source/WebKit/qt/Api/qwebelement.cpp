@@ -873,7 +873,7 @@ bool QWebElement::hasFocusInFrame() const
         return false;
     Document& document = m_element->document();
     if (Page* page = document.page())
-        return m_element == page->focusController().focusedOrRememberedElement(document);
+        return m_element == page->focusController().focusedRememberedOrDisabledElement(document);
     return m_element == document.focusedElement();
 }
 

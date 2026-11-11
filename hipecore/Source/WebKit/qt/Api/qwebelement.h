@@ -147,7 +147,8 @@ public:
 
     bool hasFocus() const;
     // True if this is the element focused in its own document, whether or not its frame has the focus: the
-    // document's focused element, or else the element its frame gives the focus to when it next gets it.
+    // document's focused element, or else the element its frame gives the focus to when it next gets it, or else
+    // an element that lost the focus to being disabled and gets it back when enabled again.
     bool hasFocusInFrame() const;
     void setFocus();
 

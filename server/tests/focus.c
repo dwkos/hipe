@@ -318,7 +318,8 @@ int main() {
         CHECK("Q1 HAS_FOCUS: another input isn't", !hasFocus(i1));
         CHECK("Q1 HAS_FOCUS: location 0 isn't", !hasFocus(0) && !strcmp(v, "0"));
         attr(fs, "disabled", "disabled"); settle(200);
-        CHECK("R1 disabling the fieldset blurs the input in it", has("blur@ri") && !hasFocus(ri)); reset();
+        CHECK("R1 disabling the fieldset blurs the input in it", has("blur@ri")); reset();
+        CHECK("R1 HAS_FOCUS: the disabled input waiting to get the focus back counts as focused", hasFocus(ri));
         hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, fs, 1, "disabled"); settle(200);
         CHECK("R1 enabling the fieldset again gives the focus back", has("focus@ri") && hasFocus(ri));
         type("x"); value(ri); CHECK("R1 with the caret where it was", !strcmp(v, "axb")); reset();
@@ -332,6 +333,10 @@ int main() {
         focus(ri); settle(100); attr(fs, "disabled", "disabled"); settle(200);
         hipe_send(s, HIPE_OP_DELETE, 0, ri, 0); hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, fs, 1, "disabled"); settle(200);
         type("q"); CHECK("R5 an input removed while disabled is forgotten: keys reach the body", has("keydown@body")); reset();
+        hipe_loc rj = tag(fs, "input", "rj", 0); listen(rj); focus(rj); settle(100); attr(fs, "disabled", "disabled"); settle(200);
+        style(rj, "display", "none"); settle(200); CHECK("R8 an input hidden while disabled isn't focused any more", !hasFocus(rj)); reset();
+        style(rj, "display", "inline-block"); settle(200); hipe_send(s, HIPE_OP_REMOVE_ATTRIBUTE, 0, fs, 1, "disabled"); settle(200);
+        CHECK("R8 ...and doesn't get the focus back when shown and enabled", !has("focus@rj") && !hasFocus(rj)); reset();
 
         hipe_loc tmp = tag(box, "input", "tmp", 0); listen(tmp); focus(tmp); settle(100); reset();
         hipe_send(s, HIPE_OP_DELETE, 0, tmp, 0); settle(200);

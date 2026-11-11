@@ -1769,7 +1769,10 @@ void Document::recalcStyle(Style::Change change)
     if (!m_focusedElement) {
         if (Page* page = this->page()) {
             Element* lost = page->focusController().focusLostToDisabling(*this);
-            if (lost && lost->supportsFocus()) {
+            // (one hidden meanwhile is forgotten, as a focused element hidden loses the focus for good)
+            if (lost && (!lost->renderer() || lost->renderer()->style().visibility() != VISIBLE))
+                page->focusController().forgetFocusLostToDisabling(*this);
+            else if (lost && lost->supportsFocus()) {
                 postTask([] (ScriptExecutionContext& context) {
                     Document& document = downcast<Document>(context);
                     if (Page* page = document.page())
