@@ -392,16 +392,21 @@ void Container::notice(const std::string& message) {
 
 
 
-bool Container::bgColorChanged(std::string newColor) {
+//Reads a computed colour, "rgb(r, g, b)" or "rgba(r, g, b, a)", into c, ignoring any alpha, and rewrites
+//newColor as "rgb(r, g, b)". False if it's in neither form.
+static bool parseComputedColor(std::string& newColor, QColor& c) {
     int r,g,b;
-
-    //require 3 color components.
-    if(sscanf(newColor.c_str(), "rgb(%d, %d, %d)", &r,&g,&b) != 3) {
-        //not in expected form or background unspecified...
+    if(sscanf(newColor.c_str(), "rgb(%d, %d, %d)", &r,&g,&b) != 3
+            && sscanf(newColor.c_str(), "rgba(%d, %d, %d,", &r,&g,&b) != 3)
         return false;
-    }
+    c = QColor(r,g,b);
+    newColor = "rgb(" + std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ")";
+    return true;
+}
 
-    QColor c(r,g,b);
+bool Container::bgColorChanged(std::string& newColor) {
+    QColor c;
+    if(!parseComputedColor(newColor, c)) return false;
     if(c==bg) return false; //no change
     bg=c;
 
@@ -416,16 +421,9 @@ bool Container::bgColorChanged(std::string newColor) {
     return true;
 }
 
-bool Container::fgColorChanged(std::string newColor) {
-    int r,g,b;
-
-    //require 3 color components.
-    if(sscanf(newColor.c_str(), "rgb(%d, %d, %d)", &r,&g,&b) != 3) {
-        //not in expected form or background unspecified...
-        return false;
-    }
-
-    QColor c(r,g,b);
+bool Container::fgColorChanged(std::string& newColor) {
+    QColor c;
+    if(!parseComputedColor(newColor, c)) return false;
     if(c==fg) return false; //no change
     fg=c;
 

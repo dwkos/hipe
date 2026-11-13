@@ -774,8 +774,8 @@ extern "C" {
 #define HIPE_FRAME_EVENT_CLIENT_DISCONNECTED 2
 #define HIPE_FRAME_EVENT_TITLE_CHANGED       3 //arg[1] is new title
 #define HIPE_FRAME_EVENT_ICON_CHANGED        4 //arg[1] is binary PNG image data.
-#define HIPE_FRAME_EVENT_COLOR_CHANGED       5 //arg[1] is the new foreground color
-#define HIPE_FRAME_EVENT_BACKGROUND_CHANGED  6 //arg[1] is the new background color
+#define HIPE_FRAME_EVENT_COLOR_CHANGED       5 //arg[1] is the new foreground color, "rgb(r, g, b)" (any alpha is dropped)
+#define HIPE_FRAME_EVENT_BACKGROUND_CHANGED  6 //arg[1] is the new background color, "rgb(r, g, b)" (any alpha is dropped)
 
 #define HIPE_NARGS 4 //fixed maximum number of arguments per hipe instruction.
 

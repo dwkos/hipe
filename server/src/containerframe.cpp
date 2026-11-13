@@ -56,7 +56,7 @@ void ContainerFrame::setBody(std::string newBodyHtml, bool overwrite)
         initYet = true;
         applyStylesheet(); //the theme and any rules sent so far
 
-        //alert parent of fg/bg colour scheme
+        //alert parent of fg/bg colour scheme (fg/bgColorChanged() rewrite the values as "rgb(r, g, b)")
         //(computed styles are worked out when asked for, so these are ready straight away.)
         std::string fg = webElement.styleProperty("color", QWebElement::ComputedStyle).toStdString();
         fgColorChanged(fg);

@@ -153,9 +153,11 @@ public:
     //let a framed app read the clipboard whenever it likes.
 
 
-    bool bgColorChanged(std::string newColor);
-    bool fgColorChanged(std::string newColor);
+    bool bgColorChanged(std::string& newColor);
+    bool fgColorChanged(std::string& newColor);
     //call to update the container on its new fg or bg color.
+    //newColor is a computed colour, "rgb(r, g, b)" or "rgba(r, g, b, a)". It is rewritten as "rgb(r, g, b)":
+    //a parent is told only the colour components, never the alpha.
     //The container will store the new color and update the embedded cursor if applicable
     //Returns true if the new color is different to the old color, otherwise
     //returns false if the color has not changed.

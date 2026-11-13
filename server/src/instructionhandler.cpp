@@ -778,20 +778,20 @@ void handle_SET_STYLE(Container* c, hipe_instruction*, bool locationSpecified, Q
         c->webElement.setStyleProperty(arg[0].c_str(), arg[1].c_str());
 
         //check if foreground/background colors for this frame have changed.
-        QString bg = c->webElement.styleProperty("background-color", QWebElement::ComputedStyle);
-        QString fg = c->webElement.styleProperty("color", QWebElement::ComputedStyle);
+        std::string bg = c->webElement.styleProperty("background-color", QWebElement::ComputedStyle).toStdString();
+        std::string fg = c->webElement.styleProperty("color", QWebElement::ComputedStyle).toStdString();
 
         //check if foreground or background colours are defined by this client. If so, notify the parent, and the
         //parent will update its own metadata for this frame, to determine whether to send the relevant event.
-        if(c->bgColorChanged(bg.toStdString())) {
+        if(c->bgColorChanged(bg)) { //bg is now "rgb(r, g, b)"
             if(c->getParent())  //notify parent frame of new background color
                 c->getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_BACKGROUND_CHANGED, 
-                        c->webElement.webFrame(), bg.toStdString());
+                        c->webElement.webFrame(), bg);
         }
-        if(c->fgColorChanged(fg.toStdString())) {
+        if(c->fgColorChanged(fg)) {
             if(c->getParent())  //notify parent frame of new foreground color
                 c->getParent()->receiveSubFrameEvent(HIPE_FRAME_EVENT_COLOR_CHANGED, 
-                        c->webElement.webFrame(), fg.toStdString());
+                        c->webElement.webFrame(), fg);
         }
     } else {  //styling another element
         location.setStyleProperty(arg[0].c_str(), arg[1].c_str());
