@@ -44,11 +44,19 @@ static void childMain(const char* key) {
         {"color", "rgba(17,34,51,0.25)"},
         {"background-color", "transparent"},
         {"background-color", "#0B0C12"},
+        {"rule", ""}, /* a stylesheet background, as a theme gives */
+        {"background-color", ""},
+        {"background-color", "transparent"},
+        {"background-color", ""},
+        {"background-color", "transparent"},
     };
     hipe_instruction r; hipe_instruction_init(&r);
     for(unsigned i = 0; i < sizeof steps / sizeof steps[0]; i++) {
         if(i == 0) hipe_send(cs, HIPE_OP_APPEND_TAG, 0, 0, 4, "div", "", "", "child"); /* initialises the body */
-        else hipe_send(cs, HIPE_OP_SET_STYLE, 0, 0, 2, steps[i][0], steps[i][1]);
+        else if(!strcmp(steps[i][0], "rule")) {
+            hipe_send(cs, HIPE_OP_ADD_STYLE_RULE, 0, 0, 2, "body", "background-color: rgb(26, 27, 39)");
+            hipe_send(cs, HIPE_OP_SET_STYLE, 0, 0, 2, "color", "rgb(17, 34, 51)"); /* SET_STYLE makes the check */
+        } else hipe_send(cs, HIPE_OP_SET_STYLE, 0, 0, 2, steps[i][0], steps[i][1]);
         hipe_send(cs, HIPE_OP_MESSAGE, 0, 0, 2, "ready", "");
         hipe_await_instruction(cs, &r, HIPE_OP_MESSAGE); /* the parent's "next" */
         hipe_instruction_clear(&r);
@@ -108,6 +116,16 @@ int main() {
     CHECK("C6 transparent is reported as rgb(0, 0, 0)", !strcmp(evlog, "bg:rgb(0, 0, 0);"));
     next(fr); step(fr);
     CHECK("C7 a solid background after a see-through one", !strcmp(evlog, "bg:rgb(11, 12, 18);"));
+    next(fr); step(fr);
+    CHECK("C8 (a stylesheet background is set; the body's own still wins)", !evlog[0]);
+    next(fr); step(fr);
+    CHECK("C9 clearing the body's background reports the stylesheet's", !strcmp(evlog, "bg:rgb(26, 27, 39);"));
+    next(fr); step(fr);
+    CHECK("C10 then transparent", !strcmp(evlog, "bg:rgb(0, 0, 0);"));
+    next(fr); step(fr);
+    CHECK("C11 clearing again", !strcmp(evlog, "bg:rgb(26, 27, 39);"));
+    next(fr); step(fr);
+    CHECK("C12 transparent again", !strcmp(evlog, "bg:rgb(0, 0, 0);"));
 
     next(fr);
     kill(child, SIGTERM);
