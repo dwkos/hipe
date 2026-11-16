@@ -37,6 +37,7 @@
 #include <vector>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTimer>
 #include <sstream>
 
 #include <iostream>
@@ -72,6 +73,14 @@ ContainerTopLevel::ContainerTopLevel(Connection* bridge, std::string clientName,
 
 ContainerTopLevel::~ContainerTopLevel() {
     frame->page()->clearContextMenuCallback();
+
+    //the client is gone: drop its waiting dialogs, and close the open one without replying.
+    dialogQueue.clear();
+    if(activeDialog) {
+        activeDialog->disconnect();
+        delete activeDialog;
+        activeDialog = nullptr;
+    }
 
     delete w;
 }
@@ -128,95 +137,149 @@ std::string ContainerTopLevel::getGlobalSelection(bool asHtml) {
     else return frame->page()->selectedHtml().toStdString();
 }
 
-std::string ContainerTopLevel::dialog(std::string title, std::string prompt,
-                    std::string choiceLines, bool editable, bool* cancelled, int* choiceNumber) {
-    if(choiceNumber) *choiceNumber = 0;
-    QStringList lines = ((QString)(choiceLines.c_str())).split("\n");
+void ContainerTopLevel::queueDialog(std::function<QDialog*()> make) {
+    dialogQueue.push_back(make);
+    showNextDialog();
+}
 
-    //Fixed choices: blank lines only group choices (periscope shows them as empty slots, keeping each choice
-    //on its key). Here, a run of blanks between choices becomes one separator, and blanks before the first
-    //choice or after the last are dropped. choiceIndex maps each displayed entry to its line number, so the
-    //reply numbers choices as sent (-1 marks a separator).
-    QStringList items;
-    std::vector<int> choiceIndex;
-    std::vector<int> separatorsAt; //display positions to turn into real separators
-    if(!editable) {
-        bool pendingSeparator = false;
-        for(int i=0; i<lines.size(); i++) {
-            if(lines[i] == "") {
-                if(items.size()) pendingSeparator = true;
-                continue;
+void ContainerTopLevel::showNextDialog() {
+    while(!activeDialog && !dialogQueue.empty()) {
+        std::function<QDialog*()> make = dialogQueue.front();
+        dialogQueue.pop_front();
+        QDialog* d = make();
+        if(!d) continue; //answered without a dialog
+        activeDialog = d;
+        //connected after the request's own reply, so the reply goes first.
+        QObject::connect(d, &QDialog::finished, d, [this, d](int) {
+            if(activeDialog == d) activeDialog = nullptr;
+            d->deleteLater();
+            //show the next one once this dialog's own handling is over.
+            QTimer::singleShot(0, w, [this]() { showNextDialog(); });
+        });
+        d->setWindowModality(Qt::WindowModal); //blocks this window only
+        d->open();
+    }
+}
+
+void ContainerTopLevel::showDialog(int64_t requestor, std::string title, std::string prompt,
+                    std::string choiceLines, bool editable) {
+    queueDialog([this, requestor, title, prompt, choiceLines, editable]() -> QDialog* {
+        QStringList lines = ((QString)(choiceLines.c_str())).split("\n");
+
+        //Fixed choices: blank lines only group choices (periscope shows them as empty slots, keeping each choice
+        //on its key). Here, a run of blanks between choices becomes one separator, and blanks before the first
+        //choice or after the last are dropped. choiceIndex maps each displayed entry to its line number, so the
+        //reply numbers choices as sent (-1 marks a separator).
+        QStringList items;
+        std::vector<int> choiceIndex;
+        std::vector<int> separatorsAt; //display positions to turn into real separators
+        if(!editable) {
+            bool pendingSeparator = false;
+            for(int i=0; i<lines.size(); i++) {
+                if(lines[i] == "") {
+                    if(items.size()) pendingSeparator = true;
+                    continue;
+                }
+                if(pendingSeparator) {
+                    separatorsAt.push_back(items.size());
+                    items << "⸻"; //"⸻", shown if the combo box can't be reached for a real separator
+                    choiceIndex.push_back(-1);
+                    pendingSeparator = false;
+                }
+                items << lines[i];
+                choiceIndex.push_back(i);
             }
-            if(pendingSeparator) {
-                separatorsAt.push_back(items.size());
-                items << "\u2E3B"; //"⸻", shown if the combo box can't be reached for a real separator
-                choiceIndex.push_back(-1);
-                pendingSeparator = false;
+        } else if(choiceLines.size()) {
+            items = lines;
+        }
+
+        if(!items.size() && !editable) { //no choices except cancellation.
+        //Display a simpler dialog box with only an OK button to dismiss
+        //the dialog (functionally equivalent to cancelling the dialog)
+            QMessageBox* box = new QMessageBox(QMessageBox::Information, QString(title.c_str()),
+                                    QString(prompt.c_str()), QMessageBox::Ok, this->w);
+            QObject::connect(box, &QDialog::finished, box, [this, requestor](int) {
+                client->sendInstruction(HIPE_OP_DIALOG_RETURN, requestor, 0, {"", "0"});
+            });
+            return box;
+        }
+
+        QInputDialog* input = new QInputDialog(this->w);
+        input->setWindowTitle(QString(title.c_str()));
+        input->setLabelText(QString(prompt.c_str()));
+        input->setComboBoxItems(items);
+        input->setComboBoxEditable(editable);
+        QComboBox* combo = input->findChild<QComboBox*>();
+        if(combo) {
+            for(auto it = separatorsAt.rbegin(); it != separatorsAt.rend(); ++it) { //from the end, so positions hold
+                combo->removeItem(*it);
+                combo->insertSeparator(*it);
             }
-            items << lines[i];
-            choiceIndex.push_back(i);
+            combo->setCurrentIndex(0); //the first real choice
         }
-    } else if(choiceLines.size()) {
-        items = lines;
-    }
 
-    if(!items.size() && !editable) { //no choices except cancellation.
-    //Display a simpler dialog box with only an OK button to dismiss
-    //the dialog (functionally equivalent to cancelling the dialog)
-        QMessageBox::information(this->w, QString(title.c_str()), QString(prompt.c_str()));
-        *cancelled = true;
-        return "";
-    }
-
-    QInputDialog input;
-    input.setWindowTitle(QString(title.c_str()));
-    input.setLabelText(QString(prompt.c_str()));
-    input.setComboBoxItems(items);
-    input.setComboBoxEditable(editable);
-    QComboBox* combo = input.findChild<QComboBox*>();
-    if(combo) {
-        for(auto it = separatorsAt.rbegin(); it != separatorsAt.rend(); ++it) { //from the end, so positions hold
-            combo->removeItem(*it);
-            combo->insertSeparator(*it);
-        }
-        combo->setCurrentIndex(0); //the first real choice
-    }
-
-    bool ok = input.exec() == QDialog::Accepted;
-    std::string item = input.textValue().toStdString();
-    int selected = combo ? combo->currentIndex() : -1;
-    if(!ok || (!editable && (selected < 0 || selected >= (int)choiceIndex.size() || choiceIndex[selected] < 0))) {
-        *cancelled = true; //cancelled, or (without real separators) a separator was chosen
-        return "";
-    }
-    *cancelled = false;
-    if(!editable) {
-        item = lines[choiceIndex[selected]].toStdString();
-        if(choiceNumber) *choiceNumber = choiceIndex[selected] + 1;
-    }
-    return item;
+        QObject::connect(input, &QDialog::finished, input,
+                    [this, requestor, input, combo, lines, choiceIndex, editable](int result) {
+            std::string item = input->textValue().toStdString();
+            int selected = combo ? combo->currentIndex() : -1;
+            if(result != QDialog::Accepted
+                    || (!editable && (selected < 0 || selected >= (int)choiceIndex.size() || choiceIndex[selected] < 0))) {
+                //cancelled, or (without real separators) a separator was chosen
+                client->sendInstruction(HIPE_OP_DIALOG_RETURN, requestor, 0, {"", "0"});
+            } else if(!editable) { //fixed choices; the number of the choice as sent (counting from 1, blanks included).
+                client->sendInstruction(HIPE_OP_DIALOG_RETURN, requestor, 0,
+                            {lines[choiceIndex[selected]].toStdString(), std::to_string(choiceIndex[selected] + 1)});
+            } else { //prompt allowed string entry. Choice position index not relevant.
+                client->sendInstruction(HIPE_OP_DIALOG_RETURN, requestor, 0, {item, "1"});
+            }
+        });
+        return input;
+    });
 }
 
 
-std::string ContainerTopLevel::selectFileResource(std::string defaultName, std::string metadata, std::string& accessMode) {
-//accessModeStr will be modified by ref. to remove items not available. In particular, random seek modes are not
+void ContainerTopLevel::sendFileResponse(int64_t requestor, std::string filepath, std::string accessMode) {
+    //separate filename and extension parts...
+    size_t strPos = filepath.rfind("/");
+    if(strPos == std::string::npos) strPos = 0; else strPos++;
+    std::string filename = filepath.substr(strPos);
+    strPos = filename.rfind("."); //isolate file extension
+    std::string fileType;
+    if(strPos != std::string::npos) {
+        fileType = filename.substr(strPos+1);
+    }
+    receiveMessage(HIPE_OP_FIFO_RESPONSE, requestor, {filepath, accessMode, filename, fileType}, nullptr);
+}
+
+
+void ContainerTopLevel::selectFileResource(int64_t requestor, std::string defaultName, std::string metadata,
+                    std::string accessMode) {
+//The access mode in the reply drops modes not available. In particular, random seek modes are not
 //available since we are dealing with native files (not a FIFO-host) and we do not intercept such requests.
 //(The client does not know that these are native files and is thus forbidden from using calls like lseek)
+  queueDialog([this, requestor, defaultName, metadata, accessMode]() -> QDialog* {
+    //an error is shown, then the request answered with no file and the access mode unchanged.
+    auto errorBox = [this, requestor, accessMode](const char* text) -> QDialog* {
+        QMessageBox* box = new QMessageBox(QMessageBox::Information, "Error", text, QMessageBox::Ok, this->w);
+        QObject::connect(box, &QDialog::finished, box, [this, requestor, accessMode](int) {
+            sendFileResponse(requestor, "", accessMode);
+        });
+        return box;
+    };
 
     //check access modes and order of precedence... Only r and w are supported.
-    bool r=false;
-    bool w=false;
+    bool r=false; //read or write wanted
+    bool wr=false;
     size_t readPosition, writePosition;
     readPosition = accessMode.find("r");
     writePosition = accessMode.find("w");
     if(readPosition != std::string::npos) r = true;
-    if(writePosition != std::string::npos) w = true;
+    if(writePosition != std::string::npos) wr = true;
 
-    bool initialRead = r && (!w || readPosition < writePosition);
+    bool initialRead = r && (!wr || readPosition < writePosition);
 
-    if(!(r|w)) { //error, none of the specified access modes are r or w.
-        QMessageBox::information(this->w, "Error", "Required access mode not supported");
-        return "";
+    if(!(r|wr)) { //error, none of the specified access modes are r or w.
+        return errorBox("Required access mode not supported");
     }
     
     //parse out the metadata...
@@ -280,23 +343,28 @@ std::string ContainerTopLevel::selectFileResource(std::string defaultName, std::
     if(!oneGoodPattern) {
         //if the client only wants a whole directory, like a project directory, we can't service that
         //at the top level, since can only provide files, not 'smart' FIFOs here.
-        QMessageBox::information(this->w, "Error", "Required access type not supported");
-        return "";
+        return errorBox("Required access type not supported");
     }
 
-
-    QString filename;
-    if(initialRead)
-        filename = QFileDialog::getOpenFileName(this->w, caption.c_str(), defaultName.c_str(), qtFilterStr.c_str());
-    else
-        filename = QFileDialog::getSaveFileName(this->w, caption.c_str(), defaultName.c_str(), qtFilterStr.c_str());
-    //it seems that Qt always returns the absolute path, which is exactly what we promise to give the user.
-    //(relative paths would be a problem if hiped has a different working directory to the application)
-    //(realpath() can also be used in such cases, but not required due to Qt giving us what we want.)
-
-    accessMode = (r && w) ? (initialRead ? "rw" : "wr") : (r ? "r" : "w");
-
-    return filename.toStdString();
+    QFileDialog* fd = new QFileDialog(this->w, caption.c_str(), defaultName.c_str(), qtFilterStr.c_str());
+    if(initialRead) {
+        fd->setAcceptMode(QFileDialog::AcceptOpen);
+        fd->setFileMode(QFileDialog::ExistingFile);
+    } else {
+        fd->setAcceptMode(QFileDialog::AcceptSave);
+        fd->setFileMode(QFileDialog::AnyFile);
+    }
+    std::string grantedMode = (r && wr) ? (initialRead ? "rw" : "wr") : (r ? "r" : "w");
+    QObject::connect(fd, &QDialog::finished, fd, [this, requestor, fd, grantedMode](int result) {
+        //Qt gives the absolute path, which is exactly what we promise to give the user.
+        //(relative paths would be a problem if hiped has a different working directory to the application)
+        std::string filename;
+        if(result == QDialog::Accepted && !fd->selectedFiles().isEmpty())
+            filename = fd->selectedFiles().first().toStdString();
+        sendFileResponse(requestor, filename, grantedMode);
+    });
+    return fd;
+  });
 }
 
 

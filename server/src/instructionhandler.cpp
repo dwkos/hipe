@@ -1342,29 +1342,9 @@ void handle_DIALOG(Container* c, hipe_instruction* instruction, bool, QWebElemen
 
     Container* target = c->getParent();
 
-    if(!target) { //we are the top level. Dialog is handled here directly
-        bool cancelled;
-        bool editable = (bool) (instruction->opcode == HIPE_OP_DIALOG_INPUT);
-
-        int choiceNumber;
-        std::string userChoice = ((ContainerTopLevel*)c)->dialog(arg[0], 
-                                    arg[1], arg[2], editable, &cancelled, &choiceNumber);
-
-        if(!cancelled) { //dialog wasn't cancelled
-            std::string itemIndexStr = "";
-
-            if(!editable) { //fixed choices; the number of the choice as sent (counting from 1, blanks included).
-                itemIndexStr = std::to_string(choiceNumber);
-            } else { //prompt allowed string entry. Choice position index not relevant.
-                itemIndexStr="1"; //Return the index value 1 for non-cancellation
-            }
-            c->client->sendInstruction(HIPE_OP_DIALOG_RETURN, instruction->requestor,
-                            0, {userChoice, itemIndexStr});
-
-        } else { //cancelled
-            c->client->sendInstruction(HIPE_OP_DIALOG_RETURN, instruction->requestor, 
-                            0, {"","0"});
-        }
+    if(!target) { //we are the top level. Dialog is handled here directly; the reply is sent when it is answered.
+        ((ContainerTopLevel*)c)->showDialog(instruction->requestor, arg[0], arg[1], arg[2],
+                                    instruction->opcode == HIPE_OP_DIALOG_INPUT);
     } else { //relay to parent frame.
         target->receiveMessage(instruction->opcode, instruction->requestor, 
                 {arg[0],arg[1],arg[2],arg[3]}, c->frame, false);
@@ -1501,27 +1481,10 @@ void handle_MESSAGE(Container* c, hipe_instruction* instruction, bool locationSp
     //desktop environment. In this case, display an open/save dialog in order to
     //give the client application a real file to work with.
 
-        std::string accessModeStr = arg[1];
+        //the reply (HIPE_OP_FIFO_RESPONSE) is sent when the user has chosen a file. Only r and w access
+        //modes are granted at top level.
+        ((ContainerTopLevel*)c)->selectFileResource(instruction->requestor, arg[0], arg[2], arg[1]);
 
-        std::string filepath = ((ContainerTopLevel*)c)->selectFileResource(arg[0],
-                   arg[2], accessModeStr);
-        //accessModeStr is modified by-reference to now reflect the actual access modes granted.
-        //(Only r and w are supported at top level)
-
-        //separate filename and extension parts...
-        size_t strPos = filepath.rfind("/");
-        if(strPos == std::string::npos) strPos = 0; else strPos++;
-        std::string filename = filepath.substr(strPos);
-        strPos = filename.rfind("."); //isolate file extension
-        std::string fileType;
-        if(strPos != std::string::npos) {
-            fileType = filename.substr(strPos+1);
-        }
-
-        //send reply to client
-        c->receiveMessage(HIPE_OP_FIFO_RESPONSE, instruction->requestor, 
-                   {filepath, accessModeStr, filename, fileType}, nullptr);
-        
     } else if(instruction->opcode == HIPE_OP_OPEN_LINK) {
     //special case for opening URL in user's browser if already running at top level.
         QDesktopServices::openUrl(QUrl(arg[0].c_str()));

@@ -26,6 +26,9 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <HipeCore/QGraphicsWebView>
+#include <QDialog>
+#include <deque>
+#include <functional>
 
 #include "container.h"
 
@@ -98,23 +101,32 @@ public:
     std::string getGlobalSelection(bool asHtml);
     //if asHtml is false, the selection is returned as plain text.
 
-    std::string dialog(std::string title, std::string prompt, std::string choices, 
-            bool editable, bool* cancelled, int* choiceNumber = nullptr);
-    //choices is newline-separated. Displays modal dialog and returns result.
-    //The returned result is the string of the choice selected or entered by the user.
-    //If the user selects cancel, the cancelled status is returned in a pointer argument.
-    //For fixed choices, choiceNumber receives the chosen line's number in choices (from 1, blank lines
-    //counted), so it matches the numbering under a framing manager.
+    //The dialogs below are modal to this window only, and never block hiped: each call returns at once and
+    //the reply is sent to the client when the user answers. A window shows one dialog at a time; requests
+    //made meanwhile wait their turn. Unanswered dialogs go away with the window.
 
-    std::string selectFileResource(std::string defaultName, std::string metadata, std::string& accessMode);
+    void showDialog(int64_t requestor, std::string title, std::string prompt, std::string choices, bool editable);
+    //HIPE_OP_DIALOG (editable false) or HIPE_OP_DIALOG_INPUT (true). choices is newline-separated.
+    //Replies HIPE_OP_DIALOG_RETURN: the choice selected or entered, and for fixed choices the chosen line's
+    //number in choices (from 1, blank lines counted, so it matches the numbering under a framing manager),
+    //"1" for entered text, or "" and "0" if cancelled.
+
+    void selectFileResource(int64_t requestor, std::string defaultName, std::string metadata, std::string accessMode);
     //implements top-level FIFO functionality through the OS's native open/save as interface.
     //Ordinary files are used instead of real FIFOs here.
     //The metadata argument spans multiple lines and contains caption and file filter info,
-    //consistent with what's passed to HIPE_OP_FIFO_GET_PEER.
+    //consistent with what's passed to HIPE_OP_FIFO_GET_PEER. Replies HIPE_OP_FIFO_RESPONSE.
 
     void editContextMenuRequested();
 private:
     WebWindow* w;
+
+    std::deque<std::function<QDialog*()>> dialogQueue; //each entry builds a dialog, its reply already connected
+    //to finished(), or sends its reply itself and returns nullptr.
+    QDialog* activeDialog = nullptr;
+    void queueDialog(std::function<QDialog*()> make);
+    void showNextDialog();
+    void sendFileResponse(int64_t requestor, std::string filepath, std::string accessMode);
 protected:
     void setTitle(std::string newTitle);
     void setBody(std::string newBodyHtml, bool overwrite=true);

@@ -425,7 +425,8 @@ extern "C" {
 
  *If sent from the top level, Hipe handles rudimentary display of the dialog,
  *however the nominal case in a complete Hipe environment is for this to be
- *handled by a framing manager.
+ *handled by a framing manager. Hipe's own dialogs block only the window that
+ *asked, one dialog at a time per window: later requests wait their turn.
  *Otherwise, the next client up receives the instruction with the clientFrame
  *as the location. A client may
  *opt to retransmit the instruction up to the next level and then relay the
