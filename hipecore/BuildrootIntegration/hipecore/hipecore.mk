@@ -13,7 +13,7 @@
 #
 ################################################################################
 
-HIPECORE_VERSION = 3.2.0
+HIPECORE_VERSION = 3.3.0
 
 HIPECORE_SITE = /path/to/hipecore   #<---- EDIT THIS!
 HIPECORE_SITE_METHOD = local

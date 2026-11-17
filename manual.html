@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Hipe 3.2 beta manual</title>
+    <title>Hipe 3.3 beta manual</title>
     <meta name="viewport" content="width=600, initial-scale=1.0" />
     <style type="text/css">
 body {
@@ -252,7 +252,7 @@ td:first-child tt {
 <body>
 
 <div id="content">
-<h1 class="unrolltitle">Hipe 3.2 beta manual</h1>
+<h1 class="unrolltitle">Hipe 3.3 beta manual</h1>
 <p style="text-align:center">A copy of the documentation at <a href="https://hipe.generaldevelopment.net/">https://hipe.generaldevelopment.net</a>, as of this release.</p>
 <div class="unrolltoc">
 <ul>
@@ -306,6 +306,7 @@ td:first-child tt {
 <li><a href="#documentation-hipe-api-hipe-op-file-return">HIPE_OP_FILE_RETURN</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-find-result">HIPE_OP_FIND_RESULT</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-find-text">HIPE_OP_FIND_TEXT</a></li>
+<li><a href="#documentation-hipe-api-hipe-op-focus-return">HIPE_OP_FOCUS_RETURN</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-frame-close">HIPE_OP_FRAME_CLOSE</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-frame-event">HIPE_OP_FRAME_EVENT</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-free-location">HIPE_OP_FREE_LOCATION</a></li>
@@ -327,6 +328,7 @@ td:first-child tt {
 <li><a href="#documentation-hipe-api-hipe-op-get-src">HIPE_OP_GET_SRC</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-get-style">HIPE_OP_GET_STYLE</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-get-x11-xid">HIPE_OP_GET_X11_XID</a></li>
+<li><a href="#documentation-hipe-api-hipe-op-has-focus">HIPE_OP_HAS_FOCUS</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-insert-tag">HIPE_OP_INSERT_TAG</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-key-return">HIPE_OP_KEY_RETURN</a></li>
 <li><a href="#documentation-hipe-api-hipe-op-location-return">HIPE_OP_LOCATION_RETURN</a></li>
@@ -453,8 +455,8 @@ the prompt itself.</p>
 hipecore and <tt>hiped</tt> with the same Qt version. To use Hipe within a desktop, you also need an X11 or
 Wayland session.</p>
 
-<p>Qt 6 support is new. The test suites pass with Qt 6.8, but these have not been tried on Qt 6 yet:
-touch and mouse-wheel input from real devices, the clipboard, input methods, video playback, embedded X11 windows, high-DPI screens, and running natively under Wayland.</p>
+<p>Qt 6 support is new. The test suites pass with Qt 6.8, it runs natively under Wayland with video playback, and embedded X11 windows work, but these have not been tried on Qt 6 yet:
+touch and mouse-wheel input from real devices, the clipboard, input methods, and high-DPI screens.</p>
 
 <p>You don't need your distribution's QtWebKit packages (such as <tt>libqt5webkit5-dev</tt>): hipecore,
 built in the next step, takes their place.</p>
@@ -2534,6 +2536,11 @@ itself produces the dialog box.</p>
 <p>The dialog box should be implemented <em>modally</em>, which means the user should not be able to continue
 interacting with the application until the dialog has either been answered or dismissed (cancelled).</p>
 
+<p>When Hipe shows the dialog itself, it blocks only the window of the application that asked: other applications'
+windows stay usable, and the application itself keeps running. A window shows one dialog at a time. A dialog requested
+while another is open (including the file dialog of <tt>HIPE_OP_FIFO_GET_PEER</tt>) is shown once the user has answered
+the first. If the application quits, its open and waiting dialogs close with its window.</p>
+
 
 <ul>
     <li><tt>location</tt>: <i>Sending a request:</i> A value of 0 (corresponding to the body element of
@@ -3969,6 +3976,22 @@ editable layer with <tt>color: transparent</tt> above a syntax-highlighted copy 
 
 <pre>#editor::search-text { background-color: rgba(255, 200, 60, 0.3); color: transparent; }</pre>
 </div>
+<h3 id="documentation-hipe-api-hipe-op-focus-return" class="unrollheading unrollheading2">HIPE_OP_FOCUS_RETURN</h3>
+<div class="unrollsection unrollsection2">
+<h1>Instruction set reference</h1>
+
+<h2><tt>HIPE_OP_FOCUS_RETURN</tt></h2>
+
+<p>Sent by the display server in reply to <tt>HIPE_OP_HAS_FOCUS</tt>.</p>
+
+<ul>
+    <li><tt>location</tt>: The element named in the <tt>HIPE_OP_HAS_FOCUS</tt> instruction.
+    </li>
+    <li><tt>arg[0]</tt>: "1" if the element is focused, otherwise "0". See <tt>HIPE_OP_HAS_FOCUS</tt> for what counts as
+        focused.
+    </li>
+</ul>
+</div>
 <h3 id="documentation-hipe-api-hipe-op-frame-close" class="unrollheading unrollheading2">HIPE_OP_FRAME_CLOSE</h3>
 <div class="unrollsection unrollsection2">
 <h1>Instruction set reference</h1>
@@ -4058,9 +4081,25 @@ and can be checked by evaluating the value of <em>(received instruction)</em><tt
 <tr><td>HIPE_FRAME_EVENT_CLIENT_DISCONNECTED</td><td> - </td><td> - </td></tr>
 <tr><td>HIPE_FRAME_EVENT_TITLE_CHANGED</td><td>Client title string</td><td> - </td></tr>
 <tr><td>HIPE_FRAME_EVENT_ICON_CHANGED</td><td>binary PNG image data</td><td> - </td></tr>
-<tr><td>HIPE_FRAME_EVENT_COLOR_CHANGED</td><td>new foreground color</td><td> - </td></tr>
-<tr><td>HIPE_FRAME_EVENT_BACKGROUND_CHANGED</td><td>new background color</td><td> - </td></tr>
+<tr><td>HIPE_FRAME_EVENT_COLOR_CHANGED</td><td>new foreground color, as <tt>rgb(r, g, b)</tt></td><td> - </td></tr>
+<tr><td>HIPE_FRAME_EVENT_BACKGROUND_CHANGED</td><td>new background color, as <tt>rgb(r, g, b)</tt></td><td> - </td></tr>
 </tbody></table>
+
+<h3>Colour events</h3>
+
+<p>The colours are those of the client's <tt>&lt;body&gt;</tt>. One of each is sent when the client connects, and again
+whenever the colour changes. The colour is always reported as <tt>rgb(r, g, b)</tt>, without any alpha (transparency):</p>
+
+<table><tbody>
+<tr><th>Client's body colour</th><th>Reported as</th></tr>
+<tr><td>solid, e.g. <tt>#0B0C12</tt></td><td><tt>rgb(11, 12, 18)</tt></td></tr>
+<tr><td>see-through, e.g. <tt>rgba(0,0,128,0.5)</tt></td><td><tt>rgb(0, 0, 128)</tt></td></tr>
+<tr><td><tt>transparent</tt>, or no background set</td><td><tt>rgb(0, 0, 0)</tt></td></tr>
+<tr><td>only the alpha changes</td><td>no event</td></tr>
+</tbody></table>
+
+<p>Where a client's background is see-through, whatever the parent draws behind the <tt>&lt;iframe&gt;</tt> (its
+background, or the iframe element's own) shows through it.</p>
 
 
 </div>
@@ -4685,6 +4724,46 @@ choose Wayland; start the display server with <tt>QT_QPA_PLATFORM=xcb hiped</tt>
 X11.</li>
 </ul>
 </div>
+<h3 id="documentation-hipe-api-hipe-op-has-focus" class="unrollheading unrollheading2">HIPE_OP_HAS_FOCUS</h3>
+<div class="unrollsection unrollsection2">
+<h1>Instruction set reference</h1>
+
+<h2><tt>HIPE_OP_HAS_FOCUS</tt></h2>
+
+<p>Asks whether an element is the focused element in the client's own document.</p>
+
+<p>The display server responds with a <tt>HIPE_OP_FOCUS_RETURN</tt> instruction with the same <tt>location</tt> and
+<tt>requestor</tt>. Its <tt>arg[0]</tt> is "1" if the element is focused, otherwise "0".</p>
+
+<ul>
+    <li><tt>location</tt>: The element to ask about.
+    </li>
+</ul>
+
+
+<h3>Notes</h3>
+
+<table>
+    <tr><th>Case</th><th>Reply</th></tr>
+    <tr><td>The element has the keyboard focus</td><td>"1"</td></tr>
+    <tr><td>The element is focused, but the client's window is inactive</td><td>"1"</td></tr>
+    <tr><td>Framed client: the element is focused in its frame, but the focus is in the framing manager or another
+        client</td><td>"1"</td></tr>
+    <tr><td>Framed client: a <tt>HIPE_OP_SET_FOCUS</tt> for the element is waiting for the frame to get the focus</td>
+        <td>"1"</td></tr>
+    <tr><td>Another element is focused, or none is</td><td>"0"</td></tr>
+    <tr><td>The element lost the focus by being disabled, and will get it back when enabled again (see
+        <tt>HIPE_OP_SET_FOCUS</tt>)</td><td>"1"</td></tr>
+    <tr><td>The same, but something else was focused meanwhile, or the element was hidden or removed</td><td>"0"</td></tr>
+    <tr><td>Location 0, while the body is focused (the body's Tab stop, a click on empty space, or
+        <tt>HIPE_OP_SET_FOCUS</tt> on location 0)</td><td>"1"</td></tr>
+    <tr><td>Location 0, otherwise</td><td>"0"</td></tr>
+</table>
+
+<ul>
+    <li>The reply carries no new location, so there is nothing to free.</li>
+</ul>
+</div>
 <h3 id="documentation-hipe-api-hipe-op-insert-tag" class="unrollheading unrollheading2">HIPE_OP_INSERT_TAG</h3>
 <div class="unrollsection unrollsection2">
 <h1>Instruction set reference</h1>
@@ -5216,10 +5295,38 @@ A cursor set on another element keeps the colours it was created with; set it ag
 
 <ul>
     <li>Nothing happens if the element can't take focus: hidden (<tt>display: none</tt>, <tt>visibility: hidden</tt>),
-        disabled, or not focusable (e.g. a <tt>div</tt> without <tt>tabindex</tt>, or location 0).</li>
+        disabled, or not focusable (e.g. a <tt>div</tt> without <tt>tabindex</tt>).</li>
+    <li>Location 0 focuses the body: the element that had the focus loses it (a <tt>blur</tt> event), and keys go to
+        the body. Nothing happens if the client has given its body <tt>tabindex</tt> -1 or removed the attribute.</li>
     <li>It works while the window is inactive: the element has the focus once the window is activated.</li>
     <li>If the focused element is later hidden or disabled, it loses the focus (a <tt>blur</tt> event), and keys go to
         the body.</li>
+    <li>An element that lost the focus by being disabled (itself, or e.g. a <tt>&lt;fieldset&gt;</tt> around it) gets
+        it back, with its caret, when it is enabled again, unless something else in the document was focused
+        meanwhile, or it was hidden. A hidden element doesn't get the focus back.</li>
+    <li>To ask whether an element is focused, use <tt>HIPE_OP_HAS_FOCUS</tt>.</li>
+</ul>
+
+<h3>Tab order</h3>
+
+<p>Each client's body has <tt>tabindex</tt> 0, so it is a Tab stop before the client's first element: the stop where
+nothing in the client is focused, which clicking empty space also gives. It is the same for a top-level client and a
+framed one.</p>
+
+<table>
+    <tr><th>Client</th><th>Tab, from its first element</th></tr>
+    <tr><td>Top-level, elements A and B</td><td>A, B, body, A, ... (Shift+Tab: A, body, B, A)</td></tr>
+    <tr><td>Framed, elements A and B</td><td>A, B, then on through the framing manager's page, which comes back
+        to the client's body, then A</td></tr>
+    <tr><td>Body given <tt>tabindex</tt> -1, or the attribute removed</td><td>Top-level: A, B, A. Framed: A, B, then on
+        through the framing manager's page</td></tr>
+    <tr><td>Nothing focusable</td><td>Only the body</td></tr>
+</table>
+
+<ul>
+    <li>Keyboard focus never leaves the window: after the last stop, Tab goes round to the first.</li>
+    <li>Location 0 is the body for <tt>HIPE_OP_SET_ATTRIBUTE</tt> and <tt>HIPE_OP_REMOVE_ATTRIBUTE</tt>, so a client
+        can change its body's <tt>tabindex</tt> at any time, including as its first instruction.</li>
 </ul>
 
 <h3>Framed clients</h3>
@@ -5308,8 +5415,16 @@ instruction. Set <tt>arg[2]</tt> to <tt>"1"</tt> on every chunk except the last.
 chunk, then finish with one more instruction that has an empty <tt>arg[0]</tt> and no
 <tt>arg[2]</tt>.</li>
     <li>A chunked file may be up to 500 MB, and a client may have up to 8 chunked files in progress
-at once. Beyond either limit the file is discarded without an error. A client that goes far beyond
-them is disconnected.</li>
+at once. Neither limit reports an error, and the client carries on sending as usual:
+    <table>
+        <tr><th>Limit passed</th><th>What happens</th></tr>
+        <tr><td>500 MB</td><td>The rest of the file is discarded. The element shows, or plays, the part that arrived; a
+        video ends where the data ends. If what arrived can't be played (e.g. an MP4 whose index is at the end), the
+        element gets an <tt>error</tt> event when <tt>arg[3]</tt> was sent, and otherwise just waits.</td></tr>
+        <tr><td>8 files at once</td><td>The new file is discarded and the element keeps what it had.</td></tr>
+    </table>
+The finishing instruction ends a refused upload like any other, and the element can then be sent a new file. A
+client that goes far beyond the limits is disconnected.</li>
     <li>A <tt>canvas</tt> can't be sent to in chunks.</li>
 </ul>
 
