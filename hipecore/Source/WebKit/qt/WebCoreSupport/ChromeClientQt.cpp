@@ -185,18 +185,16 @@ void ChromeClientQt::unfocus()
 
 bool ChromeClientQt::canTakeFocus(FocusDirection)
 {
-    // This is called when cycling through links/focusable objects and we
-    // reach the last focusable object. Then we want to claim that we can
-    // take the focus to avoid wrapping.
-    return true;
+    // Called when Tab runs past the last (or Shift+Tab past the first) focusable element of the page. A browser
+    // takes the focus here for its own controls, leaving the page with nothing focused. In Hipe there is nothing
+    // outside the page, so the focus wraps round to the other end of it instead. (hiped makes each document's
+    // <body> a Tab stop, which gives the page a stop with no element in it focused.)
+    return false;
 }
 
 void ChromeClientQt::takeFocus(FocusDirection)
 {
-    // don't do anything. This is only called when cycling to links/focusable objects,
-    // which in turn is called from focusNextPrevChild. We let focusNextPrevChild
-    // call QWidget::focusNextPrevChild accordingly, so there is no need to do anything
-    // here.
+    // Never called: canTakeFocus() returns false.
 }
 
 
