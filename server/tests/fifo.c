@@ -29,6 +29,7 @@
 
 static hipe_session s;
 static int fails = 0;
+static pid_t child = 0;
 #define CHECK(name, cond) do { int ok_ = (cond); if(!ok_) fails++; \
     printf("%s %s\n", ok_ ? "PASS" : "FAIL", name); fflush(stdout); } while(0)
 
@@ -56,7 +57,14 @@ static int argIs(hipe_instruction* r, int i, const char* want) {
     return r->arg_length[i] == strlen(want) && (!r->arg_length[i] || !memcmp(r->arg[i], want, r->arg_length[i]));
 }
 
-static void timedOut(int sig) { (void)sig; printf("FAIL timed out waiting for a relayed instruction\n"); _exit(1); }
+static void timedOut(int sig) {
+    (void)sig;
+    static const char msg[] = "FAIL timed out waiting for a relayed instruction\n";
+    fflush(stdout); /* earlier lines first: _exit() doesn't flush, and run.sh's stdout is a pipe */
+    if(write(1, msg, sizeof msg - 1)) {}
+    if(child > 0) kill(child, SIGTERM); /* else it keeps stdout open */
+    _exit(1);
+}
 
 int main() {
     signal(SIGALRM, timedOut);
@@ -70,8 +78,17 @@ int main() {
     hipe_await_instruction(s, &r, HIPE_OP_KEY_RETURN);
     char key[256]; snprintf(key, sizeof key, "%.*s", (int)r.arg_length[0], r.arg[0]);
     hipe_instruction_clear(&r);
-    pid_t child = fork();
+    child = fork();
     if(!child) childMain(key);
+
+    /* hiped drops a message sent to a frame no client has connected to yet, so wait until the child is there */
+    alarm(10);
+    do {
+        hipe_instruction_clear(&r);
+        hipe_await_instruction(s, &r, HIPE_OP_FRAME_EVENT);
+    } while(r.location != fr || r.arg_length[0] != 1 || r.arg[0][0] != HIPE_FRAME_EVENT_CLIENT_CONNECTED);
+    alarm(0);
+    hipe_instruction_clear(&r);
 
     /* each instruction goes to the child and comes back; arguments include newlines, '=' and an empty one */
     struct { char op; const char* name; } ops[] = {
