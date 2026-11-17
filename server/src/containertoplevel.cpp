@@ -101,6 +101,9 @@ void ContainerTopLevel::setBody(std::string newBodyHtml, bool overwrite) {
         initYet = true;
         applyStylesheet(); //the theme and any rules sent so far
         webElement.removeAllChildren();
+        //The body is a Tab stop, before the first element: Tab past the last element comes back to it, the same in a
+        //frame or top-level. Clients opt out with tabindex -1 or by removing the attribute.
+        webElement.setAttribute("tabindex", "0");
 
         //obtain the initial colour scheme
         //(computed styles are worked out when asked for, so these are ready straight away.)

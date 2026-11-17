@@ -250,7 +250,10 @@ extern "C" {
  * gets it back, with its caret, when enabled again, unless something else in the document was focused meanwhile
  * (or it was hidden). A framed client can't take the focus from outside its frame: while the focus
  * is elsewhere (in the framing manager or another client) or its frame is hidden, the element is remembered, and gets
- * the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>). */
+ * the focus when the frame is next given it (e.g. the framing manager focuses its <iframe>).
+ * Location 0 focuses the body. Each client's body has tabindex 0, so it is the Tab stop before the client's first
+ * element (where clicking empty space also leaves the focus), top-level or framed; a client opts out by setting its
+ * body's tabindex to -1 or removing it. Tab never takes the focus out of the window: it goes round. */
 
 #define HIPE_OP_SET_STYLE_SRC 34
 /* Applies a background image or other property to the element at location.
@@ -755,7 +758,8 @@ extern "C" {
 /* Asks whether the element at location is the focused element in the client's own document. The server replies with
  * HIPE_OP_FOCUS_RETURN. For a framed client, the answer is about the focus inside its frame, whether or not the frame
  * itself has the focus. An element a SET_FOCUS is waiting to focus counts as focused, and so does one that lost the
- * focus to being disabled and will get it back when enabled again (see HIPE_OP_SET_FOCUS).
+ * focus to being disabled and will get it back when enabled again (see HIPE_OP_SET_FOCUS). Location 0 asks about
+ * the body, which is focused at its Tab stop, after a click on empty space, or after SET_FOCUS on location 0.
  */
 
 #define HIPE_OP_FOCUS_RETURN 89

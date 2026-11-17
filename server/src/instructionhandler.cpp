@@ -763,8 +763,17 @@ void handle_SET_TITLE(Container* c, hipe_instruction*, bool, QWebElement, std::s
 
 
 //REQUIRES 2 ARGS
-void handle_SET_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
+//Location 0 is the body, which is only created when first needed: create it, so that changes to its attributes
+//sent before anything else (opting out of its Tab stop with tabindex -1, for example) aren't lost.
+static QWebElement bodyIfUnspecified(Container* c, bool locationSpecified, QWebElement location) {
+    if(locationSpecified) return location;
+    if(c->webElement.isNull()) c->setBody("", false);
+    return c->webElement;
+}
+
+void handle_SET_ATTRIBUTE(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
     if(QString(arg[0].c_str()).compare("hipe-loc", Qt::CaseInsensitive) == 0) return; //only meaningful in markup
+    location = bodyIfUnspecified(c, locationSpecified, location);
     location.setAttribute(QString(arg[0].c_str()), QString(arg[1].c_str()));
 }
 
@@ -1112,7 +1121,8 @@ void handle_CANVAS_SET_PROPERTY(Container* c, hipe_instruction*, bool, QWebEleme
 
 
 //REQUIRES 1 ARG
-void handle_REMOVE_ATTRIBUTE(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
+void handle_REMOVE_ATTRIBUTE(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
+    location = bodyIfUnspecified(c, locationSpecified, location);
     location.removeAttribute(arg[0].c_str());
 }
 
@@ -1493,7 +1503,8 @@ void handle_MESSAGE(Container* c, hipe_instruction* instruction, bool locationSp
 
 
 //REQUIRES 1 ARG
-void handle_TOGGLE_CLASS(Container*, hipe_instruction*, bool, QWebElement location, std::string arg[]) {
+void handle_TOGGLE_CLASS(Container* c, hipe_instruction*, bool locationSpecified, QWebElement location, std::string arg[]) {
+    location = bodyIfUnspecified(c, locationSpecified, location);
     location.toggleClass(arg[0].c_str());
 }
 
