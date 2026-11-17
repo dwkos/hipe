@@ -284,7 +284,7 @@ int main() {
         focus(pd); settle(100); type("w");
         CHECK("T6 SET_FOCUS on a non-focusable div does nothing", !has("blur@td") && has("keydown@td")); reset();
         focus(i1); settle(100); reset(); focus(0); settle(100); type("y");
-        CHECK("T7 SET_FOCUS on location 0 (body) does nothing", !has("blur@i1") && has("keydown@i1")); reset();
+        CHECK("T7 SET_FOCUS on location 0 focuses the body: i1 blurred, keys reach the body", has("blur@i1") && has("keydown@body") && !has("keydown@i1")); reset();
 
         focus(bt); settle(100); key("space"); settle(100);
         CHECK("T8 button focused, Space clicks it", has("focus@bt") && has("click@bt")); reset();
